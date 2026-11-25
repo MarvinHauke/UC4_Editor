@@ -23,7 +23,7 @@ Stages: **draft** → **grilled** → **decided** (spec + steps) → **in work**
 | [0009](0009-user-guide.md) | User guide (Zensical, annotated screenshots) | built (steps 1–6); hosting open | uc4-docs |
 | [0010](0010-ux-pass.md) | UX pass: audit as a newcomer, ranked barriers, fixes | decided (Q36–Q40); steps 1–2 in work | architect, uc4-ui |
 | [0011](0011-public-release.md) | Public release: editor and guide on GitHub Pages, public repo | decided (Q41–Q46); steps 1–5 in work | architect, uc4-ui, uc4-docs |
-| [0012](0012-onboarding.md) | Onboarding: the six areas in the guide and a first-run tour | decided (Q51–Q56); steps 1–4 in work | uc4-ui, uc4-docs |
+| [0012](0012-onboarding.md) | Onboarding: the six areas in the guide and a first-run tour | built locally; waits for the user's try-out | uc4-ui, uc4-docs |
 
 ## Next, in dependency order
 

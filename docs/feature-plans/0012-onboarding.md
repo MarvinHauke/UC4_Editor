@@ -1,6 +1,6 @@
 # 0012 — Onboarding: the six areas in the guide and a first-run tour
 
-_Stage: decided (grilled 2026-11-25, Q51–Q56) — steps 1–4 in work, local branch `feat/onboarding`._
+_Stage: built locally (2026-11-25, `aa394f7` … `70b4fb4`) on `feat/onboarding`; waits for the user's try-out before a push._
 _Owner: uc4-ui (data, tour), uc4-docs (guide page) · Depends on: 0010 (dump overlay)_
 
 ## Problem
