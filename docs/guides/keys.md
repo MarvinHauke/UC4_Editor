@@ -53,6 +53,7 @@ and `Ctrl` on Windows and Linux.
 | Keys | Action |
 | --- | --- |
 | `Esc` | Close the Send or Restore window; nothing is sent until you press Send or Restore |
+| `Esc` | Close the guide for sending a dump from the device; nothing is sent |
 
 ## Tour
 
@@ -60,6 +61,7 @@ and `Ctrl` on Windows and Linux.
 | --- | --- |
 | `←` `→` | Previous or next step |
 | `Esc` | End the tour |
+| `Esc` | Not now: close the welcome card |
 
 ## Anywhere
 
