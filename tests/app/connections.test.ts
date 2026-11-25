@@ -41,16 +41,17 @@ describe('Connections column', () => {
   });
   it('says what goes, what stays and why when clearing', () => {
     const plan: ClearPlan = {
-      deleteIds: ['a'], keepIds: ['b'],
+      deleteIds: ['a'], keepIds: ['b'], hideIds: ['b'],
       entries: [
-        { id: 'b', date: '2026-11-16T10:00:00.000Z', kind: 'Sndc SE05', action: 'keep', keepBecause: ['newest', 'needed'], neededBy: [{ setupId: 's', setupName: 'Lead', slot: 5, reasons: ['revert'] }] },
-        { id: 'a', date: '2026-11-15T10:00:00.000Z', kind: 'Sndc SE05', action: 'delete', keepBecause: [], neededBy: [], supersededBy: 'b' },
+        { id: 'b', date: '2026-11-16T10:00:00.000Z', kind: 'Sndc SE05', action: 'keep', keepBecause: ['backup', 'needed'], neededBy: [{ setupId: 's', setupName: 'Lead', slot: 5, reasons: ['revert'] }] },
+        { id: 'a', date: '2026-11-15T10:00:00.000Z', kind: 'Sndc SE05', action: 'delete', keepBecause: [], neededBy: [] },
       ],
     };
     const t = clearTexts(plan);
+    expect(t.body.join(' ')).toContain('the backup for Restore (the newest SndA received from the UC4)');
     expect(t.title).toBe('Clear 1 old dump?');
     expect(t.list?.[0]).toContain('Stays: Sndc SE05');
-    expect(t.list?.[0]).toContain('the newest of its kind; needed by SE05');
+    expect(t.list?.[0]).toContain('the backup for Restore; needed by SE05');
     expect(t.list?.[1]).toContain('Goes: Sndc SE05');
     expect(t.body.join(' ')).toContain('cannot be undone');
   });

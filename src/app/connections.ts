@@ -64,14 +64,14 @@ export function deleteNeededTexts(d: KeptDumpInfo, needs: readonly DumpNeed[]): 
 export function clearTexts(plan: ClearPlan): Omit<ConfirmSpec, 'run'> {
   const line = (e: ClearPlan['entries'][number]): string => {
     const when = formatExported(e.date);
-    if (e.action === 'delete') return `Goes: ${e.kind}, ${when} (a newer ${e.kind} stays)`;
-    const why = [e.keepBecause.includes('newest') ? 'the newest of its kind' : '', e.neededBy.length ? `needed by ${e.neededBy.map((n) => n.slot !== undefined ? slotName(n.slot) : n.setupName).join(', ')}` : ''].filter(Boolean).join('; ');
+    if (e.action === 'delete') return `Goes: ${e.kind}, ${when}`;
+    const why = [e.keepBecause.includes('backup') ? 'the backup for Restore' : '', e.neededBy.length ? `needed by ${e.neededBy.map((n) => n.slot !== undefined ? slotName(n.slot) : n.setupName).join(', ')}` : ''].filter(Boolean).join('; ');
     return `Stays: ${e.kind}, ${when} (${why})`;
   };
   return {
     title: `Clear ${plural(plan.deleteIds.length, 'old dump')}?`,
     body: [
-      `Lost for good: ${plural(plan.deleteIds.length, 'dump')} and their bytes. ${plural(plan.keepIds.length, 'dump')} stay: the newest of each kind and slot, and every dump a setup still needs (Revert, Sndc export).`,
+      `Lost for good: ${plural(plan.deleteIds.length, 'dump')} and their bytes. ${plural(plan.keepIds.length, 'dump')} stay, hidden under Show all: the backup for Restore (the newest SndA received from the UC4) and every dump a setup still needs (Revert, Sndc export, a send's backup).`,
       'This cannot be undone. Export a dump first with Export .syx if you want a copy.',
     ],
     list: plan.entries.map(line),
