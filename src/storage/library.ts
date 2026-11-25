@@ -1144,7 +1144,7 @@ function createLibrary(
       const hide = new Set(keepIds);
       kept = kept.filter((d) => !gone.has(d.id)).map((d) => (hide.has(d.id) && !d.hidden ? { ...d, hidden: true as const } : d));
       links = Object.fromEntries(Object.entries(links).filter(([, l]) => !gone.has(l.dump)));
-      const message = `Cleared ${deleteIds.length} dump${deleteIds.length === 1 ? '' : 's'}${keepIds.length > 0 ? `; ${keepIds.length} still needed ${keepIds.length === 1 ? 'is' : 'are'} hidden under Show all` : ''}.`;
+      const message = `Cleared ${deleteIds.length} dump${deleteIds.length === 1 ? '' : 's'}${keepIds.length > 0 ? `; ${keepIds.length} kept ${keepIds.length === 1 ? 'is' : 'are'} hidden under Show all` : ''}.`;
       publish({ ...state, ...dumpFields(), message });
       for (const id of deleteIds) persistDump(() => storage.deleteDump(id), 'The deletion');
       for (const d of kept) if (d.hidden && hideIds.includes(d.id)) persistDump(() => storage.putDump(d), 'The change');
