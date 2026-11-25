@@ -11,7 +11,7 @@ export { indexedDbStorage, indexedDbAvailable } from './indexedDbStorage.ts';
 export type { ExportState, SetupSummary } from './libraryInfo.ts';
 export { UNREADABLE_TEXT } from './dumpImport.ts';
 export type { SyxRefusal } from './syxExport.ts';
-export { NEED_TEXT } from './keptDumpPlan.ts';
+export { NEED_TEXT, hasWorkToClear } from './keptDumpPlan.ts';
 export type { ClearEntry, ClearPlan, DumpNeed, KeepReason, NeedReason } from './keptDumpPlan.ts';
 export { CHANGES_SHOWN } from './sendPlan.ts';
 export type { SendBase, SendBackup, SendChanges, SendPlan, SendRefusal } from './sendPlan.ts';
