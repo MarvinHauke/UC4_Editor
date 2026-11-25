@@ -29,6 +29,12 @@ describe('key table', () => {
     expect(matchKey(press('y'), ['vimCopy'], false)).toBeNull();
   });
   it('lists the sections the plan names, in order', () => {
-    expect(helpSections(false).map((s) => s.title)).toEqual(['Setups', 'Groups', 'Controls', 'Copy and paste', 'Dialogs', 'Send', 'Anywhere']);
+    expect(helpSections(false).map((s) => s.title)).toEqual(['Setups', 'Groups', 'Controls', 'Copy and paste', 'Dialogs', 'Send', 'Tour', 'Anywhere']);
+  });
+  it('matches the tour keys: plain arrows page, Esc ends', () => {
+    expect(matchKey(press('ArrowRight'), ['tourPage'])).toMatchObject({ id: 'tourPage', press: { dir: 1 } });
+    expect(matchKey(press('ArrowLeft'), ['tourPage'])).toMatchObject({ press: { dir: -1 } });
+    expect(matchKey(press('ArrowRight', { altKey: true }), ['tourPage'])).toBeNull();
+    expect(matchKey(press('Escape'), ['tourEnd', 'tourPage'])?.id).toBe('tourEnd');
   });
 });

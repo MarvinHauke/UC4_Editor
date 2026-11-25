@@ -4,6 +4,7 @@
   // Tab stays in the card, focus returns to where it was. The area texts come from the profile (uc4Tour.ts).
   import { tick } from 'svelte';
   import type { Tour } from '../app/tour.svelte.ts';
+  import { matchKey } from '../app/keyTable.ts';
   import { placeCard, type Box } from '../app/tour.ts';
 
   let { tour, onget }: { tour: Tour; onget: () => void } = $props();
@@ -57,13 +58,17 @@
 
   function key(e: KeyboardEvent): void {
     if (!tour.open || e.defaultPrevented) return;
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); return; }
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    const hit = matchKey(e, ['tourEnd', 'tourPage']);
+    if (hit) {
       e.preventDefault(); e.stopPropagation();
-      if (e.key === 'ArrowRight') tour.next(); else tour.back();
+      if (hit.id === 'tourEnd') finish();
+      else if (hit.press.dir === 1) tour.next();
+      else tour.back();
       return;
     }
-    if (e.key === 'Tab' && card) {
+    // Other keys stay with the card (Enter and Space press its buttons): nothing behind the dim reacts, such as Option-← stepping a group or Cmd-Z.
+    if (e.key !== 'Tab') { e.stopPropagation(); return; }
+    if (card) {
       const items = [...card.querySelectorAll<HTMLElement>('button:not(:disabled)')];
       const first = items[0], last = items.at(-1);
       if (!first || !last) return;
