@@ -24,3 +24,43 @@ export const RECEIVE_GUIDE: GuideData = {
   cues: [{ kind: 'setupLed' }, { kind: 'display', text: 'rEc' }, { kind: 'shift' }, { kind: 'edit' }],
   lit: [{ area: 'encoders', index: 6 }, { area: 'pushButtons', index: 6 }],
 };
+
+/** Which dump the user will send from the UC4: one setup (`Sndc`, encoder 4) or all of them (`SndA`, encoder 8). */
+export type SendChoice = 'one' | 'all';
+
+/**
+ * Send a dump from the UC4 (plan 0010 decision 6): Shift, Edit twice, (`Sndc`: turn encoder 1 to the setup), then hold encoder 4's
+ * (`Sndc`) or 8's (`SndA`) push button until the bars have run. Steps 1 and 2 are the receive guide's. Callouts are numbered
+ * without a gap, so `SndA` has three.
+ */
+export function sendGuide(choice: SendChoice): GuideData {
+  const lowerSteps = RECEIVE_GUIDE.callouts.filter((c) => c.part === 'lower');
+  const lowerSpots = RECEIVE_GUIDE.spots.filter((s) => s.part === 'lower');
+  const displaySpot = RECEIVE_GUIDE.spots.find((s) => s.part === 'upper' && s.y < 150)!;
+  const enc1 = GEOMETRY.encoders[0] as Disc;
+  const hold = (n: number, encoder: 4 | 8, y: number, enc: Disc): GuideData['callouts'][number] => ({
+    n, part: 'upper', x: 180, y, width: 250, height: 58,
+    lines: [['Hold encoder ', { key: String(encoder) }, "'s push button"], ['until the bars have run']],
+    pointer: { x1: 430, y1: y + 29, x2: enc.cx - 38, y2: enc.cy + 53 },
+  });
+  if (choice === 'one') {
+    const enc4 = GEOMETRY.encoders[3] as Disc;
+    return {
+      spots: [...lowerSpots, { part: 'upper', x: enc1.cx - 42, y: 30, width: 84, height: 80, rx: 14 }, { part: 'upper', x: enc4.cx - 42, y: 30, width: 84, height: 116, rx: 14 }, displaySpot],
+      callouts: [
+        ...lowerSteps,
+        { n: 3, part: 'upper', x: 128, y: 36, width: 240, height: 34, lines: [['Turn encoder ', { key: '1' }, ' to the setup']], pointer: { x1: 128, y1: 53, x2: enc1.cx + enc1.r, y2: enc1.cy } },
+        hold(4, 4, 80, enc4),
+      ],
+      cues: [{ kind: 'setupLed' }, { kind: 'display', text: 'Sndc' }, { kind: 'shift' }, { kind: 'edit' }],
+      lit: [{ area: 'encoders', index: 0 }, { area: 'pushButtons', index: 3 }],
+    };
+  }
+  const enc8 = GEOMETRY.encoders[7] as Disc;
+  return {
+    spots: [...lowerSpots, { part: 'upper', x: enc8.cx - 42, y: 204, width: 84, height: 112, rx: 14 }, displaySpot],
+    callouts: [...lowerSteps, hold(3, 8, 192, enc8)],
+    cues: [{ kind: 'setupLed' }, { kind: 'display', text: 'SndA' }, { kind: 'shift' }, { kind: 'edit' }],
+    lit: [{ area: 'pushButtons', index: 7 }],
+  };
+}

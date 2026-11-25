@@ -49,17 +49,20 @@
   });
   // The guide: the device view dimmed, three callouts and the card with Cancel · Send/Restore (decision 35). Only while the question
   // is on: a refusal has nothing to send.
+  let mine: object | null = null; // the card this dialog put up: it clears only that one (the dump guide has its own)
   const canConfirm = $derived(plan?.ok === true && device.connected);
   $effect(() => {
     if (target && view?.kind === 'confirm') {
       const restoring = target.kind === 'restore';
-      guide.show(RECEIVE_GUIDE, {
+      const card = {
         text: `Put the ${profile.deviceName} in receive mode (rc00), then ${restoring ? 'Restore' : 'Send'}.`,
         confirmLabel: restoring ? 'Restore' : 'Send', canConfirm, onconfirm: send, oncancel: () => { sender.close(); },
-      });
-    } else guide.clear();
+      };
+      mine = card;
+      guide.show(RECEIVE_GUIDE, card);
+    } else if (mine) { guide.clear(mine); mine = null; }
   });
-  onMount(() => { window.addEventListener('resize', place); return () => { window.removeEventListener('resize', place); guide.clear(); if (dialog?.open) dialog.close(); }; });
+  onMount(() => { window.addEventListener('resize', place); return () => { window.removeEventListener('resize', place); if (mine) guide.clear(mine); if (dialog?.open) dialog.close(); }; });
   function send(): void { if (target && plan?.ok && device.connected) sender.send(target.slot, plan, target.kind); }
   // A non-modal dialog has no Esc of its own.
   function key(e: KeyboardEvent): void {

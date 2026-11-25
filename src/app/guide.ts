@@ -39,3 +39,18 @@ export interface GuideCard {
   onconfirm: () => void;
   oncancel: () => void;
 }
+
+/** The card of the "Send a dump from the UC4" guide: a choice, what it waits for, and Close. Nothing here sends. */
+export interface ListenCard {
+  title: string;
+  choices: readonly { value: string; label: string; help: string }[];
+  choice: string;
+  onchoose: (value: string) => void;
+  status: string;
+  /** A short note under the status ("Shift aborts."). */
+  note: string;
+  /** Present when the UC4 is not connected: the label of the Connect button. */
+  connectLabel: string | null;
+  onconnect: () => void;
+  onclose: () => void;
+}
