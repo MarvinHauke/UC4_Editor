@@ -9,7 +9,7 @@ The UC4 Editor is a browser app for the Faderfox UC4. With it you can:
 Everything runs in your browser. Your setups stay on your computer, in this browser.
 
 !!! info "Unofficial"
-    Unofficial: the UC4 Editor is not made by, endorsed by or supported by Faderfox.
+    The UC4 Editor is not made by, endorsed by or supported by Faderfox.
 
 <a class="uc4-card"
    href="https://marvinhauke.github.io/UC4_Editor/">
