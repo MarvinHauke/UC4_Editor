@@ -64,6 +64,10 @@ A static site built with [Zensical](https://zensical.org/) from `docs/guides/`, 
    0001 decision 18). (user, 2026-11-19, Q33)
 9. **Backup** is the `SndA` the editor keeps (the app's word); the `.zip` is the **Archive**
    (0007 decision 22). The guide says "`SndA` backup" or "backup". (user, 2026-11-19, Q34)
+10. **Navigation on the left, in three groups** (user, 2026-11-25, Q48): Start (Home, Getting started), Using the
+    editor (The editor, From and to the UC4, Files, Copy / Paste), Reference (Keys, How it works); no header tabs.
+    `zensical.toml` and `extra.css` trimmed to what the guide uses: the editor's blue as the colour in both schemes,
+    two corner radii, the notice as an `!!! info` box, `zoom.css` merged into `extra.css`.
 
 ## Open questions
 

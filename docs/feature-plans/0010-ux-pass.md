@@ -35,6 +35,14 @@ each barrier gets in the way.
 3. First-run barriers rank highest. (user, 2026-11-19, Q38; Mathias knows `SndA`, other owners may not.)
 4. Its own plan, not more lines in 0006. (user, 2026-11-19, Q39)
 5. The outside test is the mail to Mathias. (user, 2026-11-19, Q40)
+6. **"How to send a dump" becomes a guide overlay** (user, 2026-11-25, Q49): the button in Connections opens the
+   dimmed device view with callouts, as Send does. The card chooses **One setup (`Sndc`)** or **All setups
+   (`SndA`)**; callouts: 1 Hold Shift, 2 Press Edit twice (Setup LED on), 3 Turn encoder 1 to the setup (`Sndc`
+   only), 4 Hold encoder 4's (`Sndc`) or 8's (`SndA`) push button until the bars have run. The card says "Waiting for
+   a dump from the UC4…" and closes by itself when a dump arrives; Close ends it. Nothing is sent. A first step
+   toward B1: the start card can open it later.
+7. **Work in the public repository's folder, on local branches, pushed only after the user's OK** (user, 2026-11-25,
+   Q50).
 
 ## Open questions
 
@@ -46,6 +54,8 @@ each barrier gets in the way.
    1024 px and light theme included.
 2. **Audit** (decision 1) — done 2026-11-19 (Playwright on :5176, demo library and MIDI stub; 26 shots in the architect's scratchpad; list below) — architect · blocked by: none · the journeys, the ranked list written into this plan.
 3. **Fixes from the list** — uc4-ui · blocked by: 2 · one step per finding or small group, blocks first.
+5. **Dump overlay** (decision 6) — uc4-ui · blocked by: none · the button in Connections, the overlay from the
+   guide data, the auto-close on a received dump; tests for the callouts per choice.
 4. **Guide shots retaken** — uc4-docs or architect · blocked by: 3 · `npm run docs:shots`, text checked.
 
 ## Audit findings (2026-11-19)
