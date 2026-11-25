@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { canClear, clearTexts, CONNECTIONS_KEY, deleteNeededTexts, dumpKindLabel, keptNote, keptRow, loadOpen, saveOpen, shownDumps, stripInfo } from '../../src/app/connections.ts';
-import type { ClearPlan, KeptDumpInfo } from '../../src/storage/index.ts';
+import { clearTexts, CONNECTIONS_KEY, deleteNeededTexts, dumpKindLabel, keptNote, keptRow, loadOpen, saveOpen, shownDumps, stripInfo } from '../../src/app/connections.ts';
+import { hasWorkToClear, type ClearPlan, type KeptDumpInfo } from '../../src/storage/index.ts';
 
 const dump = (over: Partial<KeptDumpInfo> = {}): KeptDumpInfo => ({
   id: 'd1', date: '2026-11-15T10:30:00.000Z', source: 'received', type: 'one', slots: [5], firmware: '', content: 'SE05', size: 100, ...over,
@@ -54,9 +54,9 @@ describe('Connections column', () => {
     expect(keptNote(dump())).toBe('');
   });
   it('clears when there is something to delete or to hide, not otherwise', () => {
-    expect(canClear({ deleteIds: [], hideIds: [] })).toBe(false);
-    expect(canClear({ deleteIds: ['a'], hideIds: [] })).toBe(true);
-    expect(canClear({ deleteIds: [], hideIds: ['b'] })).toBe(true);
+    expect(hasWorkToClear({ deleteIds: [], hideIds: [] })).toBe(false);
+    expect(hasWorkToClear({ deleteIds: ['a'], hideIds: [] })).toBe(true);
+    expect(hasWorkToClear({ deleteIds: [], hideIds: ['b'] })).toBe(true);
   });
   it('says what goes, what is kept hidden and that the list ends up empty', () => {
     const plan: ClearPlan = {

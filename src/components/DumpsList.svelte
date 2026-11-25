@@ -3,10 +3,10 @@
   // The 5 newest visible ones, then "Show all" (which adds the hidden ones: the backup and the dumps setups need). × asks first (naming the setups that need the dump); Clear old dumps… shows what goes and what stays.
   import type { Store } from '../app/libraryStore.svelte.ts';
   import type { Confirm } from '../app/confirm.svelte.ts';
-  import type { KeptDumpInfo } from '../storage/index.ts';
+  import { hasWorkToClear, type KeptDumpInfo } from '../storage/index.ts';
   import { downloadBytes } from '../app/download.ts';
   import { deleteDumpTexts } from '../app/dumpTexts.ts';
-  import { canClear, NEWEST_SHOWN, clearTexts, deleteNeededTexts, keptNote, keptRow, shownDumps } from '../app/connections.ts';
+  import { NEWEST_SHOWN, clearTexts, deleteNeededTexts, keptNote, keptRow, shownDumps } from '../app/connections.ts';
   import { sameAs } from '../app/dumpNotices.ts';
 
   let { store, confirm }: { store: Store; confirm: Confirm } = $props();
@@ -29,7 +29,7 @@
   }
   function askClear(): void {
     const p = store.planClearDumps();
-    if (!canClear(p)) return;
+    if (!hasWorkToClear(p)) return;
     confirm.ask({ ...clearTexts(p), run: () => { store.clearOldDumps(); } });
   }
 </script>
@@ -65,7 +65,7 @@
     {:else if all && (dumps.length > NEWEST_SHOWN || dumps.some((d) => d.hidden))}
       <button type="button" class="more" data-help="Show the newest: back to the short list, without the dim kept dumps" onclick={() => { all = false; }}>Show the newest</button>
     {/if}
-    {#if plan && canClear(plan)}
+    {#if plan && hasWorkToClear(plan)}
       <button type="button" class="more" onclick={askClear} data-help="Clear old dumps: deletes what nothing needs and hides your backup and the dumps setups need · Show all lists them">Clear old dumps…</button>
     {/if}
   {/if}

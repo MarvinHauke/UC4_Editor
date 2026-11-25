@@ -60,9 +60,6 @@ function keptBecause(backup: boolean, setups: readonly DumpNeed[]): string {
   return [backup ? 'backup' : '', sorted.length > 0 ? `kept for ${names}` : ''].filter(Boolean).join(' / ');
 }
 
-/** Whether "Clear old dumps" has anything to do: a dump to delete or one still to hide. */
-export const canClear = (plan: Pick<ClearPlan, 'deleteIds' | 'hideIds'>): boolean => plan.deleteIds.length > 0 || plan.hideIds.length > 0;
-
 const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
 const needLine = (n: DumpNeed): string => `${n.slot !== undefined ? `${slotName(n.slot)} ` : ''}"${n.setupName}" can no longer be ${n.reasons.map((r) => NEED_TEXT[r]).join(' or ')}.`;
 
