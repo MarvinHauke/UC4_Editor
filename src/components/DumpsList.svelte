@@ -1,19 +1,19 @@
 <script lang="ts">
   // Kept dumps (plan 0005 decisions 6, 10 and 15): every .syx the editor imported or received, unchanged, newest first.
-  // The 5 newest, then "Show all". × asks first (naming the setups that need the dump); Clear old dumps… shows what goes and what stays.
+  // The 5 newest visible ones, then "Show all" (which adds the hidden ones: the backup and the dumps setups need). × asks first (naming the setups that need the dump); Clear old dumps… shows what goes and what stays.
   import type { Store } from '../app/libraryStore.svelte.ts';
   import type { Confirm } from '../app/confirm.svelte.ts';
   import type { KeptDumpInfo } from '../storage/index.ts';
   import { downloadBytes } from '../app/download.ts';
   import { deleteDumpTexts } from '../app/dumpTexts.ts';
-  import { clearTexts, deleteNeededTexts, keptRow, shownDumps } from '../app/connections.ts';
+  import { canClear, NEWEST_SHOWN, clearTexts, deleteNeededTexts, keptNote, keptRow, shownDumps } from '../app/connections.ts';
   import { sameAs } from '../app/dumpNotices.ts';
 
   let { store, confirm }: { store: Store; confirm: Confirm } = $props();
   let all = $state(false);
   const dumps = $derived(store.state.dumps);
   const shown = $derived(shownDumps(dumps, all));
-  const plan = $derived.by(() => { void store.state.dumpLinks; return dumps.length > 1 ? store.planClearDumps() : null; });
+  const plan = $derived.by(() => { void store.state.dumpLinks; return dumps.length > 0 ? store.planClearDumps() : null; });
 
   function exportOne(d: KeptDumpInfo): void {
     const r = store.exportDump(d.id);
@@ -29,7 +29,7 @@
   }
   function askClear(): void {
     const p = store.planClearDumps();
-    if (p.deleteIds.length === 0) return;
+    if (!canClear(p)) return;
     confirm.ask({ ...clearTexts(p), run: () => { store.clearOldDumps(); } });
   }
 </script>
@@ -39,6 +39,7 @@
   {#if dumps.length === 0}
     <p class="empty">No dumps yet. A .syx file you import, or a dump you send from the UC4, is kept here.</p>
   {:else}
+    {#if shown.length === 0}<p class="empty">No new dumps. A dump you receive or import shows here.</p>{/if}
     <ul>
       {#each shown as d (d.id)}
         {@const row = keptRow(d)}
@@ -53,18 +54,19 @@
             </span>
           </div>
           <span class="meta first">{row.meta}</span>
+          {#if d.hidden}<span class="meta kept">{keptNote(d)}</span>{/if}
           {#if store.sentAgain.has(d.id)}<span class="meta again">The UC4 sent it again: {sameAs(d.date)}. Kept once.</span>{/if}
           {#if d.unreadable}<p class="bad">{d.unreadable.reason} {d.unreadable.whatToDo}</p>{/if}
         </li>
       {/each}
     </ul>
-    {#if dumps.length > shown.length}
-      <button type="button" class="more" onclick={() => { all = true; }}>Show all ({dumps.length})</button>
-    {:else if all && dumps.length > 5}
-      <button type="button" class="more" onclick={() => { all = false; }}>Show the 5 newest</button>
+    {#if !all && dumps.length > shown.length}
+      <button type="button" class="more" data-help="Show all: every kept dump, including your backup and the dumps setups need" onclick={() => { all = true; }}>Show all ({dumps.length})</button>
+    {:else if all && (dumps.length > NEWEST_SHOWN || dumps.some((d) => d.hidden))}
+      <button type="button" class="more" data-help="Show the newest: back to the short list, without the dim kept dumps" onclick={() => { all = false; }}>Show the newest</button>
     {/if}
-    {#if plan && plan.deleteIds.length > 0}
-      <button type="button" class="more" onclick={askClear} data-help="Clear old dumps: keeps the newest of each kind and slot and those a setup needs, after asking, not undoable · click">Clear old dumps…</button>
+    {#if plan && canClear(plan)}
+      <button type="button" class="more" onclick={askClear} data-help="Clear old dumps: deletes what nothing needs and hides your backup and the dumps setups need · Show all lists them">Clear old dumps…</button>
     {/if}
   {/if}
 </section>
@@ -79,6 +81,7 @@
   .head { display: contents; }
   .head strong { grid-column: 1; grid-row: 1; min-width: 0; overflow-wrap: anywhere; }
   .first { grid-column: 1; grid-row: 2; }
+  .kept { grid-column: 1; grid-row: 3; font-style: italic; }
   .again, .bad { grid-column: 1 / -1; }
   .meta { font-size: var(--text-sm); color: var(--text-muted); overflow-wrap: anywhere; }
   .bad { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--danger); }
