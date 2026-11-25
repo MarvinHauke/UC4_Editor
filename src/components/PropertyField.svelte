@@ -48,8 +48,10 @@
   function commit(e: Event & { currentTarget: HTMLInputElement }): void {
     if (isEmptyEntry(e.currentTarget.value, e.currentTarget.validity.badInput)) { e.currentTarget.value = String(value); return; } // left empty: the saved number comes back
     const n = parse(e.currentTarget.value);
-    leftNote = draftError !== null ? draftError : null;
-    if (n !== null && n !== value) onchange(n);
+    // Enter on a refused entry does what leaving the field does (decision 45): the kept number comes back, the red goes, the line stays.
+    if (n === null) { leftNote = draftError; draftError = null; e.currentTarget.value = String(value); return; }
+    leftNote = null;
+    if (n !== value) onchange(n);
   }
   function leave(e: KeyboardEvent & { currentTarget: HTMLInputElement }): void {
     // Escape is the way out that does not save: the saved number comes back.
@@ -98,7 +100,7 @@
   input { font-family: var(--mono); }
   .number { position: relative; }
   /* Room on the right for the dim range, so a typed value never runs under it. The spin arrows are off (the arrow keys still step). */
-  .number input { padding-right: 64px; appearance: textfield; -moz-appearance: textfield; }
+  .number input { padding-right: calc(var(--space-4) * 4); appearance: textfield; -moz-appearance: textfield; }
   .number input::-webkit-inner-spin-button, .number input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   .range {
     position: absolute; top: 0; bottom: 0; right: var(--space-2); display: flex; align-items: center;

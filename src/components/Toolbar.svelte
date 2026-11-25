@@ -31,8 +31,8 @@
   <input bind:this={picker} type="file" hidden onchange={picked} />
   <ExportMenu {store} {ui} />
   <span class="divider" role="separator" aria-orientation="vertical"></span>
-  <button type="button" class="icon" aria-label="Undo" disabled={!lib.canUndo} data-help="Undo the last change · Cmd-Z" onclick={() => store.undo()}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></svg></button>
-  <button type="button" class="icon" aria-label="Redo" disabled={!lib.canRedo} data-help="Redo the change you undid · Shift-Cmd-Z" onclick={() => store.redo()}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5" /><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13" /></svg></button>
+  <button type="button" class="icon" aria-label="Undo" title="Undo" disabled={!lib.canUndo} data-help="Undo the last change · Cmd-Z" onclick={() => store.undo()}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></svg></button>
+  <button type="button" class="icon" aria-label="Redo" title="Redo" disabled={!lib.canRedo} data-help="Redo the change you undid · Shift-Cmd-Z" onclick={() => store.redo()}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5" /><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13" /></svg></button>
 </div>
 
 <style>
