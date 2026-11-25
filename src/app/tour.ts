@@ -1,4 +1,4 @@
-// The first-run tour's rules (plan 0012): when it starts by itself, how "seen" is kept, how steps page, where the card sits.
+// The first-run tour's rules (plan 0012): when the welcome card shows, how "seen" is kept, how steps page, where the card sits.
 // Plain functions, no Svelte; the overlay and the store call them.
 
 export const TOUR_SEEN_KEY = 'uc4-editor-tour-seen';
@@ -15,8 +15,8 @@ export function writeSeen(storage: TourStorage | null): void {
   try { storage?.setItem(TOUR_SEEN_KEY, '1'); } catch { /* shown again next load */ }
 }
 
-/** The first-run rule: start by itself when nothing was received or imported yet (no kept dump, library still factory) and it was not seen. */
-export function shouldAutoStart(o: { seen: boolean; keptDumps: number; differsFromFactory: boolean }): boolean {
+/** The first-run rule: the welcome card shows by itself when nothing was received or imported yet (no kept dump, library still factory) and it was not seen. */
+export function shouldWelcome(o: { seen: boolean; keptDumps: number; differsFromFactory: boolean }): boolean {
   return !o.seen && o.keptDumps === 0 && !o.differsFromFactory;
 }
 
@@ -43,4 +43,9 @@ export function placeCard(box: Box | null, card: { width: number; height: number
   const leftStrip = box.left, rightStrip = view.width - (box.left + box.width);
   if (Math.max(leftStrip, rightStrip) >= MIN_STRIP) return { left: rightStrip > leftStrip ? view.width - card.width - gap / 2 : gap / 2, top: midTop };
   return { left: clamp(box.left + box.width - card.width - gap, card.width, view.width), top: clamp(box.top + box.height - card.height - gap, card.height, view.height) };
+}
+
+/** Where a step's number badge sits on its lit box: above the top-left corner; else (box at the window's top) inside the corner, never beside it, where it could land on another area. */
+export function badgeSide(box: Box, size = 22, gap = 4): 'above' | 'inside' {
+  return box.top >= size + gap ? 'above' : 'inside';
 }

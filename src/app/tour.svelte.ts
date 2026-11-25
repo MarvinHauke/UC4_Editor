@@ -16,6 +16,8 @@ export function createTour(storage: TourStorage | null = browserStorage(), steps
     get count() { return steps.length; },
     get isLast() { return index === steps.length - 1; },
     get seen() { return seen; },
+    /** Marks the tour seen without starting it (the welcome card does this when it shows). */
+    markSeen(): void { seen = true; writeSeen(storage); },
     start(): void { index = 0; open = true; seen = true; writeSeen(storage); },
     next(): void { index = nextIndex(index, steps.length); },
     back(): void { index = prevIndex(index); },

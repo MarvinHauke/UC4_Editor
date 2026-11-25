@@ -26,8 +26,10 @@
   import SendDialog from '../components/SendDialog.svelte';
   import DumpGuide from '../components/DumpGuide.svelte';
   import TourOverlay from '../components/TourOverlay.svelte';
+  import WelcomeCard from '../components/WelcomeCard.svelte';
   import { createTour } from './tour.svelte.ts';
-  import { shouldAutoStart } from './tour.ts';
+  import { createWelcome } from './welcome.svelte.ts';
+  import { shouldWelcome } from './tour.ts';
   import { createDumpGuide } from './dumpGuide.svelte.ts';
   import { createNotices } from './dumpNotices.svelte.ts';
   import { noticeOf, withImportHook, type DumpNotice as Notice } from './dumpNotices.ts';
@@ -54,6 +56,7 @@
   const notices = createNotices();
   const dumpGuide = createDumpGuide();
   const tour = createTour();
+  const welcome = createWelcome(tour, () => { getSetups(); });
   const sender = createSender(device, faderfoxUc4.deviceName, (slot, plan) => { store?.recordSend(slot, plan); });
   // A dump can arrive before the library has opened: it waits here, then is kept like any other.
   let waiting: Uint8Array[] = [];
@@ -141,7 +144,7 @@
     e.preventDefault();
     if (hit.id === 'redo') store.redo(); else store.undo();
   }
-  // The first-run tour starts by itself once, when the library has opened empty-handed: no kept dump, factory setups, not seen.
+  // The welcome card shows by itself once, when the library has opened empty-handed: no kept dump, factory setups, not seen.
   let tourChecked = false;
   $effect(() => {
     if (!store || tourChecked) return;
@@ -150,7 +153,7 @@
       if (!store) return;
       const { dumps, differsFromFactory } = store.state;
       // Not over an open dialog (it sits in the top layer above the tour).
-      if (!document.querySelector('dialog[open]') && shouldAutoStart({ seen: tour.seen, keptDumps: dumps.length, differsFromFactory })) tour.start();
+      if (!document.querySelector('dialog[open]') && shouldWelcome({ seen: tour.seen, keptDumps: dumps.length, differsFromFactory })) welcome.show();
     });
   });
   // Settings' Tour button: close Settings, focus back on the gear (the tour hands focus there afterwards), start.
@@ -232,6 +235,7 @@
   <ConfirmDialog {confirm} />
   {#if store}<SendDialog {store} {device} {sender} profile={faderfoxUc4} />{/if}
   <TourOverlay {tour} onget={getSetups} />
+  <WelcomeCard {welcome} />
   {#if store}<DumpGuide {dumpGuide} {device} {sender} profile={faderfoxUc4} />{/if}
   <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)}
     waiting={notices.queue.length} onopenconnections={openConnections} />

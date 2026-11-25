@@ -5,7 +5,7 @@
   import { tick } from 'svelte';
   import type { Tour } from '../app/tour.svelte.ts';
   import { matchKey } from '../app/keyTable.ts';
-  import { placeCard, type Box } from '../app/tour.ts';
+  import { badgeSide, placeCard, type Box } from '../app/tour.ts';
 
   let { tour, onget }: { tour: Tour; onget: () => void } = $props();
   const PAD = 4; // the lit box sits this far outside the area
@@ -85,7 +85,7 @@
   <div class="tour" class:dim={!box} data-tour>
     {#if box}
       <div class="lit" style:left="{box.left}px" style:top="{box.top}px" style:width="{box.width}px" style:height="{box.height}px" aria-hidden="true">
-        <span class="n" class:below={box.top < 30}>{tour.index + 1}</span>
+        <span class="n {badgeSide(box)}">{tour.index + 1}</span>
       </div>
     {/if}
     <div class="card" role="dialog" aria-modal="true" aria-labelledby="tour-title" bind:this={card} bind:offsetWidth={cardW} bind:offsetHeight={cardH}
@@ -110,7 +110,8 @@
   /* The box lifts the dim over the area: its shadow is the dim everywhere else. */
   .lit { position: absolute; box-sizing: border-box; border: 2px solid var(--accent); border-radius: var(--radius); box-shadow: 0 0 0 100vmax rgb(0 0 0 / 60%); pointer-events: none; }
   .n { position: absolute; top: -26px; left: -2px; min-width: 22px; height: 22px; padding: 0 var(--space-1); box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-size: var(--text-md); font-weight: 700; color: var(--on-accent); background: var(--accent); border-radius: 11px; }
-  .n.below { top: auto; bottom: -26px; }
+  /* A box at the window's top: the badge sits inside its corner, small enough to leave the title beside it readable. */
+  .n.inside { top: var(--space-1); left: var(--space-1); min-width: 16px; height: 16px; padding: 0; font-size: var(--text-sm); border-radius: 8px; }
   .card { position: absolute; box-sizing: border-box; width: 340px; max-width: calc(100vw - var(--space-4)); padding: var(--space-3) var(--space-4); color: var(--text); background: var(--surface-2); border: 2px solid var(--accent); border-radius: var(--radius); box-shadow: 0 8px 28px rgb(0 0 0 / 55%); }
   .count { margin: 0; font-size: var(--text-sm); color: var(--text-muted); }
   h2 { margin: 0 0 var(--space-2); font-size: var(--text-lg); }

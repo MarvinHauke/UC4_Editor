@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextIndex, placeCard, prevIndex, readSeen, shouldAutoStart, TOUR_SEEN_KEY, writeSeen } from '../../src/app/tour.ts';
+import { badgeSide, nextIndex, placeCard, prevIndex, readSeen, shouldWelcome, TOUR_SEEN_KEY, writeSeen } from '../../src/app/tour.ts';
 import { createTour } from '../../src/app/tour.svelte.ts';
 import { TOUR_STEPS } from '../../src/app/profile/uc4Tour.ts';
 
@@ -8,13 +8,13 @@ const blocked = { getItem: () => { throw new Error('blocked'); }, setItem: () =>
 
 describe('first-run rule', () => {
   it('starts when nothing was received or imported and it was not seen', () => {
-    expect(shouldAutoStart({ seen: false, keptDumps: 0, differsFromFactory: false })).toBe(true);
+    expect(shouldWelcome({ seen: false, keptDumps: 0, differsFromFactory: false })).toBe(true);
   });
   it.each([
     { seen: true, keptDumps: 0, differsFromFactory: false },
     { seen: false, keptDumps: 1, differsFromFactory: false },
     { seen: false, keptDumps: 0, differsFromFactory: true },
-  ])('does not start for %o', (o) => { expect(shouldAutoStart(o)).toBe(false); });
+  ])('does not start for %o', (o) => { expect(shouldWelcome(o)).toBe(false); });
 });
 
 describe('seen', () => {
@@ -94,4 +94,10 @@ describe('card placement', () => {
   it('centres without a box', () => {
     expect(placeCard(null, card, view)).toEqual({ left: 352, top: 250 });
   });
+});
+
+describe('badgeSide', () => {
+  const b = (left: number, top: number) => ({ left, top, width: 300, height: 40 });
+  it('sits above the corner when there is room', () => { expect(badgeSide(b(100, 60))).toBe('above'); });
+  it('sits inside the corner for a box at the window top, wherever it starts', () => { expect(badgeSide(b(200, 0))).toBe('inside'); expect(badgeSide(b(0, 0))).toBe('inside'); });
 });
