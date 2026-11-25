@@ -127,3 +127,7 @@ which group is selected.
 The gear (or `Cmd`+`,`) opens Settings: the theme (light, dark or your computer's setting), the keys
 (Standard, or Vim, which adds `y` to copy and `p` to paste) and the slide speed. `?` shows all keys;
 the full table is on [Keys](keys.md).
+
+Settings also has a **Tour** button. It starts a short walk through the six areas of the editor and ends with how to get your
+setups from the UC4. It also starts by itself the first time you open the editor, as long as you have not received or
+imported any setups yet. `←` and `→` step through it; `Esc` ends it.
