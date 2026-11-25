@@ -43,6 +43,12 @@ each barrier gets in the way.
    toward B1: the start card can open it later.
 7. **Work in the public repository's folder, on local branches, pushed only after the user's OK** (user, 2026-11-25,
    Q50).
+8. **"Clear old dumps" leaves an empty list** (user, 2026-11-25, Q57, Q58): it deletes every dump nothing needs,
+   including the newest `Sndc` per slot. What stays (the newest `SndA` as the backup for Restore, and every dump a
+   setup needs for Revert, `.syx` export and the send's base) is **hidden**: the list shows only dumps received or
+   imported after the clear. **Show all** shows the hidden ones too, marked ("backup", "kept for SE05"). Why: the
+   list is for what just arrived; resetting to factory is more common than restoring, and the backup is still
+   there when Restore needs it. Changes 0005 decisions 6/10/15 for what the list shows.
 
 ## Open questions
 
@@ -56,6 +62,8 @@ each barrier gets in the way.
 3. **Fixes from the list** — uc4-ui · blocked by: 2 · one step per finding or small group, blocks first.
 5. **Dump overlay** (decision 6) — done 2026-11-25 (`5231f47`, reviewed; auto-close unit-tested, the real-UC4 check is the user's; at 1024 px the card slightly overlaps `SndA` callout 3) — uc4-ui · blocked by: none · the button in Connections, the overlay from the
    guide data, the auto-close on a received dump; tests for the callouts per choice.
+6. **Compact dumps list** (decision 8) — uc4-model (the hidden mark, the clear rule, tests), then uc4-ui (the
+   list, Show all, the question's text) · blocked by: none.
 4. **Guide shots retaken** — uc4-docs or architect · blocked by: 3 · `npm run docs:shots`, text checked.
 
 ## Audit findings (2026-11-19)
