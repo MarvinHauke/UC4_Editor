@@ -1,13 +1,28 @@
 /* UC4 Editor documentation — custom theme */
 
 :root {
-  --uc4-accent-strong: #2563eb;
+  --uc4-accent: #2563eb;
+  --uc4-radius-small: 6px;
+  --uc4-radius: 12px;
+  --md-primary-fg-color: #2563eb;
+  --md-primary-fg-color--light: #4a80f0;
+  --md-primary-fg-color--dark: #1d4fc4;
+  --md-accent-fg-color: #2563eb;
   --uc4-panel: rgba(127, 127, 127, 0.06);
   --uc4-panel-border: rgba(127, 127, 127, 0.18);
 }
 
 [data-md-color-scheme="slate"] {
-  --uc4-accent-strong: #6ea0ff;
+  --uc4-accent: #6ea0ff;
+  --md-primary-fg-color: #6ea0ff;
+  --md-primary-fg-color--light: #8db5ff;
+  --md-primary-fg-color--dark: #4f86f0;
+  --md-accent-fg-color: #6ea0ff;
+}
+
+/* White on #6ea0ff is only 2.6:1; the dark header uses the light-scheme blue (5.2:1). */
+[data-md-color-scheme="slate"] .md-header {
+  background-color: #2563eb;
 }
 
 /* Wider, more spacious layout */
@@ -21,7 +36,7 @@
 }
 
 .md-typeset h1 {
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.035em;
 }
 
@@ -31,24 +46,13 @@
   letter-spacing: -0.02em;
 }
 
-/* Rounded code blocks */
-.md-typeset pre {
-  border: 1px solid var(--uc4-panel-border);
-  border-radius: 14px;
-}
-
 .md-typeset code {
-  border-radius: 5px;
+  border-radius: var(--uc4-radius-small);
 }
 
 /* Rounded content elements */
 .md-typeset img {
-  border-radius: 12px;
-}
-
-.md-typeset table {
-  border-radius: 10px;
-  overflow: hidden;
+  border-radius: var(--uc4-radius);
 }
 
 /* Custom documentation cards */
@@ -57,12 +61,11 @@
   padding: 1.2rem 1.4rem;
   margin: 0.5rem 0;
   border: 1px solid var(--uc4-panel-border);
-  border-radius: 16px;
+  border-radius: var(--uc4-radius);
   background: var(--uc4-panel);
   transition:
     border-color 160ms ease,
-    transform 160ms ease,
-    background 160ms ease;
+    transform 160ms ease;
 }
 
 .md-typeset .uc4-card,
@@ -72,7 +75,7 @@
 }
 
 .md-typeset .uc4-card:hover {
-  border-color: var(--uc4-accent-strong);
+  border-color: var(--uc4-accent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -89,20 +92,26 @@
 
 .md-typeset .uc4-card span {
   display: block;
-  margin: 0;
   opacity: 0.8;
 }
 
 .md-typeset .uc4-card:focus-visible {
-  outline: 2px solid var(--uc4-accent-strong);
+  outline: 2px solid var(--uc4-accent);
   outline-offset: 2px;
 }
 
-/* Notice / disclaimer */
-.md-typeset .uc4-notice {
-  padding: 1rem 1.2rem;
-  border-left: 3px solid var(--uc4-accent-strong);
-  border-radius: 8px;
-  background: var(--uc4-panel);
-  font-size: 0.9rem;
+/* Admonitions */
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: var(--uc4-radius);
 }
+
+/* Pictures in the guide open full size on click (zoom.js). */
+.md-content img { cursor: zoom-in; }
+dialog.zoom {
+  max-width: 100vw; max-height: 100vh; width: 100vw; height: 100vh;
+  margin: 0; padding: 1rem; border: 0; box-sizing: border-box;
+  background: transparent; overflow: auto; cursor: zoom-out;
+}
+dialog.zoom::backdrop { background: rgb(0 0 0 / 0.85); }
+dialog.zoom img { display: block; margin: auto; max-width: none; width: min(100%, 1440px); height: auto; }

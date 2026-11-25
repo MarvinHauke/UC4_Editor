@@ -5,28 +5,30 @@ docs_dir = "docs/guides"
 site_url = "https://marvinhauke.github.io/UC4_Editor/guide/"
 site_dir = "site"
 copyright = "Unofficial: the UC4 Editor is not made by, endorsed by or supported by Faderfox."
-extra_css = ["assets/zoom.css", "stylesheets/extra.css"]
-extra_javascript = ["assets/zoom.js"]
+extra_css = ["stylesheets/extra.css"]
+extra_javascript = ["javascripts/zoom.js"]
 nav = [
-  { "Home" = "index.md" },
-  { "Getting started" = "getting-started.md" },
-  { "The editor" = "editor.md" },
-  { "From and to the UC4" = "device.md" },
-  { "Files" = "files.md" },
-  { "Copy / Paste, Reset, Library" = "copy-paste.md" },
-  { "Keys" = "keys.md" },
-  { "How it works" = "how-it-works.md" },
+  { "Start" = [
+    { "Home" = "index.md" },
+    { "Getting started" = "getting-started.md" },
+  ] },
+  { "Using the editor" = [
+    { "The editor" = "editor.md" },
+    { "From and to the UC4" = "device.md" },
+    { "Files" = "files.md" },
+    { "Copy / Paste, Reset, Library" = "copy-paste.md" },
+  ] },
+  { "Reference" = [
+    { "Keys" = "keys.md" },
+    { "How it works" = "how-it-works.md" },
+  ] },
 ]
 
-# Dark first, with a toggle; as the ableton-remote-script-mcp docs.
+# Dark first, with a toggle.
 [project.theme]
 features = [
-  "navigation.tabs",
-  "navigation.tabs.sticky",
   "navigation.sections",
-  "navigation.path",
   "navigation.top",
-  "content.code.copy",
   "search.suggest",
   "search.highlight",
 ]
