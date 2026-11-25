@@ -20,9 +20,10 @@
   --md-accent-fg-color: #6ea0ff;
 }
 
-/* White on #6ea0ff is only 2.6:1; the dark header uses the light-scheme blue (5.2:1). */
+/* The dark header in the editor's fader/button green (its --fader, light scheme): white on it is 5.0:1.
+   The light header stays white (user, 2026-11-25). */
 [data-md-color-scheme="slate"] .md-header {
-  background-color: #2563eb;
+  background-color: #15803d;
 }
 
 /* Wider, more spacious layout */
