@@ -20,8 +20,7 @@ describe('tour steps', () => {
 });
 
 // Drift test: the guide page "The editor" (plan 0012 step 2, uc4-docs) names every area by its title.
-// Waits for uc4-docs: switch `describe.skip` to `describe` when the page is committed.
-describe.skip('guide page drift (until uc4-docs commits step 2)', () => {
+describe('guide page drift', () => {
   const page = existsSync('docs/guides/editor.md') ? readFileSync('docs/guides/editor.md', 'utf8') : '';
   it.each(TOUR_AREAS.map((a) => a.title))('editor.md mentions "%s"', (title) => {
     expect(page).toContain(title);

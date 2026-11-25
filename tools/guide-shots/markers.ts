@@ -9,8 +9,8 @@ export interface Marker {
   n: number;
   /** One box around all matched elements together (for example a label and its select), not one box each. */
   union?: boolean;
-  /** Where the number sits: left of the outline (default), or straddling its top edge at the right end when there is no room on the left. */
-  dot?: 'left' | 'top-right';
+  /** Where the number sits: left of the outline (default), straddling its top edge at the right end when there is no room on the left, inside the outline in its bottom-left or bottom-right corner, or in its middle (wide bars and large areas whose neighbours touch them). */
+  dot?: 'left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'middle';
 }
 
 export interface MarkerOptions {
@@ -57,8 +57,10 @@ export async function addMarkers(page: Page, markers: Marker[], options: MarkerO
         // Left of the outline, centred; above it when there is no room on the left.
         const fitsLeft = left - PAD - GAP - DOT >= 0;
         const corner = m.dot === 'top-right';
-        const dx = corner ? right + PAD - DOT - 4 : fitsLeft ? left - PAD - GAP - DOT : left - PAD;
-        const dy = corner ? top - PAD - DOT / 2 : fitsLeft ? top + h / 2 - DOT / 2 : top - PAD - GAP - DOT;
+        const inside = m.dot === 'bottom-left' || m.dot === 'bottom-right';
+        const mid = m.dot === 'middle';
+        const dx = mid ? left + w / 2 - DOT / 2 : inside ? (m.dot === 'bottom-left' ? left : right - DOT) : corner ? right + PAD - DOT - 4 : fitsLeft ? left - PAD - GAP - DOT : left - PAD;
+        const dy = mid ? top + h / 2 - DOT / 2 : inside ? bottom - DOT - 14 : corner ? top - PAD - DOT / 2 : fitsLeft ? top + h / 2 - DOT / 2 : top - PAD - GAP - DOT;
         const dot = document.createElement('div');
         dot.setAttribute('data-guide-box', '');
         dot.textContent = String(m.n);

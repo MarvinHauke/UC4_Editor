@@ -8,6 +8,46 @@ changes the UC4 by itself: to put a setup on the UC4 you use
     The **Send** button under the setup list replaces a setup on the UC4. Make a `SndA` backup of all
     18 setups first. [From and to the UC4](device.md) shows how.
 
+## The six areas
+
+The editor window has six areas. The numbers in the picture match the sections below.
+
+![The editor with its six areas numbered: toolbar (1), Connections (2), property panel (3), device view (4), setup list (5), help line (6)](images/editor-areas.png)
+
+### 1. Toolbar
+
+Import opens a configuration (.json) or a dump (.syx) from your computer, and Export saves the library.
+Undo and redo step back and forward through your changes.
+The book opens the user guide; the gear opens Settings. More in [Files](files.md).
+
+### 2. Connections
+
+This column shows whether the UC4 is connected and holds the dumps it sent, with Review, Export and Dismiss.
+It only listens: the editor sends nothing to the UC4 until you press Send. More in
+[Getting started](getting-started.md).
+
+### 3. Property panel
+
+Here you edit the group names and, once you select a control, its properties.
+It shows only the properties that control kind has, in the UC4's own words, such as CCr1 or SnAP.
+More in [Change a property](#change-a-property).
+
+### 4. Device view
+
+The drawn UC4 shows the selected setup. Click a control to edit it.
+The arrows step through the 8 encoder groups and the 8 fader/button groups, each on its own, as on the device.
+More in [The two group selections](#the-two-group-selections).
+
+### 5. Setup list
+
+The 18 setups of the library, named SE01 to SE18 like the UC4's slots. Click one to show it on the device view.
+Rename, copy and paste setups here, and send one to the UC4 with Send. More in [Pick a setup](#pick-a-setup).
+
+### 6. Help line
+
+The line at the bottom says what is under the mouse or in focus.
+It also shows messages, such as a value that was refused and what to do about it.
+
 ## The window
 
 In this guide `Cmd` means the `Cmd` key on a Mac and the `Ctrl` key on Windows and Linux.
@@ -20,19 +60,8 @@ In this guide `Cmd` means the `Cmd` key on a Mac and the `Ctrl` key on Windows a
 3. **A property.** The selected control's properties are listed in the panel on the left. This one is
    the command type.
 
-The window has four parts:
-
-- **Connections** (far left, a narrow strip): the state of the UC4. See
-  [Getting started](getting-started.md).
-- **The property panel** (left): the group you work in, then the selected control.
-- **The device view** (centre): a drawing of the UC4 with the setup shown.
-- **The setup list** (right): the 18 setups of the library.
-
-At the top are **Import…**, **Export**, undo and redo (`↶` `↷`) and Settings (the gear). Files are
-covered in [Files](files.md).
-
-The line at the bottom is the **help line**. Hold the pointer over anything and it says what that
-thing does. It also shows messages, for example when a value was refused.
+The six areas of the window are described in [The six areas](#the-six-areas). Files are covered in
+[Files](files.md).
 
 ## Pick a setup
 

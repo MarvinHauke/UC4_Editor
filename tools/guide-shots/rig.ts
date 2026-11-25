@@ -3,6 +3,7 @@
 import { chromium, type Browser, type Page } from 'playwright';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { TOUR_SEEN_KEY } from '../../src/app/tour.ts';
 
 // 5174 by default; GUIDE_SHOTS_PORT picks another when something else holds it. Never 5173 (the architect's dev server).
 export const PORT = Number(process.env.GUIDE_SHOTS_PORT ?? 5174);
@@ -51,6 +52,8 @@ export async function newShotPage(browser: Browser): Promise<Page> {
   });
   const page = await context.newPage();
   await page.addInitScript(installMidiStub);
+  // The first-run tour (plan 0012) would dim every shot: the fresh profile counts as having seen it (key from src/app/tour.ts).
+  await page.addInitScript((key) => { try { localStorage.setItem(key, '1'); } catch { /* shots do not need it */ } }, TOUR_SEEN_KEY);
   // The clock stands still, so times in the editor (a kept dump's time) are the same in every run.
   await page.clock.setFixedTime(new Date('2026-11-19T10:30:00Z'));
   await page.goto(BASE);
