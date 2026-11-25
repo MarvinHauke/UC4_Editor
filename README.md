@@ -1,16 +1,20 @@
 # UC4 Editor
 
+> [!IMPORTANT]
+> **Independent project, not supported by Faderfox.** The UC4 Editor is an unofficial, community-developed editor.
+> It is not affiliated with, endorsed by, provided by or supported by Faderfox, so please don't contact Faderfox
+> about it; questions and bugs belong in this repository's issues.
+>
+> I am the developer of this repository and welcome community feedback, bug reports, and pull requests. While I may
+> review and respond to issues and PRs, I do not guarantee ongoing support, maintenance, or timely responses. Use it
+> at your own risk, and keep a `SndA` backup of your setups.
+
 A browser editor for the **Faderfox UC4**: back up, edit, send and restore all 18 setups of your controller, on a
 drawing of the panel, without installing anything.
 
 **[Open the editor](https://marvinhauke.github.io/UC4_Editor/)** · **[Read the guide](https://marvinhauke.github.io/UC4_Editor/guide/)**
 
 ![The UC4 Editor: the property panel, the device view with encoder group 1 and the setup list](docs/guides/images/readme-editor.png)
-
-> **Disclaimer:** This is an unofficial, community-developed editor and is not affiliated with, endorsed by, or
-> provided by Faderfox. I am the developer of this repository and welcome community feedback, bug reports, and pull
-> requests. While I may review and respond to issues and PRs, I do not guarantee ongoing support, maintenance, or
-> timely responses. Use it at your own risk, and keep a `SndA` backup of your setups.
 
 ## What it does
 
