@@ -26,7 +26,7 @@ import { ENGINE_VERSION } from '../protocol/engine.ts';
 import type { RawDump } from '../protocol/types.ts';
 import { baselineAfter, canon, exportState, fileDate, isSlot, locate, summaries } from './libraryInfo.ts';
 import type { ExportBaseline, ExportState, SetupSummary } from './libraryInfo.ts';
-import { dumpNeeds, newestBackupId, planClearOldDumps, type BackupCandidate } from './keptDumpPlan.ts';
+import { dumpNeeds, hasWorkToClear, newestBackupId, planClearOldDumps, type BackupCandidate } from './keptDumpPlan.ts';
 import type { ClearPlan, DumpNeed } from './keptDumpPlan.ts';
 
 export type ControlArea = 'encoders' | 'pushButtons' | 'faders' | 'buttons';
@@ -465,9 +465,7 @@ function createLibrary(
   let sends = side.sends;
   let writtenSends = side.sendsText ?? '{}';
   const sendFields = (): Pick<LibraryState, 'lastSends'> => ({ lastSends: Object.fromEntries(Object.entries(sends).map(([n, s]) => [n, { sentAt: s.sentAt, backup: s.backup }])) });
-  // `state` is not assigned yet while the first `dumpFields()` runs: the setups then come from `initial`.
-  let stateReady = false;
-    const needs = () => dumpNeeds(kept, links, (stateReady ? state.configuration : initial).setups, new Set(Object.keys(marks).filter((id) => hasMarks(marks, id))),
+  const needs = () => dumpNeeds(kept, links, state.configuration.setups, new Set(Object.keys(marks).filter((id) => hasMarks(marks, id))),
     Object.fromEntries(Object.entries(sends).flatMap(([n, s]) => (s.backup ? [[Number(n), s.backup.dumpId] as const] : []))));
   /** Unreadable dump values per setup id (plan 0005 decision 9). */
   let marks = side.marks;
@@ -483,13 +481,15 @@ function createLibrary(
     configuration: initial,
     selection: { setupId: initial.setups[0]!.id, encoderGroup: 0, faderButtonGroup: 0, control: null },
     ...derived(initial),
-    ...dumpFields(),
-    ...sendFields(),
+    dumps: [],
+    dumpLinks: {},
+    lastSends: {},
     canUndo: false,
     canRedo: false,
     saveStatus: blocked ? 'failed' : 'saved',
   };
-  stateReady = true;
+  // The dump and send fields read `state` (via `needs()`) and `marks`, `kept`, `links`, `sends`: keep those declared above this line.
+  state = { ...state, ...dumpFields(), ...sendFields() };
   let undoStack: Snapshot[] = [];
   let redoStack: Snapshot[] = [];
   const listeners = new Set<(s: LibraryState) => void>();
@@ -1138,8 +1138,9 @@ function createLibrary(
     },
 
     clearOldDumps() {
-      const { deleteIds, keepIds, hideIds } = planClearOldDumps(kept.map(planDump), needs());
-      if (deleteIds.length === 0 && hideIds.length === 0) return result('There are no old dumps to clear.');
+      const plan = planClearOldDumps(kept.map(planDump), needs());
+      const { deleteIds, keepIds, hideIds } = plan;
+      if (!hasWorkToClear(plan)) return result('There are no old dumps to clear.');
       const gone = new Set(deleteIds);
       const hide = new Set(keepIds);
       kept = kept.filter((d) => !gone.has(d.id)).map((d) => (hide.has(d.id) && !d.hidden ? { ...d, hidden: true as const } : d));
@@ -1147,7 +1148,8 @@ function createLibrary(
       const message = `Cleared ${deleteIds.length} dump${deleteIds.length === 1 ? '' : 's'}${keepIds.length > 0 ? `; ${keepIds.length} kept ${keepIds.length === 1 ? 'is' : 'are'} hidden under Show all` : ''}.`;
       publish({ ...state, ...dumpFields(), message });
       for (const id of deleteIds) persistDump(() => storage.deleteDump(id), 'The deletion');
-      for (const d of kept) if (d.hidden && hideIds.includes(d.id)) persistDump(() => storage.putDump(d), 'The change');
+      const newlyHidden = new Set(hideIds);
+      for (const d of kept) if (d.hidden && newlyHidden.has(d.id)) persistDump(() => storage.putDump(d), 'The change');
       saveNow();
       return result(message);
     },

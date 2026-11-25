@@ -3,7 +3,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { openLibrary, memoryStorage } from '../../src/storage/index.ts';
-import { dumpNeeds, newestBackupId, planClearOldDumps } from '../../src/storage/keptDumpPlan.ts';
+import { dumpNeeds, hasWorkToClear, newestBackupId, planClearOldDumps } from '../../src/storage/keptDumpPlan.ts';
 import { parseFrame, writeFrame } from '../../src/protocol/frame.ts';
 import type { PlanDump } from '../../src/storage/keptDumpPlan.ts';
 
@@ -202,4 +202,10 @@ test('send-backup: the need stays when no setup holds the slot', () => {
   const needs = dumpNeeds(dumps, {}, [], new Set(), { 5: 'a' });
   assert.deepEqual(needs['a']!.map((n) => [n.setupId, n.slot, n.reasons]), [['', 5, ['send-backup']]]);
   assert.equal(planClearOldDumps([...dumps, { id: 'b', date: '2026-11-19T10:00:00Z', type: 'all' as const, slots: [1] }], needs).entries.find((e) => e.id === 'a')!.action, 'keep');
+});
+
+test('hasWorkToClear: true when a dump goes or is newly hidden, false when both lists are empty', () => {
+  assert.equal(hasWorkToClear({ deleteIds: [], hideIds: [] }), false);
+  assert.equal(hasWorkToClear({ deleteIds: ['a'], hideIds: [] }), true);
+  assert.equal(hasWorkToClear({ deleteIds: [], hideIds: ['b'] }), true);
 });

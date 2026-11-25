@@ -82,6 +82,9 @@ export interface ClearEntry {
 /** `entries` is newest first. Every id in `keepIds` is hidden by the clear; `hideIds` are those not hidden yet. Nothing to clear when `deleteIds` and `hideIds` are both empty. */
 export interface ClearPlan { entries: ClearEntry[]; deleteIds: string[]; keepIds: string[]; hideIds: string[] }
 
+/** Whether the clear has anything to do: a dump to delete or one to hide. */
+export const hasWorkToClear = (plan: Pick<ClearPlan, 'deleteIds' | 'hideIds'>): boolean => plan.deleteIds.length > 0 || plan.hideIds.length > 0;
+
 /** The part of a kept dump the backup rule reads: `received` is when the UC4 sent it (absent for a dump only imported from a file). */
 export interface BackupCandidate extends PlanDump { received?: string; unreadable?: boolean; /** Already hidden by an earlier clear. */ hidden?: boolean }
 
@@ -106,6 +109,7 @@ export function newestBackupId(dumps: readonly BackupCandidate[]): string | unde
  */
 export function planClearOldDumps(dumps: readonly BackupCandidate[], needs: Record<string, DumpNeed[]>): ClearPlan {
   const backup = newestBackupId(dumps);
+  const hiddenIds = new Set(dumps.filter((d) => d.hidden).map((d) => d.id));
   const entries: ClearEntry[] = byNewest(dumps).map((d) => {
     const keepBecause: KeepReason[] = [];
     if (backup === d.id) keepBecause.push('backup');
@@ -114,5 +118,5 @@ export function planClearOldDumps(dumps: readonly BackupCandidate[], needs: Reco
     return { id: d.id, date: d.date, kind: dumpKind(d).label, action: keepBecause.length > 0 ? 'keep' : 'delete', keepBecause, neededBy };
   });
   return { entries, deleteIds: entries.filter((e) => e.action === 'delete').map((e) => e.id), keepIds: entries.filter((e) => e.action === 'keep').map((e) => e.id),
-    hideIds: entries.filter((e) => e.action === 'keep' && !dumps.find((d) => d.id === e.id)?.hidden).map((e) => e.id) };
+    hideIds: entries.filter((e) => e.action === 'keep' && !hiddenIds.has(e.id)).map((e) => e.id) };
 }
