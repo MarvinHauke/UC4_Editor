@@ -42,6 +42,11 @@ their own in (0010 audit B1).
 6. Its own plan, built locally on its own branch, pushed after the user has tried it. (user, 2026-11-25, Q56)
 7. **"Seen" is written when the tour starts,** not when it ends, so a reload in the middle doesn't start it again.
    (architect, 2026-11-25, from the step 3 review)
+8. **A welcome card comes first** (user, 2026-11-25): on first open the editor dims and shows a centred card,
+   "Welcome to the UC4 Editor", with two sentences (what it does; unofficial, not from Faderfox) and three choices:
+   **Take the tour** (primary), **Get my setups from the UC4** (the dump overlay, `SndA`), **Not now**. Under them:
+   "The tour is in Settings → Tour any time; the guide is behind the book icon." The tour no longer starts by itself;
+   the card decides. Esc = Not now. "Seen" as in decision 7, written when the card shows.
 
 ## Steps
 
@@ -49,6 +54,9 @@ their own in (0010 audit B1).
 2. **Guide page** — uc4-docs · blocked by: 1 · overview shot with six markers, a section per area.
 3. **Tour** — uc4-ui · blocked by: 1 · dim, light, card, keys, first-run start, Settings' Tour button, "seen" stored.
 4. **Last step into the dump overlay** — uc4-ui · blocked by: 3.
+
+5. **Welcome card** (decision 8) — uc4-ui · blocked by: 3 · plus the toolbar step's number badge, which sits on the
+   Connections strip instead of on the toolbar.
 
 ## Out of scope
 
