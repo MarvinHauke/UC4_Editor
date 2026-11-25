@@ -36,10 +36,12 @@ their own in (0010 audit B1).
    (user, 2026-11-25, Q53)
 4. It starts by itself on first open (nothing received or imported yet, not dismissed). Settings has a **Tour**
    button that starts it again; it replaces Settings' "User guide" link. The guide stays reachable from the book
-   icon in the toolbar and from the key help. "Seen" is kept in this browser only and is written when the tour starts, so a reload mid-tour does not repeat it. (user, 2026-11-25, Q54)
+   icon in the toolbar and from the key help. "Seen" is kept in this browser only. (user, 2026-11-25, Q54)
 5. The last step opens the dump overlay; this answers audit B1, and the start card is dropped.
    (user, 2026-11-25, Q55)
 6. Its own plan, built locally on its own branch, pushed after the user has tried it. (user, 2026-11-25, Q56)
+7. **"Seen" is written when the tour starts,** not when it ends, so a reload in the middle doesn't start it again.
+   (architect, 2026-11-25, from the step 3 review)
 
 ## Steps
 
