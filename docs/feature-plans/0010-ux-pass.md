@@ -41,6 +41,7 @@ each barrier gets in the way.
    only), 4 Hold encoder 4's (`Sndc`) or 8's (`SndA`) push button until the bars have run. The card says "Waiting for
    a dump from the UC4…" and closes by itself when a dump arrives; Close ends it. Nothing is sent. A first step
    toward B1: the start card can open it later.
+   Numbered without a gap: for `SndA` (no setup to pick) the hold step is 3. (architect, 2026-11-25, from the review)
 7. **Work in the public repository's folder, on local branches, pushed only after the user's OK** (user, 2026-11-25,
    Q50).
 8. **"Clear old dumps" leaves an empty list** (user, 2026-11-25, Q57, Q58): it deletes every dump nothing needs,

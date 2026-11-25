@@ -1,6 +1,6 @@
 # 0012 — Onboarding: the six areas in the guide and a first-run tour
 
-_Stage: built locally (2026-11-25, `aa394f7` … `70b4fb4`) on `feat/onboarding`; waits for the user's try-out before a push._
+_Stage: built locally (2026-11-25) on `feat/onboarding` → `feat/compact-dumps`, review fixes on `fix/review-findings`; waits for the user's try-out before a push._
 _Owner: uc4-ui (data, tour), uc4-docs (guide page) · Depends on: 0010 (dump overlay)_
 
 ## Problem
@@ -34,7 +34,7 @@ their own in (0010 audit B1).
 2. The guide page: an overview with six numbers, a short section per area. (user, 2026-11-25, Q52)
 3. The tour highlights one area at a time in the editor and explains it in a few words, with Back / Next / Skip.
    (user, 2026-11-25, Q53)
-4. It starts by itself on first open (nothing received or imported yet, not dismissed). Settings has a **Tour**
+4. ~~It starts by itself on first open~~ (replaced by decision 8: the welcome card decides). It starts by itself on first open (nothing received or imported yet, not dismissed). Settings has a **Tour**
    button that starts it again; it replaces Settings' "User guide" link. The guide stays reachable from the book
    icon in the toolbar and from the key help. "Seen" is kept in this browser only. (user, 2026-11-25, Q54)
 5. The last step opens the dump overlay; this answers audit B1, and the start card is dropped.
@@ -50,10 +50,10 @@ their own in (0010 audit B1).
 
 ## Steps
 
-1. **Area texts as data, plus the drift test** — uc4-ui · blocked by: none.
-2. **Guide page** — uc4-docs · blocked by: 1 · overview shot with six markers, a section per area.
-3. **Tour** — uc4-ui · blocked by: 1 · dim, light, card, keys, first-run start, Settings' Tour button, "seen" stored.
-4. **Last step into the dump overlay** — uc4-ui · blocked by: 3.
+1. **Area texts as data, plus the drift test** — done (`aa394f7`) — uc4-ui · blocked by: none.
+2. **Guide page** — done (`16a8e08`, `c7ad8d2`, `70b4fb4`) — uc4-docs · blocked by: 1 · overview shot with six markers, a section per area.
+3. **Tour** — done (`b971b80`, `5de8397`; its first-run start replaced by step 5) — uc4-ui · blocked by: 1 · dim, light, card, keys, first-run start, Settings' Tour button, "seen" stored.
+4. **Last step into the dump overlay** — done (`b971b80`) — uc4-ui · blocked by: 3.
 
 5. **Welcome card** (decision 8) — done 2026-11-25 (`d6b7a9f`, reviewed) — uc4-ui · blocked by: 3 · plus the toolbar step's number badge, which sits on the
    Connections strip instead of on the toolbar.
