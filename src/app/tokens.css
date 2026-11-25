@@ -35,6 +35,9 @@
   --text-md: 13px;
   --text-lg: 15px;
   --target: 28px;
+  /* Card widths: a tour step beside its area, and the welcome card. */
+  --card-w-step: 340px;
+  --card-w-wide: 500px;
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 /* Dark: the system's choice (keep the two dark blocks in step) unless the settings say light; or forced by the settings. */
@@ -106,3 +109,12 @@ button, input, select { font: inherit; color: inherit; }
   .flash-copy, .flash-paste, .flash-paste-ring { animation: flash-still 1s step-end; }
   .flash-copy-svg, .flash-paste-svg { animation: flash-still-svg 1s step-end; }
 }
+
+/* The one look of a card that asks something (tour, welcome, send guide, Send/Restore question): surface, accent border, and its buttons. */
+.ui-card { box-sizing: border-box; color: var(--text); background: var(--surface-2); border: 2px solid var(--accent); border-radius: var(--radius); box-shadow: 0 8px 28px rgb(0 0 0 / 55%); }
+.ui-card button { min-height: var(--target); padding: 0 var(--space-3); color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+.ui-card button:hover:not(:disabled) { background: var(--accent-soft); }
+.ui-card button:disabled { color: var(--text-muted); cursor: not-allowed; }
+.ui-card button:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+.ui-card button.go:not(:disabled) { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+.ui-card button.go:hover:not(:disabled) { background: var(--accent); filter: brightness(1.1); }

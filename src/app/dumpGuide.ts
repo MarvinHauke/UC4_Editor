@@ -2,11 +2,6 @@
 // dumpGuide.svelte.ts, the card is GuideCard / ListenCard.
 import type { ConnectionState } from '../midi/connection.ts';
 
-export const SEND_CHOICES = [
-  { value: 'one', label: 'One setup (Sndc)', help: 'One setup · UC4: turn encoder 1 to the setup, hold encoder 4\'s push button' },
-  { value: 'all', label: 'All setups (SndA)', help: 'All 18 setups · UC4: hold encoder 8\'s push button' },
-] as const;
-
 /** What the card says while the guide listens, and the one action it offers when the UC4 is not connected. */
 export interface ListenStatus { text: string; waiting: boolean; connect: 'connect' | 'again' | null }
 

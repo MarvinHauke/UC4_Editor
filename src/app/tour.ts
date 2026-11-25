@@ -27,6 +27,9 @@ export const prevIndex = (i: number): number => Math.max(0, i - 1);
 /** A dimmed strip beside the lit box must be this wide to hold the card's edge. */
 export const MIN_STRIP = 120;
 
+/** How far the lit box sits outside the area it lights, in px (one `--space-1`). */
+export const LIT_PAD = 4;
+
 export interface Box { left: number; top: number; width: number; height: number }
 
 /** The card's top-left: beside the lit box (right, left, below, above); else over the wider dimmed strip at the window's edge (never over the lit area when a strip is at least MIN_STRIP wide); else inside the box at the bottom right. Always inside the window. No box: centred. */
@@ -45,7 +48,10 @@ export function placeCard(box: Box | null, card: { width: number; height: number
   return { left: clamp(box.left + box.width - card.width - gap, card.width, view.width), top: clamp(box.top + box.height - card.height - gap, card.height, view.height) };
 }
 
-/** Where a step's number badge sits on its lit box: above the top-left corner; else (box at the window's top) inside the corner, never beside it, where it could land on another area. */
-export function badgeSide(box: Box, size = 22, gap = 4): 'above' | 'inside' {
-  return box.top >= size + gap ? 'above' : 'inside';
+/** Where a step's number badge sits on its lit box: above the top-left corner, if the room above is free (it starts at `floor`: the bottom of the toolbar, whose title the badge must not cover); else (box at the window's top or under the toolbar) inside the corner, never beside it, where it could land on another area. */
+export function badgeSide(box: Box, floor = 0, size = BADGE.size, gap = BADGE.gap): 'above' | 'inside' {
+  return box.top - floor >= size + gap ? 'above' : 'inside';
 }
+
+/** The number badge's sizes in px: the overlay hands them to its CSS as `--badge`, `--badge-inside` and `--badge-gap`, so the side rule above and the drawing agree. */
+export const BADGE = { size: 22, inside: 16, gap: 4 } as const;

@@ -49,9 +49,11 @@ export const KEY_ROWS = [
   { id: 'dialogPress', section: 'dialogs', chips: ['Tab', 'Enter'], action: 'Move to a button, press it' },
 
   { id: 'sendClose', section: 'send', chips: ['Esc'], action: 'Close the Send or Restore window; nothing is sent until you press Send or Restore' },
+  { id: 'dumpGuideEnd', section: 'send', chips: ['Esc'], action: 'Close the guide for sending a dump from the device; nothing is sent', presses: [{ key: 'Escape' }] },
 
   { id: 'tourPage', section: 'tour', chips: ['←', '→'], action: 'Previous or next step', presses: [arrow('ArrowLeft'), arrow('ArrowRight')] },
   { id: 'tourEnd', section: 'tour', chips: ['Esc'], action: 'End the tour', presses: [{ key: 'Escape' }] },
+  { id: 'welcomeEnd', section: 'tour', chips: ['Esc'], action: 'Not now: close the welcome card', presses: [{ key: 'Escape' }] },
 
   { id: 'undo', section: 'anywhere', chips: ['Cmd', 'Z'], action: 'Undo', presses: [{ key: 'z', cmd: true, alt: false, shift: false }] },
   { id: 'redo', section: 'anywhere', chips: ['Shift', 'Cmd', 'Z'], action: 'Redo', presses: [{ key: 'z', cmd: true, alt: false, shift: true }] },

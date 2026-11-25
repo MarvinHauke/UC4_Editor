@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { GEOMETRY } from '../../src/app/profile/uc4Geometry.ts';
 import { sendGuide } from '../../src/app/profile/uc4Guides.ts';
+import { sendChoices } from '../../src/app/profile/uc4Guides.ts';
+import { welcomeTexts } from '../../src/app/profile/uc4Tour.ts';
 import { createDumpGuide } from '../../src/app/dumpGuide.svelte.ts';
 import { listenStatus } from '../../src/app/dumpGuide.ts';
 
@@ -36,11 +38,11 @@ describe('dump guide state', () => {
     const d = createDumpGuide();
     expect(d.choice).toBe('all');
     d.show(); expect(d.open).toBe(true);
-    d.dumpArrived(); expect(d.open).toBe(false);
+    d.close(); expect(d.open).toBe(false);
     d.show(); d.close(); expect(d.open).toBe(false);
   });
   it('a dump with the guide closed changes nothing', () => {
-    const d = createDumpGuide(); d.dumpArrived(); expect(d.open).toBe(false);
+    const d = createDumpGuide(); d.close(); expect(d.open).toBe(false);
   });
   it('says waiting only when connected, else offers Connect', () => {
     expect(listenStatus({ kind: 'connected', port: { id: '1', name: 'p' } }, 'UC4').waiting).toBe(true);
@@ -59,5 +61,19 @@ describe('guide ownership', () => {
     expect(g.card).toBe(theirs);
     g.clear(theirs);
     expect(g.card).toBeNull();
+  });
+});
+
+describe('device texts come from the profile', () => {
+  it('names the device, its messages and its setup count', () => {
+    const c = sendChoices({ deviceName: 'X9', messageNames: { one: 'S1', all: 'SA' }, slotCount: 12 });
+    expect(c[0].label).toBe('One setup (S1)');
+    expect(c[1].help).toContain('All 12 setups · X9');
+  });
+  it('welcome texts use the device name', () => {
+    const t = welcomeTexts('X9');
+    expect(t.title).toBe('Welcome to the X9 Editor');
+    expect(t.getLabel).toBe('Get my setups from the X9');
+    expect(t.tourHelp).toContain('6 areas');
   });
 });

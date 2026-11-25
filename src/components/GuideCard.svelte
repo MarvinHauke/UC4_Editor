@@ -6,7 +6,7 @@
   function start(node: HTMLButtonElement): void { node.focus(); }
 </script>
 
-<div class="card" role="group" aria-label="Send">
+<div class="ui-card card" role="group" aria-label="Send">
   <p>{card.text}</p>
   <div class="buttons">
     <button type="button" use:start onclick={() => { card.oncancel(); }}>Cancel</button>
@@ -16,13 +16,7 @@
 </div>
 
 <style>
-  .card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3; box-sizing: border-box; width: min(280px, 92%); padding: var(--space-4); color: var(--text); background: var(--surface-2); border: 2px solid var(--accent); border-radius: var(--radius); box-shadow: 0 8px 28px rgb(0 0 0 / 55%); }
+  .card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3; width: min(280px, 92%); padding: var(--space-4); }
   p { margin: 0 0 var(--space-3); font-size: var(--text-lg); font-weight: 600; color: var(--text); }
   .buttons { display: flex; justify-content: flex-end; gap: var(--space-2); }
-  button { min-height: var(--target); padding: 3px var(--space-3); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
-  button:hover:not(:disabled) { background: var(--accent-soft); }
-  button:disabled { color: var(--text-muted); cursor: not-allowed; }
-  button:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
-  .go:not(:disabled) { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-weight: 600; }
-  .go:hover:not(:disabled) { background: var(--accent); filter: brightness(1.1); }
 </style>

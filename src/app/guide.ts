@@ -1,6 +1,8 @@
 // A guide on the drawn panel (plan 0005 decision 35): the device view is dimmed except a few controls, numbered callouts
 // stand beside them, and a card in the middle asks for the action. Plain data; the profile supplies the positions
 // (viewBox units of the drawn panel), the Send and Restore dialogs use it for `rEc`, `Sndc`/`SndA` help can reuse it.
+import type { SendChoice } from './profile/uc4Guides.ts';
+
 /** A callout's text: plain words and key words shown in bold. */
 export type Chunk = string | { key: string };
 
@@ -43,9 +45,9 @@ export interface GuideCard {
 /** The card of the "Send a dump from the UC4" guide: a choice, what it waits for, and Close. Nothing here sends. */
 export interface ListenCard {
   title: string;
-  choices: readonly { value: string; label: string; help: string }[];
-  choice: string;
-  onchoose: (value: string) => void;
+  choices: readonly { value: SendChoice; label: string; help: string }[];
+  choice: SendChoice;
+  onchoose: (value: SendChoice) => void;
   status: string;
   /** A short note under the status ("Shift aborts."). */
   note: string;

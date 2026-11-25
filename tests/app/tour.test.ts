@@ -99,5 +99,6 @@ describe('card placement', () => {
 describe('badgeSide', () => {
   const b = (left: number, top: number) => ({ left, top, width: 300, height: 40 });
   it('sits above the corner when there is room', () => { expect(badgeSide(b(100, 60))).toBe('above'); });
+  it('sits inside the corner when the room above belongs to the toolbar (floor), above when free', () => { expect(badgeSide(b(0, 40), 38)).toBe('inside'); expect(badgeSide(b(0, 80), 38)).toBe('above'); });
   it('sits inside the corner for a box at the window top, wherever it starts', () => { expect(badgeSide(b(200, 0))).toBe('inside'); expect(badgeSide(b(0, 0))).toBe('inside'); });
 });

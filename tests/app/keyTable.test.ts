@@ -37,4 +37,8 @@ describe('key table', () => {
     expect(matchKey(press('ArrowRight', { altKey: true }), ['tourPage'])).toBeNull();
     expect(matchKey(press('Escape'), ['tourEnd', 'tourPage'])?.id).toBe('tourEnd');
   });
+  it('Esc closes the welcome card and the dump guide through the table', () => {
+    expect(matchKey(press('Escape'), ['welcomeEnd'])?.id).toBe('welcomeEnd');
+    expect(matchKey(press('Escape'), ['dumpGuideEnd'])?.id).toBe('dumpGuideEnd');
+  });
 });

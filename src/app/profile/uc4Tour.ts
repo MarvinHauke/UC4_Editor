@@ -70,3 +70,24 @@ export const TOUR_LAST: TourStep = {
 
 /** All steps in order: the six areas, then the closing step. */
 export const TOUR_STEPS: readonly TourStep[] = [...TOUR_AREAS, TOUR_LAST];
+
+/** The welcome card's words (plan 0012 decision 8): the device's name and maker are the profile's, not the card's. */
+export const MAKER = 'Faderfox';
+
+export function welcomeTexts(deviceName: string) {
+  return {
+    title: `Welcome to the ${deviceName} Editor`,
+    lead: `Edit, back up and send the setups of your ${MAKER} ${deviceName}, in the browser.`,
+    unofficial: `Unofficial: not made or supported by ${MAKER}.`,
+    tourLabel: 'Take the tour',
+    tourHelp: `Take the tour: a short walk through the ${TOUR_AREAS.length} areas of the editor`,
+    getLabel: `Get my setups from the ${deviceName}`,
+    getHelp: `Get my setups from the ${deviceName}: opens the steps for sending all setups from the ${deviceName} · the editor sends nothing to the ${deviceName}`,
+    hint: 'The tour is in Settings → Tour any time; the guide is behind the book icon.',
+  };
+}
+
+/** The tour card's last button: the dump overlay for all setups. */
+export function tourGetHelp(deviceName: string): string {
+  return `Get your setups: opens the guide for sending all setups from the ${deviceName} · the editor sends nothing to the ${deviceName}`;
+}

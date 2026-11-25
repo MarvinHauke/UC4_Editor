@@ -65,7 +65,7 @@
     const notice = noticeOf(store.keepReceived(bytes));
     // What the UC4 sends back after a send, byte for byte: kept as usual, but it is not news.
     if (notice && sender.matches(bytes)) return;
-    if (notice) { notices.add(notice); arrivals += 1; dumpGuide.dumpArrived(); }
+    if (notice) { notices.add(notice); arrivals += 1; dumpGuide.close(); }
     else store.say('The UC4 sent a MIDI message that is not a dump. Nothing was changed.');
   }
   const flowUi: FlowUi = { ask: (spec) => { confirm.ask(spec); }, download, say: (text) => { store?.say(text); } };
@@ -234,8 +234,8 @@
   <aside class="list" bind:offsetWidth={shownWidth} data-area="setups" data-copy-level="setup" data-help={listHelp}>{#if store}<LibraryList {store} {confirm} {device} {sender} profile={faderfoxUc4} />{/if}</aside>
   <ConfirmDialog {confirm} />
   {#if store}<SendDialog {store} {device} {sender} profile={faderfoxUc4} />{/if}
-  <TourOverlay {tour} onget={getSetups} />
-  <WelcomeCard {welcome} />
+  <TourOverlay {tour} onget={getSetups} profile={faderfoxUc4} />
+  <WelcomeCard {welcome} profile={faderfoxUc4} />
   {#if store}<DumpGuide {dumpGuide} {device} {sender} profile={faderfoxUc4} />{/if}
   <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)}
     waiting={notices.queue.length} onopenconnections={openConnections} />
