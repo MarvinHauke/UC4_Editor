@@ -44,6 +44,10 @@ describe('dump guide state', () => {
   it('a dump with the guide closed changes nothing', () => {
     const d = createDumpGuide(); d.close(); expect(d.open).toBe(false);
   });
+  it('says the connection states message when not connected, with or without access', () => {
+    expect(listenStatus({ kind: 'not-connected', access: true, message: 'No UC4 found. Connect it by USB.' }, 'UC4').text).toBe('No UC4 found. Connect it by USB.');
+    expect(listenStatus({ kind: 'not-connected', access: false, message: 'Press Connect to let the editor listen to your UC4.' }, 'UC4').text).toBe('Press Connect to let the editor listen to your UC4.');
+  });
   it('says waiting only when connected, else offers Connect', () => {
     expect(listenStatus({ kind: 'connected', port: { id: '1', name: 'p' } }, 'UC4').waiting).toBe(true);
     expect(listenStatus({ kind: 'not-connected', access: false, message: '' }, 'UC4').connect).toBe('connect');

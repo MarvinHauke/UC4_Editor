@@ -11,6 +11,6 @@ export function listenStatus(state: ConnectionState, deviceName: string): Listen
     case 'choose-port': return { text: `Several ports match. Select your ${deviceName} under Connections.`, waiting: false, connect: null };
     case 'denied': return { text: state.message, waiting: false, connect: 'again' };
     case 'unsupported': return { text: state.message, waiting: false, connect: null };
-    case 'not-connected': return { text: `The ${deviceName} is not connected. ${state.access ? state.message : 'Connect it by USB, then press Connect.'}`, waiting: false, connect: state.access ? null : 'connect' };
+    case 'not-connected': return { text: state.message, waiting: false, connect: state.access ? null : 'connect' };
   }
 }
