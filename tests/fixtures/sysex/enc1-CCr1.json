@@ -1,0 +1,10 @@
+{
+  "file": "enc1-CCr1.syx",
+  "sha256": "3cf9d74163244429ecea7e8c765f75761b817412f9e5a0a311fa4e3396e8a6b4",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-U126",
+  "change": "Enc1 type CCAb -> CCr1. Also changed the number 7F -> 1F (n127 -> n031): finding, the device probably clamped it on the way through CCAh (number 0-31); not a confirmed rule (session 1, batch 2; chained on SE16)",
+  "date": "2026-11-13"
+}

@@ -1,0 +1,10 @@
+{
+  "file": "enc1-bPoL.syx",
+  "sha256": "cf1a13dd036cf1ec455333afcc32de8d42f2c8c1fae96eed65ea2b738a798236",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-dispOFF",
+  "change": "Enc1 display OFF -> bPoL (session 1, batch 3a; chained on SE16)",
+  "date": "2026-11-13"
+}

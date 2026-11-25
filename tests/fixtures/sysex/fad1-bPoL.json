@@ -1,0 +1,10 @@
+{
+  "file": "fad1-bPoL.syx",
+  "sha256": "3d9c3e43e5355d5c814d8b89c1d65a6d63b75ab8b54885935539a7901b781a15",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "fad1-dispOFF",
+  "change": "FAd1 display OFF -> bPoL (session 1, batch 7; chained on SE16)",
+  "date": "2026-11-13"
+}

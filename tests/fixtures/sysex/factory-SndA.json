@@ -1,0 +1,11 @@
+{
+  "file": "factory-SndA.syx",
+  "sha256": "b15ed00f12a2f1386f3570a54f1266fb3c281369dd071a766ca09f7b3bfebaab",
+  "bytes": 100640,
+  "firmware": "02.05",
+  "slot": "all 18 setups (SndA)",
+  "fromFixture": "none",
+  "change": "rESA (reset all setups to factory), then SndA. Every slot is at factory settings; holds no user data.",
+  "date": "2026-11-13",
+  "source": "dumps/2026-11-13-SndA-after-rESA.syx"
+}

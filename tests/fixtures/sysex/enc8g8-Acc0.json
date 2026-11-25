@@ -1,0 +1,10 @@
+{
+  "file": "enc8g8-Acc0.syx",
+  "sha256": "0d75649bdb6b292d000e36319cdcb92b72e27f5a0e6661f9fa4136b1243f9fbd",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc876g8-stride",
+  "change": "Enc8 of encoder group 8 mode Acc3 -> Acc0 (session 1, batch 4b; chained on SE16)",
+  "date": "2026-11-13"
+}

@@ -1,0 +1,10 @@
+{
+  "file": "enc1-Acc0.syx",
+  "sha256": "7778941c10c66c26f6662a2adf672d62b15b71205087c7b5a21edcb33fca4c1f",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-CCAb-n031",
+  "change": "Enc1 mode Acc3 -> Acc0 (session 1, batch 3a; chained on SE16)",
+  "date": "2026-11-13"
+}

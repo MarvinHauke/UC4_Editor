@@ -1,0 +1,10 @@
+{
+  "file": "fad9g1-bPoL.syx",
+  "sha256": "b2fb8b2d12a767d6b2f3e4535cd9a84d0b1109a648001167fc7226e0cb7ee144",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "fad9g1-AFtt",
+  "change": "Fader 9 of fader/button group 1 display Std -> bPoL. Captured from the receivemidi listen log.",
+  "date": "2026-11-16"
+}

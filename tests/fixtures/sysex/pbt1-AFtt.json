@@ -1,0 +1,10 @@
+{
+  "file": "pbt1-AFtt.syx",
+  "sha256": "d4b0f9180b6c31c161f8bc431a78b1db1eca3188be6be1f1a061ac9bce196621",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "pbt1-PrGC",
+  "change": "Pbt1 type PrGC -> AFtt (session 1, batch 5; chained on SE16)",
+  "date": "2026-11-13"
+}

@@ -1,0 +1,10 @@
+{
+  "file": "fad9g1-AFtt.syx",
+  "sha256": "48e899c3238fbb5708c295205987b56861174f9a6d1dd8810d47fbd9eca4ae31",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "fad9g1-Pbnd",
+  "change": "Fader 9 of fader/button group 1 type Pbnd -> AFtt. Captured from the receivemidi listen log.",
+  "date": "2026-11-16"
+}

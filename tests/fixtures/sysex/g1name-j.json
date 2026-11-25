@@ -1,0 +1,10 @@
+{
+  "file": "g1name-j.syx",
+  "sha256": "603d1e72a7d6675a0e6bea0924c47b8d079b0aeeddc168283f123268fe165be2",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "g1name-z",
+  "change": "group 1 name character 1 z -> j (session 1, batch 8, dump 8.4; chained on SE16)",
+  "date": "2026-11-13"
+}

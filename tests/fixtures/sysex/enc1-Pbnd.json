@@ -1,0 +1,10 @@
+{
+  "file": "enc1-Pbnd.syx",
+  "sha256": "f5d6ada60ba8bab353500f0a2bd8aa6245e6a776e774f7211500ffc67785f1c3",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-CCAh",
+  "change": "Enc1 type CCAh -> Pbnd (session 1, batch 2; chained on SE16)",
+  "date": "2026-11-13"
+}

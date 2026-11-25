@@ -1,0 +1,10 @@
+{
+  "file": "pbt1-CC.syx",
+  "sha256": "6340d56b2895c8b038fca95dfac73c60b943155af604ee6efb83a4736de188c4",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "pbt1-OFF",
+  "change": "Pbt1 type OFF -> CC (session 1, batch 5; chained on SE16)",
+  "date": "2026-11-13"
+}

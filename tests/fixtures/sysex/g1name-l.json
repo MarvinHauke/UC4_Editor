@@ -1,0 +1,10 @@
+{
+  "file": "g1name-l.syx",
+  "sha256": "f171797bd4a1c586eca4a0e32d60b0c08706e3455ec2536310ff69ee67f556cd",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "g1name-j",
+  "change": "group 1 name character 1 j -> l (the device has no k) (session 1, batch 8, dump 8.5; chained on SE16)",
+  "date": "2026-11-13"
+}

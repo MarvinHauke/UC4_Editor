@@ -1,0 +1,10 @@
+{
+  "file": "last-mode-disp.syx",
+  "sha256": "e7d1fe8909016eff2c2538be5d6a33bc3e463d8208a060af36a0702dc3fa07ad",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "last-upper-ch",
+  "change": "Pbt8 mode btn -> toGL, btn8 display Std -> OFF, FAd8 mode JMP -> SnAP (session 1, batch 9, dump 9.4; chained on SE16)",
+  "date": "2026-11-13"
+}

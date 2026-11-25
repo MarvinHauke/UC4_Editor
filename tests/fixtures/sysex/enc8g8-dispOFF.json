@@ -1,0 +1,10 @@
+{
+  "file": "enc8g8-dispOFF.syx",
+  "sha256": "566d619549be1ea5a86bdfe4f803dad4bce0d0225cefd4f32cfeaae2c61a5b23",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc8g8-Acc0",
+  "change": "Enc8 of encoder group 8 display Std -> OFF (session 1, batch 4b; chained on SE16)",
+  "date": "2026-11-13"
+}

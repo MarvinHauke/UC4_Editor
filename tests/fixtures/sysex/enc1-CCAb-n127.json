@@ -1,0 +1,10 @@
+{
+  "file": "enc1-CCAb-n127.syx",
+  "sha256": "a52ad5039e8388e11089343a44f3500ce268e68f603a7cd17348469db1d7889f",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-PrGC-back-CCAb",
+  "change": "Enc1 number n031 -> n127 (session 1, batch 3b; chained on SE16)",
+  "date": "2026-11-13"
+}

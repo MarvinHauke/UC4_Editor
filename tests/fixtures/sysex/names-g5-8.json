@@ -1,0 +1,10 @@
+{
+  "file": "names-g5-8.syx",
+  "sha256": "e8ca348593da68295e3c804c5476f24a24e27a14f5b9507a1522304e36fe41ec",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "names-g1-4",
+  "change": "Group names of encoder groups 5-8 in one combined dump: G5 1 2 3 4, G6 5 6 7 8, G7 r p r p, G8 0 z j l. 16 image bytes, exactly as predicted. Captured from the listen log.",
+  "date": "2026-11-16"
+}

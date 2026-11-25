@@ -1,0 +1,477 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UC4 Editor configuration",
+  "description": "Setups of a Faderfox UC4, in the device's own words. Written by the UC4 Editor; safe to edit by hand.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schemaVersion",
+    "device",
+    "createdAt",
+    "updatedAt",
+    "setups"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Path or URL of this schema; lets the editor check the file as you type."
+    },
+    "format": {
+      "const": "uc4-config",
+      "description": "Always \"uc4-config\"."
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Version of this file format."
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile"
+      ],
+      "properties": {
+        "profile": {
+          "const": "faderfox-uc4",
+          "description": "The device this is for."
+        },
+        "firmware": {
+          "type": "string",
+          "description": "Firmware version the setups were read from, e.g. \"02.05\"."
+        }
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 with seconds, e.g. 2026-11-13T10:00:00Z."
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 with seconds, e.g. 2026-11-13T10:00:00Z."
+    },
+    "setups": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 18,
+      "items": {
+        "$ref": "#/definitions/setup"
+      },
+      "description": "1 to 18 setups."
+    }
+  },
+  "definitions": {
+    "setup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "encoderGroups",
+        "faderButtonGroups"
+      ],
+      "description": "One UC4 setup: 8 encoder groups and 8 fader/button groups, chosen independently on the device.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Editor-only identifier, unique in this file."
+        },
+        "name": {
+          "type": "string",
+          "description": "Your name for the setup, e.g. \"Live Mixing\"."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Your notes. Editor-only."
+        },
+        "slot": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 18,
+          "description": "Device slot SE01–SE18 this setup belongs to; at most one setup per slot."
+        },
+        "encoderGroups": {
+          "type": "array",
+          "description": "8 encoder groups; position = group number − 1.",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/definitions/encoderGroup"
+          }
+        },
+        "faderButtonGroups": {
+          "type": "array",
+          "description": "8 fader/button groups; position = group number − 1.",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/definitions/faderButtonGroup"
+          }
+        }
+      }
+    },
+    "encoderGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "encoders",
+        "pushButtons"
+      ],
+      "description": "Encoder group: 8 encoders and their 8 push buttons, with a 4-character name.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[0123456789abcdefghijlmnopqrstuxyz\\-_'\"= ]{4}$",
+          "description": "Exactly 4 characters the UC4 can show: 0–9, a–j, l–u, x, y, z (no k, v, w; lower case), - _ = ' \" and space."
+        },
+        "label": {
+          "type": "string",
+          "description": "Your own name for this, e.g. \"Cutoff\". Editor-only; never sent to the device."
+        },
+        "encoders": {
+          "type": "array",
+          "description": "Enc1…Enc8.",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/definitions/encoder"
+          }
+        },
+        "pushButtons": {
+          "type": "array",
+          "description": "Pbt1…Pbt8.",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/definitions/pushButton"
+          }
+        }
+      }
+    },
+    "faderButtonGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "faders",
+        "buttons"
+      ],
+      "description": "Fader/button group: 9 faders and 8 green buttons. The device gives it no name.",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Your own name for this, e.g. \"Cutoff\". Editor-only; never sent to the device."
+        },
+        "faders": {
+          "type": "array",
+          "description": "FAd1…FAd9 (9 is the horizontal one).",
+          "minItems": 9,
+          "maxItems": 9,
+          "items": {
+            "$ref": "#/definitions/fader"
+          }
+        },
+        "buttons": {
+          "type": "array",
+          "description": "btn1…btn8.",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/definitions/greenButton"
+          }
+        }
+      }
+    },
+    "encoder": {
+      "type": "object",
+      "description": "An encoder.",
+      "additionalProperties": false,
+      "required": [
+        "display",
+        "type",
+        "mode",
+        "channel",
+        "number",
+        "lower",
+        "upper"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Your own name for this, e.g. \"Cutoff\". Editor-only; never sent to the device."
+        },
+        "display": {
+          "enum": [
+            "OFF",
+            "Std",
+            "bPoL"
+          ],
+          "description": "Display scale (edit encoder 2). Green buttons: the LED."
+        },
+        "type": {
+          "enum": [
+            "CCr1",
+            "CCr2",
+            "CCAb",
+            "PrGC",
+            "CCAh",
+            "Pbnd",
+            "AFtt"
+          ],
+          "description": "Command type (edit encoder 3)."
+        },
+        "mode": {
+          "enum": [
+            "Acc0",
+            "Acc1",
+            "Acc2",
+            "Acc3"
+          ],
+          "description": "Command mode (edit encoder 4)."
+        },
+        "channel": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "description": "MIDI channel as on the display, 1–16."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Command number, 0–127 (with CCAh 0–31)."
+        },
+        "lower": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Lower value, 0–127; not used by relative types. Lower above upper inverts the control."
+        },
+        "upper": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Upper value, 0–127; not used by relative types. For buttons: press/on."
+        }
+      },
+      "if": {
+        "properties": {
+          "type": {
+            "const": "CCAh"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 31,
+            "description": "CCAh numbers are 0–31 (the LSB is number + 32)."
+          }
+        }
+      }
+    },
+    "pushButton": {
+      "type": "object",
+      "description": "An encoder push button. It has no display scale.",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "mode",
+        "channel",
+        "number",
+        "lower",
+        "upper"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Your own name for this, e.g. \"Cutoff\". Editor-only; never sent to the device."
+        },
+        "type": {
+          "enum": [
+            "OFF",
+            "notE",
+            "CC",
+            "PrGC",
+            "AFtt"
+          ],
+          "description": "Command type (edit encoder 3)."
+        },
+        "mode": {
+          "enum": [
+            "btn",
+            "toGL"
+          ],
+          "description": "Command mode (edit encoder 4)."
+        },
+        "channel": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "description": "MIDI channel as on the display, 1–16."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Command number, 0–127 (with CCAh 0–31)."
+        },
+        "lower": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Lower value, 0–127; not used by relative types. Lower above upper inverts the control."
+        },
+        "upper": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Upper value, 0–127; not used by relative types. For buttons: press/on."
+        }
+      }
+    },
+    "greenButton": {
+      "type": "object",
+      "description": "A green button with LED. It has no OFF type.",
+      "additionalProperties": false,
+      "required": [
+        "display",
+        "type",
+        "mode",
+        "channel",
+        "number",
+        "lower",
+        "upper"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Your own name for this, e.g. \"Cutoff\". Editor-only; never sent to the device."
+        },
+        "display": {
+          "enum": [
+            "OFF",
+            "Std",
+            "EXt"
+          ],
+          "description": "Display scale (edit encoder 2). Green buttons: the LED."
+        },
+        "type": {
+          "enum": [
+            "notE",
+            "CC",
+            "PrGC",
+            "AFtt"
+          ],
+          "description": "Command type (edit encoder 3)."
+        },
+        "mode": {
+          "enum": [
+            "btn",
+            "toGL"
+          ],
+          "description": "Command mode (edit encoder 4)."
+        },
+        "channel": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "description": "MIDI channel as on the display, 1–16."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Command number, 0–127 (with CCAh 0–31)."
+        },
+        "lower": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Lower value, 0–127; not used by relative types. Lower above upper inverts the control."
+        },
+        "upper": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Upper value, 0–127; not used by relative types. For buttons: press/on."
+        }
+      }
+    },
+    "fader": {
+      "type": "object",
+      "description": "A fader.",
+      "additionalProperties": false,
+      "required": [
+        "display",
+        "type",
+        "mode",
+        "channel",
+        "number",
+        "lower",
+        "upper"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Your own name for this, e.g. \"Cutoff\". Editor-only; never sent to the device."
+        },
+        "display": {
+          "enum": [
+            "OFF",
+            "Std",
+            "bPoL"
+          ],
+          "description": "Display scale (edit encoder 2). Green buttons: the LED."
+        },
+        "type": {
+          "enum": [
+            "CCAb",
+            "PrGC",
+            "Pbnd",
+            "AFtt"
+          ],
+          "description": "Command type (edit encoder 3)."
+        },
+        "mode": {
+          "enum": [
+            "JMP",
+            "SnAP"
+          ],
+          "description": "Command mode (edit encoder 4)."
+        },
+        "channel": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "description": "MIDI channel as on the display, 1–16."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Command number, 0–127 (with CCAh 0–31)."
+        },
+        "lower": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Lower value, 0–127; not used by relative types. Lower above upper inverts the control."
+        },
+        "upper": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127,
+          "description": "Upper value, 0–127; not used by relative types. For buttons: press/on."
+        }
+      }
+    }
+  }
+}

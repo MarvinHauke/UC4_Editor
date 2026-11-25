@@ -1,0 +1,10 @@
+{
+  "file": "names-g1-4.syx",
+  "sha256": "ca3fc2ae576f2418e88ce0a059932503ca3f6cc5f98d3204289770aa92e2c886",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "base",
+  "change": "Group names of encoder groups 1-4, characters changed in one combined dump (user's OK for names only): G1 c2-4 a b c, G2 c2-4 d e f, G3 h i m n, G4 a q s t. Planned G4 c1 = o, but the user set a (0A): o stays unconfirmed. 14 image bytes. From rESc'd SE16 (= base); captured from the listen log.",
+  "date": "2026-11-16"
+}

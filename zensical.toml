@@ -1,0 +1,42 @@
+[project]
+site_name = "UC4 Editor"
+site_description = "User guide for the UC4 Editor, a browser editor for the Faderfox UC4."
+docs_dir = "docs/guides"
+site_url = "https://marvinhauke.github.io/UC4_Editor/guide/"
+site_dir = "site"
+copyright = "Unofficial: the UC4 Editor is not made by, endorsed by or supported by Faderfox."
+extra_css = ["assets/zoom.css", "stylesheets/extra.css"]
+extra_javascript = ["assets/zoom.js"]
+nav = [
+  { "Home" = "index.md" },
+  { "Getting started" = "getting-started.md" },
+  { "The editor" = "editor.md" },
+  { "From and to the UC4" = "device.md" },
+  { "Files" = "files.md" },
+  { "Copy / Paste, Reset, Library" = "copy-paste.md" },
+  { "Keys" = "keys.md" },
+  { "How it works" = "how-it-works.md" },
+]
+
+# Dark first, with a toggle; as the ableton-remote-script-mcp docs.
+[project.theme]
+features = [
+  "navigation.tabs",
+  "navigation.tabs.sticky",
+  "navigation.sections",
+  "navigation.path",
+  "navigation.top",
+  "content.code.copy",
+  "search.suggest",
+  "search.highlight",
+]
+
+[[project.theme.palette]]
+scheme = "slate"
+toggle.icon = "material/weather-sunny"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+scheme = "default"
+toggle.icon = "material/weather-night"
+toggle.name = "Switch to dark mode"

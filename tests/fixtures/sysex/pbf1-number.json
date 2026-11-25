@@ -1,0 +1,10 @@
+{
+  "file": "pbf1-number.syx",
+  "sha256": "ae84a13869e7fe1a6aa49c877646a229be4059832e09c8e4cce6f431ccbcdb01",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "pbf1-ch01",
+  "change": "number: Pbt1 n000 -> n127, btn1 n064 -> n065, FAd1 n032 -> n033 (session 1, batch 4; chained on SE16)",
+  "date": "2026-11-13"
+}

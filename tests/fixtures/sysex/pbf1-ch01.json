@@ -1,0 +1,10 @@
+{
+  "file": "pbf1-ch01.syx",
+  "sha256": "d4320a784483b059f8447d73f46eb1c7a89dac515bd3ba09e768f1dd9792af9d",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-CCAh-clamp",
+  "change": "channel Ch16 -> Ch01 on Pbt1, btn1 and FAd1 (the user left and re-entered edit mode between btn1 and FAd1; no Sndc between) (session 1, batch 4; chained on SE16)",
+  "date": "2026-11-13"
+}

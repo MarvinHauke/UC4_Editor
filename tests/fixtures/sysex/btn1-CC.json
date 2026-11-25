@@ -1,0 +1,10 @@
+{
+  "file": "btn1-CC.syx",
+  "sha256": "3c49862e248f7db4b7fa2efc2c9371dbab89b8c2c316bd06ea38ed1332ca128e",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "pbt1-AFtt",
+  "change": "btn1 type notE -> CC (session 1, batch 5; chained on SE16)",
+  "date": "2026-11-13"
+}

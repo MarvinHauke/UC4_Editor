@@ -1,0 +1,10 @@
+{
+  "file": "enc1-CCAh.syx",
+  "sha256": "3eff8d0a549650636bfc15f9129ab67368f80b5fdc00f0fcacf06706cacf4ed5",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-CCr2",
+  "change": "Enc1 type CCr2 -> CCAh (session 1, batch 2; chained on SE16)",
+  "date": "2026-11-13"
+}

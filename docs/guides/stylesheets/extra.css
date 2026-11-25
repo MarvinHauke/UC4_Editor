@@ -1,0 +1,108 @@
+/* UC4 Editor documentation — custom theme */
+
+:root {
+  --uc4-accent-strong: #2563eb;
+  --uc4-panel: rgba(127, 127, 127, 0.06);
+  --uc4-panel-border: rgba(127, 127, 127, 0.18);
+}
+
+[data-md-color-scheme="slate"] {
+  --uc4-accent-strong: #6ea0ff;
+}
+
+/* Wider, more spacious layout */
+.md-grid {
+  max-width: 1440px;
+}
+
+/* Softer content typography */
+.md-typeset {
+  line-height: 1.75;
+}
+
+.md-typeset h1 {
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.md-typeset h2 {
+  margin-top: 2em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Rounded code blocks */
+.md-typeset pre {
+  border: 1px solid var(--uc4-panel-border);
+  border-radius: 14px;
+}
+
+.md-typeset code {
+  border-radius: 5px;
+}
+
+/* Rounded content elements */
+.md-typeset img {
+  border-radius: 12px;
+}
+
+.md-typeset table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Custom documentation cards */
+.md-typeset .uc4-card {
+  display: block;
+  padding: 1.2rem 1.4rem;
+  margin: 0.5rem 0;
+  border: 1px solid var(--uc4-panel-border);
+  border-radius: 16px;
+  background: var(--uc4-panel);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.md-typeset .uc4-card,
+.md-typeset .uc4-card:hover,
+.md-typeset .uc4-card:focus-visible {
+  text-decoration: none;
+}
+
+.md-typeset .uc4-card:hover {
+  border-color: var(--uc4-accent-strong);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .md-typeset .uc4-card:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.md-typeset .uc4-card strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 1.05rem;
+}
+
+.md-typeset .uc4-card span {
+  display: block;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.md-typeset .uc4-card:focus-visible {
+  outline: 2px solid var(--uc4-accent-strong);
+  outline-offset: 2px;
+}
+
+/* Notice / disclaimer */
+.md-typeset .uc4-notice {
+  padding: 1rem 1.2rem;
+  border-left: 3px solid var(--uc4-accent-strong);
+  border-radius: 8px;
+  background: var(--uc4-panel);
+  font-size: 0.9rem;
+}

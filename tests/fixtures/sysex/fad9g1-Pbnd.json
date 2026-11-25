@@ -1,0 +1,10 @@
+{
+  "file": "fad9g1-Pbnd.syx",
+  "sha256": "8433d61b83cb981aa6e10c549533a53fb84d12133d75fd084be4f950c0dabe37",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "base",
+  "change": "Fader 9 of fader/button group 1 type CCAb -> Pbnd, turned up via PrGC (no clamp, number unchanged). From factory SE16 after rESc. Captured from the receivemidi listen log. User bumped green button 1 once (note 64): played, no setup change.",
+  "date": "2026-11-16"
+}

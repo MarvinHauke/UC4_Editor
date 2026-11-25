@@ -1,0 +1,10 @@
+{
+  "file": "enc876g8-stride.syx",
+  "sha256": "d0b6e29d864228dda32cd50d1a5bc2b194c8314fbcdb86686a8356e05231d9d4",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "pbf8-stride",
+  "change": "encoder group 8: Enc8 channel Ch16 -> Ch01, Enc7 lower L000 -> L001, Enc6 upper U127 -> U126 (session 1, batch 4b; chained on SE16)",
+  "date": "2026-11-13"
+}

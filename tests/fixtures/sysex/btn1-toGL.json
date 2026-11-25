@@ -1,0 +1,10 @@
+{
+  "file": "btn1-toGL.syx",
+  "sha256": "30a336788ec490c2ae95babd6ae1e2f750302873f12e6d511e5f4a6cea77dab9",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "btn1-CC",
+  "change": "btn1 mode btn -> toGL (session 1, batch 5; chained on SE16)",
+  "date": "2026-11-13"
+}

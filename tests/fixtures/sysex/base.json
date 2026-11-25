@@ -1,0 +1,10 @@
+{
+  "file": "base.syx",
+  "sha256": "e7153cf40c5db83528db4b92c0226a8e4f427422e65e3fc557cc31eb44913f5a",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "none",
+  "change": "rESc (reset to factory) on scratch setup SE16, then Sndc",
+  "date": "2026-11-13"
+}

@@ -1,0 +1,10 @@
+{
+  "file": "fad1-SnAP.syx",
+  "sha256": "ebf2d3b62c17cbbc8b929ec5695516627c93dbcfb23b2ab1af9ec305735ac768",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "pbt1-toGL",
+  "change": "FAd1 mode JMP -> SnAP (session 1, batch 6; chained on SE16)",
+  "date": "2026-11-13"
+}

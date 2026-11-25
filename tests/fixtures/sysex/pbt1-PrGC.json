@@ -1,0 +1,10 @@
+{
+  "file": "pbt1-PrGC.syx",
+  "sha256": "b113cadb7b9d5415481f230d0903743da8eb4649fd551fecee27df5376a6a483",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "pbt1-CC",
+  "change": "Pbt1 type CC -> PrGC (session 1, batch 5; chained on SE16)",
+  "date": "2026-11-13"
+}

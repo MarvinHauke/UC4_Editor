@@ -1,0 +1,10 @@
+{
+  "file": "fad9g1-n113.syx",
+  "sha256": "147cb2bb029abeb5461cb3074baf6235e2ef2bb7eb326d1d8be0aba2ec9f4919",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "fad1-bPoL",
+  "change": "FAd9 of fader/button group 1 number n112 -> n113 (session 1, batch 7; chained on SE16)",
+  "date": "2026-11-13"
+}

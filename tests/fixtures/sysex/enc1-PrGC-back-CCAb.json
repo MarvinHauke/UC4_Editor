@@ -1,0 +1,10 @@
+{
+  "file": "enc1-PrGC-back-CCAb.syx",
+  "sha256": "22acc25f3eb368d0e81f0a63a79ed8ffa2dd497756105ebc60df3babaad77db5",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-PrGC",
+  "change": "Enc1 type PrGC -> CCAb (the user also pressed btn1 by accident; no byte changed) (session 1, batch 3b; chained on SE16)",
+  "date": "2026-11-13"
+}

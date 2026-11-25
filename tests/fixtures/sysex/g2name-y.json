@@ -1,0 +1,10 @@
+{
+  "file": "g2name-y.syx",
+  "sha256": "6bbdf4fcd7b2d21f49723d8763eddfe7521bd56444c8eade0846998ed54f0230",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "g2name-x",
+  "change": "group 2 name character 1 -> y (session 1, batch 8b, dump 8b.3; chained on SE16)",
+  "date": "2026-11-13"
+}

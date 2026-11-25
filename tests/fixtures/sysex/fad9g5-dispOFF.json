@@ -1,0 +1,10 @@
+{
+  "file": "fad9g5-dispOFF.syx",
+  "sha256": "799d90c09d88e0ea24ba03091c66a7269fc5c9cbdefb9a5d77877c833ab5faa8",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "fad9-g876",
+  "change": "fader 9 table: group 5 display Std -> OFF (session 1, batch 9, dump 9.7; chained on SE16)",
+  "date": "2026-11-13"
+}

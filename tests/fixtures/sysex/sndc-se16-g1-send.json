@@ -1,0 +1,11 @@
+{
+  "file": "sndc-se16-g1-send.syx",
+  "sha256": "de5ff5906652a6adc38771c5a702c8ef998160100f2b2e9df6f315afc56beb6d",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "base",
+  "change": "Scratch setup SE16 at factory settings with the name of encoder group 1 set to \"send\": the Sndc the editor built and sent on 2026-11-17 (the device stored it; SE16-after-send2 read back the same). Equals base plus that one name change. Holds no user data.",
+  "date": "2026-11-17",
+  "source": "dumps/2026-11-17-send2-SE16-g1-send.syx"
+}

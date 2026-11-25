@@ -1,0 +1,10 @@
+{
+  "file": "fad9g8-ch01.syx",
+  "sha256": "42204321318c289c06e659b60932348d014846d2c1d101b35e13191539185fa1",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "fad9g4-L001",
+  "change": "FAd9 of fader/button group 8 channel Ch16 -> Ch01 (session 1, batch 7; chained on SE16)",
+  "date": "2026-11-13"
+}

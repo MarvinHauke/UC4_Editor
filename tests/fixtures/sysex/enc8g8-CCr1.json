@@ -1,0 +1,10 @@
+{
+  "file": "enc8g8-CCr1.syx",
+  "sha256": "792b030bfbeb991434ea8b7362498f455a257ec2ace1b86915eeb6a3f3474228",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "base",
+  "change": "Enc8 of encoder group 8 type CCAb -> CCr1, turned DOWN via CCr2 (no CCAh, so no number clamp; number stays n103). From factory SE16 after rESc. One encoder was bumped by accident (CC 96 = 1 then 0): a played value, no setup change. Captured from the receivemidi listen log.",
+  "date": "2026-11-16"
+}

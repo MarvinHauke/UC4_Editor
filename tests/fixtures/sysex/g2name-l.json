@@ -1,0 +1,10 @@
+{
+  "file": "g2name-l.syx",
+  "sha256": "6438d5c9208fe3323807d0d1ff8cea354fdce2fd5b0ddcb8a71cbb891219a9e2",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "g1name-l",
+  "change": "group 2 name character 1 G -> l (lrP2); group 1 stays lrP1 (session 1, batch 8, dump 8.6; chained on SE16)",
+  "date": "2026-11-13"
+}

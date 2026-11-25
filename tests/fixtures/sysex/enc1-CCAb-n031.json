@@ -1,0 +1,10 @@
+{
+  "file": "enc1-CCAb-n031.syx",
+  "sha256": "a23628a370a51537e4687625abf8d2529a106d824f40f9758c925a0c94755f81",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-AFtt",
+  "change": "Enc1 type AFtt -> CCAb (back; number stays n031, so this differs from enc1-U126 only in the number) (session 1, batch 2; chained on SE16)",
+  "date": "2026-11-13"
+}

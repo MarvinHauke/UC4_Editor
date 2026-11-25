@@ -1,0 +1,108 @@
+/* Design tokens (plan 0006 decision 2): colours, spacing, type, focus ring. Light and dark follow the system. */
+:root {
+  color-scheme: light dark;
+  --bg: #e9e9e6;
+  --surface: #f6f6f4;
+  --surface-2: #ffffff;
+  --border: #b9b9b3;
+  --text: #1c1c1a;
+  --text-muted: #5a5a55;
+  --accent: #2563eb;
+  --on-accent: #ffffff;
+  --accent-soft: #dbe6fd;
+  --encoder: #2563eb;
+  --fader: #15803d;
+  --danger: #b42318;
+  --on-danger: #ffffff;
+  --ok: #15803d;
+  --led: #22c55e;
+  --led-edge: #15803d;
+  /* The fader/button group shown by an LED above green button n: a colour of its own, not the LED green. */
+  --group: #d97706;
+  --led-off: #cfcfc9;
+  --display-bg: #161616;
+  --display-fg: #ef4444;
+  --display-off: #2b1717;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --radius: 6px;
+  --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, Menlo, Consolas, monospace;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-lg: 15px;
+  --target: 28px;
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+/* Dark: the system's choice (keep the two dark blocks in step) unless the settings say light; or forced by the settings. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #131315;
+    --surface: #1d1d20;
+    --surface-2: #26262a;
+    --border: #3d3d44;
+    --text: #e8e8ea;
+    --text-muted: #a0a0a8;
+    --accent: #6ea0ff;
+    --on-accent: #0b1020;
+    --accent-soft: #1f2f52;
+    --encoder: #60a5fa;
+    --fader: #4ade80;
+    --danger: #ff7b72;
+    --on-danger: #0b1020;
+    --ok: #4ade80;
+    --led: #4ade80;
+    --led-edge: #4ade80;
+    --group: #fbbf24;
+    --led-off: #34343a;
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+    --bg: #131315;
+    --surface: #1d1d20;
+    --surface-2: #26262a;
+    --border: #3d3d44;
+    --text: #e8e8ea;
+    --text-muted: #a0a0a8;
+    --accent: #6ea0ff;
+    --on-accent: #0b1020;
+    --accent-soft: #1f2f52;
+    --encoder: #60a5fa;
+    --fader: #4ade80;
+    --danger: #ff7b72;
+    --on-danger: #0b1020;
+    --ok: #4ade80;
+    --led: #4ade80;
+    --led-edge: #4ade80;
+    --group: #fbbf24;
+    --led-off: #34343a;
+}
+:root[data-theme='light'] { color-scheme: light; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #app { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: var(--text-md)/1.4 var(--font); }
+button, input, select { font: inherit; color: inherit; }
+
+/* Copy / Paste feedback (plan 0006 decision 36): motion that answers an event; reduced motion gets a static outline for ~1 s. */
+.flash-copy { animation: flash-copy 500ms ease-out; }
+.flash-paste { animation: flash-paste 600ms ease-out; }
+.flash-paste-ring { animation: flash-paste-ring 600ms ease-out; } /* rows and steps: a ring only, a tint would read as a selection */
+.flash-copy-svg { animation: flash-copy-svg 500ms ease-out; }
+.flash-paste-svg { animation: flash-paste-svg 600ms ease-out; }
+@keyframes flash-copy { 0% { box-shadow: inset 0 0 0 3px var(--accent); } 100% { box-shadow: inset 0 0 0 0 var(--accent); } }
+@keyframes flash-paste { 0% { background-color: color-mix(in srgb, var(--accent) 45%, transparent); box-shadow: inset 0 0 0 2px var(--accent); } 100% { background-color: transparent; box-shadow: inset 0 0 0 0 var(--accent); } }
+@keyframes flash-paste-ring { 0% { box-shadow: inset 0 0 0 3px var(--accent); } 100% { box-shadow: inset 0 0 0 0 var(--accent); } }
+@keyframes flash-copy-svg { 0% { filter: drop-shadow(0 0 5px var(--accent)) drop-shadow(0 0 2px var(--accent)); } 100% { filter: drop-shadow(0 0 0 transparent); } }
+@keyframes flash-paste-svg { 0% { filter: drop-shadow(0 0 8px var(--accent)) drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 3px var(--accent)); } 100% { filter: drop-shadow(0 0 0 transparent); } }
+@keyframes flash-still { 0%, 99% { outline: 2px solid var(--accent); outline-offset: -2px; } 100% { outline: 0 solid transparent; } }
+@keyframes flash-still-svg { 0%, 99% { filter: drop-shadow(0 0 1.5px var(--accent)) drop-shadow(0 0 1.5px var(--accent)); } 100% { filter: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .flash-copy, .flash-paste, .flash-paste-ring { animation: flash-still 1s step-end; }
+  .flash-copy-svg, .flash-paste-svg { animation: flash-still-svg 1s step-end; }
+}

@@ -1,0 +1,10 @@
+{
+  "file": "fad9-g876.syx",
+  "sha256": "8b74ba2c4d782d6b8fca0b8a01bedcd3bb9b116525c32287fc77185170397052",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "last-types",
+  "change": "fader 9 table: group 8 upper U127 -> U126, group 7 mode JMP -> SnAP, group 6 type CCAb -> PrGC (session 1, batch 9, dump 9.6; chained on SE16)",
+  "date": "2026-11-13"
+}

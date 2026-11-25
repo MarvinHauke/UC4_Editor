@@ -1,0 +1,10 @@
+{
+  "file": "last-lower-ch-num.syx",
+  "sha256": "5940bd39f54b80f638bc0cca12d5b5492d5e1deb6e830ed9c9da414d3580365d",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "last-ch-num-lower",
+  "change": "Pbt8 lower L000 -> L001, btn8 channel Ch16 -> Ch01, FAd8 number n111 -> n110 (session 1, batch 9, dump 9.2; chained on SE16)",
+  "date": "2026-11-13"
+}

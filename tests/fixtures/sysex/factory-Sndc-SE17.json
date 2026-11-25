@@ -1,0 +1,11 @@
+{
+  "file": "factory-Sndc-SE17.syx",
+  "sha256": "e9308b47f9235f6c900df20ab1f63305a1d8c8e7a854145456d60a53124a10f4",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE17",
+  "fromFixture": "factory-SndA",
+  "change": "Sndc of SE17 as the UC4 sends it from factory settings. Equals slot 17 cut from factory-SndA byte for byte. Holds no user data.",
+  "date": "2026-11-13",
+  "source": "dumps/2026-11-13-Sndc-SE17.syx"
+}

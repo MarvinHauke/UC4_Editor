@@ -1,0 +1,10 @@
+{
+  "file": "fad1-Pbnd.syx",
+  "sha256": "f13546439ed5d481d13efd227202a29169454093034909f22069896481b4bb7e",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "fad1-PrGC",
+  "change": "FAd1 type PrGC -> Pbnd (session 1, batch 6; chained on SE16)",
+  "date": "2026-11-13"
+}

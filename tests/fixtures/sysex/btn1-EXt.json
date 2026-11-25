@@ -1,0 +1,10 @@
+{
+  "file": "btn1-EXt.syx",
+  "sha256": "ae3c265769ff444af2c7306ad19c2f64d39e6977ba8772a860ce19bc9e1df718",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "btn1-dispOFF",
+  "change": "btn1 display OFF -> EXt (session 1, batch 6; chained on SE16)",
+  "date": "2026-11-13"
+}

@@ -1,0 +1,10 @@
+{
+  "file": "enc1-L001.syx",
+  "sha256": "b0568c502a3173bb139e70bfeeed0e06d8f89ef72fcbe8de3db478b0e85b1b8e",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-n127",
+  "change": "Enc1 lower L000 -> L001 (session 1, batch 1; chained on SE16)",
+  "date": "2026-11-13"
+}

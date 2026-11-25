@@ -1,0 +1,10 @@
+{
+  "file": "btn1-dispOFF.syx",
+  "sha256": "cf7aeb0207fa106c23a588c4827dfdd1eb57adba02dbde6c93142c841aa76e9e",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "btn1-toGL",
+  "change": "btn1 display Std -> OFF (session 1, batch 6; chained on SE16)",
+  "date": "2026-11-13"
+}

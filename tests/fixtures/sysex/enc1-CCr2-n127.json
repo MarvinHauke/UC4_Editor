@@ -1,0 +1,10 @@
+{
+  "file": "enc1-CCr2-n127.syx",
+  "sha256": "397802933441df9d1b1e6d85bff690eef887d66ec46c9be8889f62d43cf36836",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-CCAb-n127",
+  "change": "Enc1 type CCAb -> CCr2, one step down; the number stays n127 (session 1, batch 3b; chained on SE16)",
+  "date": "2026-11-13"
+}

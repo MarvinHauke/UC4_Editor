@@ -1,0 +1,10 @@
+{
+  "file": "last-ch-num-lower.syx",
+  "sha256": "61e9a8c61eeceef01ba9eeb4d142eb6276fb74aef069d82c8017f5f26ea2077d",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "g2name-y",
+  "change": "Pbt8 channel Ch16 -> Ch01, btn8 number n127 -> n126, FAd8 lower L000 -> L001; plus an accidental FAd8 upper U126 -> U127 at 0x6BBF (user bumped an encoder, already confirmed field) (session 1, batch 9, dump 9.1; chained on SE16)",
+  "date": "2026-11-13"
+}

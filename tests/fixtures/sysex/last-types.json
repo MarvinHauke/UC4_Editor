@@ -1,0 +1,10 @@
+{
+  "file": "last-types.syx",
+  "sha256": "cf31a59224f1c0910f6040b0cde4dd3063452640938a690812f8b74dd04a0594",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "last-mode-disp",
+  "change": "Pbt8 type notE -> CC, btn8 type notE -> CC, FAd8 type CCAb -> PrGC (session 1, batch 9, dump 9.5; chained on SE16)",
+  "date": "2026-11-13"
+}

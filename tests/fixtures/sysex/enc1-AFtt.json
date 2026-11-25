@@ -1,0 +1,10 @@
+{
+  "file": "enc1-AFtt.syx",
+  "sha256": "d721002044c6d00b1413376a897bf85ad06ed58c62a5244dba09c8295970bb7e",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-Pbnd",
+  "change": "Enc1 type Pbnd -> AFtt (session 1, batch 2; chained on SE16)",
+  "date": "2026-11-13"
+}

@@ -1,0 +1,10 @@
+{
+  "file": "enc1-CCAh-clamp.syx",
+  "sha256": "ee8b296ac2b9174d33c19d6c8adb39aab2cf9baf58a71adf8fb6c65c6386b646",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-CCr1-n127",
+  "change": "Enc1 group 1 type CCr1 -> CCAh with number n127: the number also went 7F -> 1F (clamp on CCAh) (session 1, batch 4; chained on SE16)",
+  "date": "2026-11-13"
+}

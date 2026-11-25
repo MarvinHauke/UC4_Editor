@@ -1,0 +1,10 @@
+{
+  "file": "pbf1-upper.syx",
+  "sha256": "82b83080be5d44124a719d7bc2e80062a622e63df842d84566915ce65fe6f877",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "pbf1-lower",
+  "change": "upper U127 -> U126 on Pbt1, btn1 and FAd1 (session 1, batch 4; chained on SE16)",
+  "date": "2026-11-13"
+}

@@ -1,0 +1,10 @@
+{
+  "file": "pbf1-lower.syx",
+  "sha256": "7f40696101ea2980c1a111369d19e5dd83a8963bf5f554301fe03719994e2570",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "pbf1-number",
+  "change": "lower L000 -> L001 on Pbt1, btn1 and FAd1 (session 1, batch 4; chained on SE16)",
+  "date": "2026-11-13"
+}

@@ -1,0 +1,10 @@
+{
+  "file": "enc1-CCr2.syx",
+  "sha256": "4acec623e68486a594fab93892ac448896e18499b9b6bd3187cdcbf2d5ca6d5e",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "enc1-CCr1",
+  "change": "Enc1 type CCr1 -> CCr2 (session 1, batch 2; chained on SE16)",
+  "date": "2026-11-13"
+}

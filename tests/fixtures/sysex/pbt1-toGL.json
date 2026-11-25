@@ -1,0 +1,10 @@
+{
+  "file": "pbt1-toGL.syx",
+  "sha256": "9b2e3690697f7a366d941905312f2c0231079ecb669abba6d237c6ec6e068228",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "btn1-EXt",
+  "change": "Pbt1 mode btn -> toGL (session 1, batch 6; chained on SE16)",
+  "date": "2026-11-13"
+}

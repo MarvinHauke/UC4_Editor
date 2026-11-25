@@ -1,0 +1,10 @@
+{
+  "file": "g1name-9.syx",
+  "sha256": "484d00b017c4330ef77245306db942eeafda4f4d682940e983805c644a14512e",
+  "bytes": 5072,
+  "firmware": "02.05",
+  "slot": "SE16",
+  "fromFixture": "g1name-0",
+  "change": "group 1 name character 1 0 -> 9 (session 1, batch 8, dump 8.2; chained on SE16)",
+  "date": "2026-11-13"
+}
