@@ -27,7 +27,7 @@ nav = [
 # Dark first, with a toggle.
 [project.theme]
 features = [
-  "navigation.sections",
+  "navigation.expand",
   "navigation.top",
   "search.suggest",
   "search.highlight",
