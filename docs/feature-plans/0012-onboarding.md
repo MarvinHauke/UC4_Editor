@@ -55,7 +55,7 @@ their own in (0010 audit B1).
 3. **Tour** — uc4-ui · blocked by: 1 · dim, light, card, keys, first-run start, Settings' Tour button, "seen" stored.
 4. **Last step into the dump overlay** — uc4-ui · blocked by: 3.
 
-5. **Welcome card** (decision 8) — uc4-ui · blocked by: 3 · plus the toolbar step's number badge, which sits on the
+5. **Welcome card** (decision 8) — done 2026-11-25 (`d6b7a9f`, reviewed) — uc4-ui · blocked by: 3 · plus the toolbar step's number badge, which sits on the
    Connections strip instead of on the toolbar.
 
 ## Out of scope

@@ -129,5 +129,5 @@ The gear (or `Cmd`+`,`) opens Settings: the theme (light, dark or your computer'
 the full table is on [Keys](keys.md).
 
 Settings also has a **Tour** button. It starts a short walk through the six areas of the editor and ends with how to get your
-setups from the UC4. It also starts by itself the first time you open the editor, as long as you have not received or
-imported any setups yet. `←` and `→` step through it; `Esc` ends it.
+setups from the UC4. The first time you open the editor, a welcome card offers the tour, a way to get your setups from
+the UC4, or "Not now". `←` and `→` step through it; `Esc` ends it.

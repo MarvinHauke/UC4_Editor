@@ -50,6 +50,7 @@ _Last updated: 2026-11-25 (0011 public release in work; Faderfox's documentation
 
 ## In work
 
+- **Local branches, not pushed** (user tries first, 0010 decision 7): `fix/guide-and-dump-overlay` → `feat/onboarding` (0012, welcome card `d6b7a9f`) → `feat/compact-dumps` (0010 step 6 in work). Open, light theme: `--border` `#b9b9b3` on white is 1.97:1, below 3:1 for field edges; app-wide, left for a token pass.
 - **0011 public release** (2026-11-25): steps 2–4 and 6 done; PR #2 with the user; privacy check done except the commit email (Q47). **For uc4-model**, from Faderfox's documentation (uc4-sysex.md §11): the push button's +4 low nibble is a mode/scale byte (not "none"); the number is unused for `PrGC`, `AFtt` and `Pbnd`, so validation must not reject any value there. **uc4-protocol** (later): `tests/protocol/markOLikely.ts` mutates the shared profile; convert to a test engine from `createEngine` with a modified profile, as `guard.test.ts` does.
 - **0009 user guide** built (steps 1–6, last `ab52ad4`): seven pages, three annotated shots (`npm run docs:shots`), dark theme, click-to-zoom; preview `npm run docs` (:8000). Open: the user's read-through, hosting (before the mail to Mathias), lines over 100 columns. **uc4-ui:** in the Send guide, callout 2 covers fader labels 1–3 and callout 1 the numbers of faders 7–8 (`device-send.png`). **uc4-protocol:** `uc4-sysex.md` stale in §1:57, §9 rows 256/257/260, §9b:285.
 - 0002 step 1 done (`8309e28`): document shape, factory SE01–SE16, `save`/`load`, migration
