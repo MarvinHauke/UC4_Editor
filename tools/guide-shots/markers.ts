@@ -9,17 +9,19 @@ export interface Marker {
   n: number;
   /** One box around all matched elements together (for example a label and its select), not one box each. */
   union?: boolean;
-  /** Where the number sits: left of the outline (default), straddling its top edge at the right end when there is no room on the left, inside the outline in its bottom-left or bottom-right corner, or in its middle (wide bars and large areas whose neighbours touch them). */
-  dot?: 'left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'middle';
+  /** Where the number sits: left of the outline (default), straddling its top edge at the right end when there is no room on the left, inside the outline in its bottom-left or bottom-right corner, in its top-left corner or the middle of its top edge, the middle of its bottom edge, in its middle or right of the middle (wide bars and large areas whose neighbours touch them). */
+  dot?: 'left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'middle' | 'top-left' | 'top-center' | 'bottom-center' | 'middle-right';
 }
 
 export interface MarkerOptions {
+  /** Draw each outline this many px inside its element instead of around it, so neighbours that touch never share an edge. */
+  inset?: number;
   /** Dim everything except the marked elements (default true); false for a shot that needs the whole page readable. */
   dim?: boolean;
 }
 
 export async function addMarkers(page: Page, markers: Marker[], options: MarkerOptions = {}): Promise<void> {
-  await page.evaluate(({ list, dim }) => {
+  await page.evaluate(({ list, dim, inset }) => {
     const layer = document.createElement('div');
     layer.setAttribute('data-guide-markers', '');
     layer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483647';
@@ -46,7 +48,7 @@ export async function addMarkers(page: Page, markers: Marker[], options: MarkerO
       boxes.forEach(({ el, left, top, right, bottom }) => {
         const w = right - left, h = bottom - top;
         const round = el instanceof SVGElement && Math.abs(w - h) < 0.05 * w;
-        const PAD = 6; // 7 or more would run into the push button label under an encoder
+        const PAD = inset > 0 ? -inset : 6; // outside: 7 or more would run into the push button label under an encoder
         const outline = document.createElement('div');
         outline.style.cssText =
           `position:absolute;left:${left - PAD}px;top:${top - PAD}px;width:${w + 2 * PAD}px;height:${h + 2 * PAD}px;` +
@@ -57,10 +59,11 @@ export async function addMarkers(page: Page, markers: Marker[], options: MarkerO
         // Left of the outline, centred; above it when there is no room on the left.
         const fitsLeft = left - PAD - GAP - DOT >= 0;
         const corner = m.dot === 'top-right';
-        const inside = m.dot === 'bottom-left' || m.dot === 'bottom-right';
-        const mid = m.dot === 'middle';
-        const dx = mid ? left + w / 2 - DOT / 2 : inside ? (m.dot === 'bottom-left' ? left : right - DOT) : corner ? right + PAD - DOT - 4 : fitsLeft ? left - PAD - GAP - DOT : left - PAD;
-        const dy = mid ? top + h / 2 - DOT / 2 : inside ? bottom - DOT - 14 : corner ? top - PAD - DOT / 2 : fitsLeft ? top + h / 2 - DOT / 2 : top - PAD - GAP - DOT;
+        const inside = m.dot === 'bottom-left' || m.dot === 'bottom-right' || m.dot === 'bottom-center';
+        const atTop = m.dot === 'top-left' || m.dot === 'top-center';
+        const mid = m.dot === 'middle' || m.dot === 'middle-right';
+        const dx = m.dot === 'middle-right' ? left + w * 0.75 - DOT / 2 : m.dot === 'top-center' || m.dot === 'bottom-center' ? left + w / 2 - DOT / 2 : m.dot === 'top-left' ? left + 10 : mid ? left + w / 2 - DOT / 2 : inside ? (m.dot === 'bottom-left' ? left + 10 : right - DOT - 10) : corner ? right + PAD - DOT - 4 : fitsLeft ? left - PAD - GAP - DOT : left - PAD;
+        const dy = atTop ? top + 10 : mid ? top + h / 2 - DOT / 2 : inside ? bottom - DOT - 14 : corner ? top - PAD - DOT / 2 : fitsLeft ? top + h / 2 - DOT / 2 : top - PAD - GAP - DOT;
         const dot = document.createElement('div');
         dot.setAttribute('data-guide-box', '');
         dot.textContent = String(m.n);
@@ -94,5 +97,5 @@ export async function addMarkers(page: Page, markers: Marker[], options: MarkerO
       layer.prepend(svg);
     }
     document.body.append(layer);
-  }, { list: markers, dim: options.dim ?? true });
+  }, { list: markers, dim: options.dim ?? true, inset: options.inset ?? 0 });
 }

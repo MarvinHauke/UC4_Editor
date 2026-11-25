@@ -54,6 +54,13 @@ and `Ctrl` on Windows and Linux.
 | --- | --- |
 | `Esc` | Close the Send or Restore window; nothing is sent until you press Send or Restore |
 
+## Tour
+
+| Keys | Action |
+| --- | --- |
+| `←` `→` | Previous or next step |
+| `Esc` | End the tour |
+
 ## Anywhere
 
 | Keys | Action |
