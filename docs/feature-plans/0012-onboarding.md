@@ -47,6 +47,11 @@ their own in (0010 audit B1).
    **Take the tour** (primary), **Get my setups from the UC4** (the dump overlay, `SndA`), **Not now**. Under them:
    "The tour is in Settings → Tour any time; the guide is behind the book icon." The tour no longer starts by itself;
    the card decides. Esc = Not now. "Seen" as in decision 7, written when the card shows.
+9. **One overlay card, two kinds of light** (architect, 2026-11-25, from the review): the tour and the welcome card
+   share one `OverlayCard` (dim, lit area with its number, card, focus trap, focus back to the opener) and the one
+   `.ui-card` look that the guide cards also use. The guide store stays for the device view's SVG callouts (`rEc`,
+   dump guide); the tour lights page areas by selector. Narrows the Design's "not a new overlay system": one look and
+   one card component, two ways to light.
 
 ## Steps
 
