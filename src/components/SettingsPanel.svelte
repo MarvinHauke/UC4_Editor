@@ -2,10 +2,10 @@
   // The editor's own settings: one foldable floating panel (plan 0006 decision 14). Opened by the gear,
   // Cmd-, or the drawn Setup button; it remembers whether it is open.
   import { tick, untrack } from 'svelte';
-  import { GUIDE_URL, NOTICE } from '../app/links';
+  import { NOTICE } from '../app/links';
   import { SLIDE, slideDuration, type Keys, type Settings, type Theme } from '../app/settings.svelte.ts';
 
-  let { settings, opener, onallkeys }: { settings: Settings; opener: () => HTMLElement | null; onallkeys: () => void } = $props();
+  let { settings, opener, onallkeys, ontour }: { settings: Settings; opener: () => HTMLElement | null; onallkeys: () => void; ontour: () => void } = $props();
   // Shown value: the user's speed, else what applies now (the default, or 0 when the system asks for less motion).
   const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const slideMs = $derived(slideDuration(settings.slideMs, reducedMotion));
@@ -77,7 +77,7 @@
       <input id="slide-speed" type="range" min={SLIDE.min} max={SLIDE.max} step={SLIDE.step} value={slideMs}
         oninput={(e) => { settings.setSlideMs(Number(e.currentTarget.value)); }} />
     </div>
-    <a class="guide" href={GUIDE_URL} target="_blank" rel="noopener" data-help="User guide: opens in a new tab">User guide ↗</a>
+    <button type="button" class="tour" data-help="Tour: a short walk through the six areas of the editor, then how to get your setups from the UC4" onclick={ontour}>Tour</button>
     <p class="about" data-help="About: this editor is not from Faderfox">{NOTICE}</p>
   </div>
 {/if}
@@ -100,9 +100,9 @@
   .all-keys { align-self: flex-start; min-height: var(--target); margin-top: var(--space-1); padding: 3px var(--space-3); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .all-keys:hover { background: var(--accent-soft); }
   .all-keys:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
-  .guide { display: inline-flex; align-items: center; min-height: var(--target); margin-top: var(--space-2); padding: 3px var(--space-3); color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); text-decoration: none; }
-  .guide:hover { background: var(--accent-soft); }
-  .guide:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+  .tour { display: inline-flex; align-items: center; min-height: var(--target); margin-top: var(--space-2); padding: 3px var(--space-3); color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .tour:hover { background: var(--accent-soft); }
+  .tour:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .about { margin: var(--space-3) 0 0; padding-top: var(--space-2); border-top: 1px solid var(--border); font-size: var(--text-sm); color: var(--text-muted); }
   .slide { display: flex; flex-direction: column; gap: var(--space-1); }
   .slide label { justify-content: space-between; min-height: 0; }

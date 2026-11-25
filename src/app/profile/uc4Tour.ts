@@ -15,7 +15,7 @@ export interface TourStep {
 /** The six areas, in the order of the guide page (the numbers 1–6 of its overview picture). */
 export const TOUR_AREAS: readonly TourStep[] = [
   {
-    id: 'toolbar', title: 'Toolbar', selector: '.toolbar',
+    id: 'toolbar', title: 'Toolbar', selector: 'header.top',
     sentences: [
       'Import opens a configuration (.json) or a dump (.syx) from your computer, and Export saves the library.',
       'Undo and redo step back and forward through your changes.',

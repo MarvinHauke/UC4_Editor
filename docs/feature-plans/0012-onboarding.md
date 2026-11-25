@@ -23,7 +23,7 @@ their own in (0010 audit B1).
 - **Guide page "The editor":** an overview picture with six numbered markers, then one short section per area,
   then the details that are there now.
 - **Tour in the editor:** the same look as the `rEc` guide and the dump overlay. The editor dims, one area at a
-  time is lit with its number, and a card beside it holds the title, the sentences, "3 of 6", Back / Next / Skip.
+  time is lit with its number, and a card beside it holds the title, the sentences, "n of 7" (six areas and the closing step), Back / Next / Skip.
   Esc ends it, ← → page through. It is built on the existing guide data, not a new overlay system.
 - **Last step:** "Get your own setups from the UC4", with a button that opens the dump overlay (`SndA`). Until
   then the setups on screen are factory setups; the step says so.
@@ -36,7 +36,7 @@ their own in (0010 audit B1).
    (user, 2026-11-25, Q53)
 4. It starts by itself on first open (nothing received or imported yet, not dismissed). Settings has a **Tour**
    button that starts it again; it replaces Settings' "User guide" link. The guide stays reachable from the book
-   icon in the toolbar and from the key help. "Seen" is kept in this browser only. (user, 2026-11-25, Q54)
+   icon in the toolbar and from the key help. "Seen" is kept in this browser only and is written when the tour starts, so a reload mid-tour does not repeat it. (user, 2026-11-25, Q54)
 5. The last step opens the dump overlay; this answers audit B1, and the start card is dropped.
    (user, 2026-11-25, Q55)
 6. Its own plan, built locally on its own branch, pushed after the user has tried it. (user, 2026-11-25, Q56)
