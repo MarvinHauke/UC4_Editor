@@ -16,6 +16,7 @@
   import { FRAMES, GROUP_LED, groupPitch, CROSSFADER, GROUP_LED_X, VIEWS } from '../app/profile/uc4Geometry.ts';
   import { controlPath, problemsOf } from '../app/controlProblems.ts';
   import { warningsOf } from '../app/warningMarks.ts';
+  import { glyphNumber } from '../app/glyphText.ts';
   import { useLive } from '../app/liveStore.svelte.ts';
   import { useMap } from '../app/mapFlow.svelte.ts';
   import { controlId } from '../live/index.ts';
@@ -46,7 +47,7 @@
     return { state, setup, setupIndex, eg: state.selection.encoderGroup, fg: state.selection.faderButtonGroup };
   });
   const group = $derived(part === 'upper' ? view.eg : view.fg);
-  type Shown = { type: string; number: number; label?: string };
+  type Shown = { type: string; number: number; lower?: number; upper?: number; label?: string };
   const shown = $derived<[ControlArea, Shown[]][]>(
     part === 'upper'
       ? [['encoders', view.setup.encoderGroups[view.eg]!.encoders], ['pushButtons', view.setup.encoderGroups[view.eg]!.pushButtons]]
@@ -119,7 +120,7 @@
     onpaste={() => { copy.pasteControlOnto(area, index); }}
     lit={guide.data?.lit.some((l) => l.area === area && l.index === index) ?? false}
     type={control.type}
-    number={control.number}
+    number={glyphNumber(area, control)}
     selected={selected?.area === area && selected.index === index}
     problemCount={count(area, index)}
     warningCount={warned(area, index)}

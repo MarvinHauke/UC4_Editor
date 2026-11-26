@@ -14,7 +14,8 @@
     area: ControlArea;
     index: number;
     type: string;
-    number: number;
+    /** What the control sends beside its type, as text (`glyphNumber`): empty for pitch bend and aftertouch. */
+    number: string;
     selected: boolean;
     /** A guide points at this control: the accent on its own outline. */
     lit?: boolean;
@@ -56,7 +57,7 @@
   // Schema (decision 39): what it is · the one way · UC4. On encoders and green buttons the one way is Shift + click.
   const liveText = $derived(stateText(live));
   const help = $derived(mapState ? (mapState.ok ? `${name}: click to map the row's message here` : (mapState.reason ?? `${name} can't take this message`)) :
-    `${name}: ${type} ${number}${liveText ? ` · live ${liveText}` : ''}${problemCount > 0 ? ` · ${problemCount} problem${problemCount === 1 ? '' : 's'}` : ''}${warningCount > 0 ? ` · ${warningCount} warning${warningCount === 1 ? '' : 's'}` : ''} · ${shiftTarget ? `Shift + click: ${shiftTarget}` : 'click to edit'}${shiftTarget ? ' · UC4: Shift + press' : ''}`,
+    `${name}: ${`${type} ${number}`.trim()}${liveText ? ` · live ${liveText}` : ''}${problemCount > 0 ? ` · ${problemCount} problem${problemCount === 1 ? '' : 's'}` : ''}${warningCount > 0 ? ` · ${warningCount} warning${warningCount === 1 ? '' : 's'}` : ''} · ${shiftTarget ? `Shift + click: ${shiftTarget}` : 'click to edit'}${shiftTarget ? ' · UC4: Shift + press' : ''}`,
   );
   function key(e: KeyboardEvent): void {
     const move = matchKey(e, ['controlMove']);
@@ -99,7 +100,7 @@
   role="button"
   tabindex={tabStop ? 0 : -1}
   aria-pressed={selected}
-  aria-label="{name}, {type} {number}{liveText ? `, live ${liveText}` : ''}{problemCount > 0 ? `, ${problemCount} problems` : ''}{warningCount > 0 ? `, ${warningCount} warnings` : ''}"
+  aria-label="{name}, {`${type} ${number}`.trim()}{liveText ? `, live ${liveText}` : ''}{problemCount > 0 ? `, ${problemCount} problems` : ''}{warningCount > 0 ? `, ${warningCount} warnings` : ''}"
   data-help={help}
   onclick={(e) => { onselect(e.shiftKey); }}
   onkeydown={key}
@@ -127,7 +128,7 @@
     <text class="type" x={cx} y={cy + 3}>{type}</text>
     <text class="num" x={cx} y={cy + 18}>{number}</text>
   {:else if shape.shape === 'pill'}
-    <text class="type" x={cx} y={cy + 4}>{type} {number}</text>
+    <text class="type" x={cx} y={cy + 4}>{`${type} ${number}`.trim()}</text>
   {:else}
     <text class="type" x={cx} y={cy + 16}>{type}</text>
     <text class="num" x={cx} y={cy + 30}>{number}</text>
