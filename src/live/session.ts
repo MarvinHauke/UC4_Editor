@@ -2,8 +2,8 @@
 // Pure: no Web MIDI, DOM or Svelte. It holds the monitor rows (step 1) and, with a context, the matches, pins and
 // control states of the UC4's rows (step 2). Later steps grow the same session, not new modules:
 //   step 7/8 `mapPlan(rowKey, target)` → a planned edit or a refusal reason; Map by touch reads the next UC4 event.
-// Step 4 added the switch offer (`offer`, `acceptOffer`, `dismissOffer`, `silenceOffers`). Step 3 added pairs (a `CCAh` pair or a note's on and off as one row, `split`/`join`) and `valueText`; the rows never
-// leave memory (decision 11), only the splits are session state the UI saves (`getState`).
+// Step 4 added the switch offer (`offer`, `acceptOffer`, `dismissOffer`, `silenceOffers`). Step 3 added pairs (a `CCAh` pair or a note's on and off as one row, always joined: decision 28) and `valueText`; the rows never
+// leave memory (decision 11), only the silenced offers are session state the UI saves (`getState`).
 import { rowKey, type ChannelEvent, type MessageKind } from './messages.ts';
 import { planMap, refusalFor, type MapOptions, type MapPlan } from './mapping.ts';
 import {
@@ -33,19 +33,24 @@ export interface MonitorRow {
   lastMoved: boolean;
 }
 
-/** Where a row stands in a pair (decision 12): a `CCAh` control's CC n and n+32, or a note's on and off. */
+/** The single messages a pair row stands for, for the details text ("MSB 64 · LSB 0", "last on 127 · last off 0"); `null` is a half not seen yet. */
+export type PairParts =
+  | { msb: number | null; lsb: number | null }
+  | { lastOn: number | null; lastOff: number | null };
+
+/** Where a row stands in a pair (decisions 12 and 28): a `CCAh` control's CC n and n+32, or a note's on and off. A pair is always one row. */
 export interface PairInfo {
-  /** The pair's key for `split`/`join` and the saved state; the same for the joined row and for both halves when split. */
+  /** The pair's key; for a joined `CCAh` row it is the row's own key. */
   key: string;
   kind: 'ccah' | 'note';
-  /** `joined`: this row stands for both messages; `split`: one of the single messages; `waiting`: a `CCAh` half whose other half has not been seen yet. */
-  state: 'joined' | 'split' | 'waiting';
+  /** `joined`: this row stands for both messages (every note row; a `CCAh` row with both halves seen); `waiting`: a `CCAh` half whose other half has not been seen yet. */
+  state: 'joined' | 'waiting';
   /**
-   * Which single message a `split` row is, for drawing it as a sub-row: `msb`/`lsb` (a `CCAh` control's CC n and n+32) or `on`/`off`.
-   * The halves of a split pair are listed adjacent, in that order (MSB then LSB, on then off), at the place the pair had, and keep it
-   * across new values, Split and Join. Their `key`s are their own (`cc:…`, `note:…#on`) and differ from the joined row's `key`. `null` unless `state` is `split`.
+   * `CCAh`: `{ msb, lsb }`, the 7-bit values of CC n and n+32 (a half not seen yet is `null`; a joined row has both).
+   * Note: `{ lastOn, lastOff }`, the velocity of the last press and of the last release (`null` until seen; Clear forgets both).
+   * Narrow with `pair.kind` or `'msb' in parts`.
    */
-  role: 'msb' | 'lsb' | 'on' | 'off' | null;
+  parts: PairParts;
 }
 
 /** A row with what the open configuration says about it. Only the UC4's rows are matched; other devices' rows have no matches. */
@@ -68,8 +73,6 @@ export interface LiveRow extends MonitorRow {
 
 /** What the UI saves in the session storage and hands back after a reload (JSON-safe). */
 export interface LiveSessionState {
-  /** Keys of the pairs the user split. */
-  splits: string[];
   /** "Don't ask again" on the switch offer. */
   silenceOffers: boolean;
 }
@@ -159,22 +162,17 @@ export interface LiveSession {
   /** Set by the first UC4 message that matches a control while armed; later messages don't replace it until `armMap` again. */
   readonly touchTarget: TouchTarget | null;
 
-  /** Splits a pair into its single messages (`row.pair.key`); `join` puts it back. Unknown keys are ignored. Session state: see `getState`. */
-  split(pairKey: string): void;
-  join(pairKey: string): void;
   /** The saved state (a new object). Save it after every change (`subscribe`) in the session storage: it survives a reload and ends with the tab. */
   getState(): LiveSessionState;
   /** Takes back what `getState` gave; anything malformed is ignored, never thrown. Call it before the first message. */
   restoreState(state: unknown): void;
 
-  /** Called after every change (a message, Clear, a context, a pin, a split), not at subscription. Returns the unsubscribe function. */
+  /** Called after every change (a message, Clear, a context, a pin), not at subscription. Returns the unsubscribe function. */
   subscribe(listener: () => void): () => void;
 }
 
 /** A cap on distinct keys (poly aftertouch alone has 262 144); the oldest-created rows go first. Far above any real use. */
 export const MAX_ROWS = 2000;
-
-interface NotePart { value: number; at: number; count: number; seq: number }
 
 const inRange = (n: number | null, max: number) => n === null || (Number.isInteger(n) && n >= 0 && n <= max);
 
@@ -197,7 +195,6 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
 
   const notify = () => { view = null; for (const l of [...listeners]) l(); };
 
-  const splits = new Set<string>();
   const mapped = new Map<string, ControlRef>();
   const seen = new Map<string, { count: number; values: Set<number> }>();
   let armedKey: string | null = null;
@@ -207,9 +204,8 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
   const dismissed = new Set<string>();
   /** The last messages that matched only elsewhere (at most 3), oldest first. */
   let streak: { setupId: string; setupName: string; slot?: number; half: 'enc' | 'fad'; group: number }[] = [];
-  /** The last on and the last off of every note row, for the split view. */
-  const noteParts = new Map<string, { on: NotePart | null; off: NotePart | null; last: 'on' | 'off' }>();
-  let seq = 0;
+  /** The velocity of the last on and the last off of every note row, for `pair.parts`. */
+  const noteParts = new Map<string, { on: number | null; off: number | null }>();
 
   const partnerOf = (number: number, via: 'msb' | 'lsb') => (via === 'msb' ? number + 32 : number - 32);
   const ccahKey = (inputId: string, channel: number, msb: number) => `${inputId}|ccah:${channel}:${msb}`;
@@ -242,11 +238,10 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
     };
   }
 
-  /** A LiveRow per base row object: a row that did not change keeps its object, so a keyed list re-renders only what moved. Reset when matching inputs or splits change. */
+  /** A LiveRow per base row object: a row that did not change keeps its object, so a keyed list re-renders only what moved. Reset when matching inputs change. */
   let cache = new WeakMap<MonitorRow, LiveRow>();
   let joinedCache = new WeakMap<MonitorRow, WeakMap<MonitorRow, LiveRow>>();
-  let notesCache = new WeakMap<MonitorRow, LiveRow[]>();
-  const resetCache = () => { cache = new WeakMap(); joinedCache = new WeakMap(); notesCache = new WeakMap(); };
+  const resetCache = () => { cache = new WeakMap(); joinedCache = new WeakMap(); };
 
   function single(row: MonitorRow): LiveRow {
     const hit = cache.get(row);
@@ -254,50 +249,30 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
     const matches = rank(row);
     const best = matches[0];
     let pair: PairInfo | null = null;
-    if (row.kind === 'note') pair = { key: row.key, kind: 'note', state: 'joined', role: null };
+    if (row.kind === 'note') {
+      const p = noteParts.get(row.key);
+      pair = { key: row.key, kind: 'note', state: 'joined', parts: { lastOn: p?.on ?? null, lastOff: p?.off ?? null } };
+    }
     else if (best && (best.via === 'msb' || best.via === 'lsb') && row.number !== null) {
       const key = ccahKey(row.inputId, row.channel, best.via === 'msb' ? row.number : row.number - 32);
-      const split = splits.has(key);
-      pair = { key, kind: 'ccah', state: split ? 'split' : 'waiting', role: split ? best.via as 'msb' | 'lsb' : null };
+      const isMsb = best.via === 'msb';
+      pair = { key, kind: 'ccah', state: 'waiting', parts: { msb: isMsb ? row.value : null, lsb: isMsb ? null : row.value } };
     }
     const live = build(row, matches, pair);
     cache.set(row, live);
     return live;
   }
 
-  /** The note row as its on and off message, on first. */
-  function noteHalves(row: MonitorRow): LiveRow[] {
-    const hit = notesCache.get(row);
-    if (hit) return hit;
-    const made = noteHalvesUncached(row);
-    notesCache.set(row, made);
-    return made;
-  }
-  function noteHalvesUncached(row: MonitorRow): LiveRow[] {
-    const p = noteParts.get(row.key);
-    if (!p) return [single(row)];
-    const half = (kind: 'on' | 'off', part: NotePart): LiveRow => {
-      const key = `${row.key}#${kind}`;
-      const own: MonitorRow = { ...row, key, value: part.value, on: kind === 'on', at: part.at, count: part.count, lastMoved: row.lastMoved && p.last === kind };
-      return build(own, rank({ ...own }), { key: row.key, kind: 'note', state: 'split', role: kind });
-    };
-    const out: LiveRow[] = [];
-    if (p.on) out.push(half('on', p.on));
-    if (p.off) out.push(half('off', p.off));
-    return out;
-  }
-
-  /** Rows keep their place; a joined row, or the two halves of a split pair (MSB then LSB), take the place of the half that was listed first (the newer-created key). */
+  /** Rows keep their place; a joined `CCAh` row takes the place of the half that was listed first (the newer-created key). */
   function derive(): LiveRow[] {
     const out: LiveRow[] = [];
     const byKey = new Map(base.map((r) => [r.key, r]));
     const consumed = new Set<string>();
     for (const row of base) {
       if (consumed.has(row.key)) continue;
-      if (row.kind === 'note' && splits.has(row.key)) { out.push(...noteHalves(row)); continue; }
       const mine = single(row);
       const pair = mine.pair;
-      if (pair?.kind === 'ccah' && mine.best && pair.state !== 'joined' && row.number !== null) {
+      if (pair?.kind === 'ccah' && mine.best && pair.state === 'waiting' && row.number !== null) {
         const via = mine.best.via as 'msb' | 'lsb';
         const other = byKey.get(`${row.inputId}|cc:${row.channel}:${partnerOf(row.number, via)}`);
         const theirs = other && !consumed.has(other.key) ? single(other) : null;
@@ -305,8 +280,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
         if (other && theirs?.best?.control.id === mine.best.control.id && theirs.best.via === complement) {
           consumed.add(other.key);
           const [msb, lsb] = via === 'msb' ? [row, other] : [other, row];
-          if (splits.has(pair.key)) out.push(single(msb), single(lsb));
-          else out.push(joined(msb, lsb, pair.key));
+          out.push(joined(msb, lsb, pair.key));
           continue;
         }
       }
@@ -325,7 +299,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       ...msb, key, value: msb.value * 128 + lsb.value, on: null, at: Math.max(msb.at, lsb.at),
       count: Math.max(msb.count, lsb.count), lastMoved: msb.lastMoved || lsb.lastMoved,
     };
-    const live = build(row, applyPin(key, both), { key, kind: 'ccah', state: 'joined', role: null });
+    const live = build(row, applyPin(key, both), { key, kind: 'ccah', state: 'joined', parts: { msb: msb.value, lsb: lsb.value } });
     if (!inner) joinedCache.set(msb, (inner = new WeakMap()));
     inner.set(lsb, live);
     return live;
@@ -434,11 +408,9 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
         seen.set(key, history);
       }
       if (m.kind === 'note') {
-        const parts2 = noteParts.get(key) ?? { on: null, off: null, last: 'on' as 'on' | 'off' };
-        const which = on ? 'on' : 'off';
-        parts2[which] = { value: m.value, at, count: (parts2[which]?.count ?? 0) + 1, seq: ++seq };
-        parts2.last = which;
-        noteParts.set(key, parts2);
+        const parts = noteParts.get(key) ?? { on: null, off: null };
+        parts[on ? 'on' : 'off'] = m.value;
+        noteParts.set(key, parts);
       }
       if (isUc4 && context) {
         const best = rank(row)[0];
@@ -501,7 +473,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
     pin(key, controlId) {
       const row = rowsView().find((r) => r.key === key);
       if (!row) return;
-      // A joined or split row stands for source rows: the pin goes to all keys the matching reads (`touch` reads the base key).
+      // A joined row stands for source rows: the pin goes to all keys the matching reads (`touch` reads the base key).
       const keys = [key];
       if (row.pair?.kind === 'ccah') {
         const msb = Number(row.pair.key.slice(row.pair.key.lastIndexOf(':') + 1));
@@ -516,17 +488,6 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       }
       if (!row.isUc4 || !context || !row.matches.some((m) => m.control.id === controlId)) return;
       for (const k of keys) pins.set(k, controlId);
-      resetCache();
-      notify();
-    },
-    split(pairKey) {
-      if (splits.has(pairKey) || !rowsView().some((r) => r.pair?.key === pairKey)) return;
-      splits.add(pairKey);
-      resetCache();
-      notify();
-    },
-    join(pairKey) {
-      if (!splits.delete(pairKey)) return;
       resetCache();
       notify();
     },
@@ -604,13 +565,10 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       if (on) offer = null;
       notify();
     },
-    getState() { return { splits: [...splits], silenceOffers: silenced }; },
+    getState() { return { silenceOffers: silenced }; },
     restoreState(state) {
-      const list = (state as { splits?: unknown } | null)?.splits;
       silenced = (state as { silenceOffers?: unknown } | null)?.silenceOffers === true;
       if (silenced) offer = null;
-      splits.clear();
-      if (Array.isArray(list)) for (const k of list) if (typeof k === 'string') splits.add(k);
       resetCache();
       notify();
     },

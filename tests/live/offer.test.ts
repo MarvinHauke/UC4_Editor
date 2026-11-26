@@ -158,7 +158,7 @@ describe('"no" and "don\'t ask again"', () => {
     s.silenceOffers(true);
     for (const n of [24, 25, 26]) send(s, cc(n));
     expect(s.offer).toBeNull();
-    expect(s.getState()).toEqual({ splits: [], silenceOffers: true });
+    expect(s.getState()).toEqual({ silenceOffers: true });
     const again = createLiveSession();
     again.restoreState(JSON.parse(JSON.stringify(s.getState())));
     again.setContext(ctx());
@@ -196,6 +196,6 @@ describe('"no" and "don\'t ask again"', () => {
   it('restoreState keeps ignoring garbage and a missing silence flag means off', () => {
     const s = createLiveSession();
     s.restoreState({ splits: ['a'], silenceOffers: 'yes' });
-    expect(s.getState()).toEqual({ splits: ['a'], silenceOffers: false });
+    expect(s.getState()).toEqual({ silenceOffers: false });
   });
 });
