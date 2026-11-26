@@ -365,9 +365,9 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 3. **Pairs, values and monitor size** — uc4-protocol (done `ba09253`, reviewed; a note's press and release are one row for every input, a `CCAh` pair only when it matches), then uc4-ui · blocked by: 2 · `CCAh` pair and `notE` press and
    release as one row, split for the tab's life; values 0–16383, "on/off", "+1/−1"; resize with a scrollbar, one
    line. Stories 8–12.
-4. **Switch offer** — uc4-protocol, then uc4-ui · blocked by: 2 · 3 in a row → offer; switch as one undo step; "no"
+4. **Switch offer** — uc4-protocol (done `218308d`, reviewed; a message that matches several other groups is no evidence), then uc4-ui · blocked by: 2 · 3 in a row → offer; switch as one undo step; "no"
    holds; "don't ask again" until the tab closes. Stories 22–24.
-5. **Warnings in the validator** — uc4-model (done `8da5b93`, reviewed: `warnings(config)`, `MessageKind` in the model), then uc4-ui · blocked by: none · the collision check beside `validate`
+5. **Warnings in the validator** — done 2026-11-26: uc4-model (`8da5b93`), uc4-ui (`5977db3`, orange `--warn`, stepper in the status bar; browser-checked by the architect) · blocked by: none · the collision check beside `validate`
    (same group, or across the two halves; factory SE01–SE16 give 8 each, SE17/18 2 each), warnings in the problem list after the
    problems, a marker on the control. Stories 39–40.
 6. **Waivers, Send and export** — uc4-model, then uc4-ui · blocked by: 5 · Send dialog lists warnings, "Send
