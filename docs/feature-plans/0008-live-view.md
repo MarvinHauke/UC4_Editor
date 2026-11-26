@@ -348,6 +348,8 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
      affected. **Factory collisions start waived** (B), marked "factory layout", until one of the two controls
      changes: a fresh library shows no warning. Send lists unwaived warnings with "Send anyway" (waives them) and
      "Review…" (opens the dialog).
+   - **Follow is on by default** (user, 2026-11-26, after trying step 9); turning it off is remembered. Follow and
+     Clear have the same button size.
    - **Offer placement kept, one info in the status bar** (user, 2026-11-26, after round 5): the switch offer stays
      under the monitor heading; with Connections folded it takes the warnings' place in the status bar while it
      shows, and the warning count comes back after Switch or No, so the bar holds one info at a time.
