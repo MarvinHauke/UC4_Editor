@@ -96,6 +96,8 @@ export function createMidiInputs(options: {
   portName: string;
   env: MidiEnv;
   now?: () => number;
+  /** The label of the button that starts listening, named in the status line; e.g. `Connect Faderfox UC4`. */
+  connectLabel?: string;
 }): MidiInputs {
   const { env } = options;
   const now = options.now ?? Date.now;
@@ -106,7 +108,7 @@ export function createMidiInputs(options: {
   let inputs: InputInfo[] = [];
   let selection: InputSelection = 'all';
   let status: ListenStatus = env.supported
-    ? { kind: 'not-started', message: 'Press Connect to let the editor listen to your MIDI inputs.' }
+    ? { kind: 'not-started', message: `Press “${options.connectLabel ?? 'Connect'}” above to let the editor listen to your MIDI inputs; it only listens.` }
     : { kind: 'unsupported', message: UNSUPPORTED_MESSAGE };
   const ignored: IgnoredCounts = { clock: 0, activeSensing: 0, other: 0 };
   const attached = new Map<string, { input: MidiInputLike; handler: (e: { data: Uint8Array | null }) => void }>();

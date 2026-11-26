@@ -174,6 +174,12 @@ describe('SysEx', () => {
 });
 
 describe('access, permission and listening only', () => {
+  it('names the button that starts listening in its first status', () => {
+    const { env } = fakeEnv();
+    expect(createMidiInputs({ portName, env, connectLabel: 'Connect Faderfox UC4' }).status.message).toContain('“Connect Faderfox UC4”');
+    expect(createMidiInputs({ portName, env }).status.message).toContain('“Connect”');
+  });
+
   it('is unsupported with a message, and asks for nothing on creation', async () => {
     const { env, calls } = fakeEnv({ supported: false });
     const i = createMidiInputs({ portName, env });
