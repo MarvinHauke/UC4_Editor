@@ -296,6 +296,12 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    synth, drum machine or effect, which may have a CC table) or a *third-party controller*. "Device" alone stays
    the UC4.
 
+23. **Live values look like the hardware** (user, 2026-11-26, after trying step 2): a fader's **cap moves** to the
+   live position (fader 9 sideways), with its number in it, instead of a line drawn across a cap that stays in the
+   middle; an encoder's ring sweeps like a real knob from bottom left (0) clockwise to bottom right (127), so the
+   gap sits at the bottom, behind the push button's label. A relative encoder's tick moves on the same sweep.
+   Before a control first sends, the cap and ring stay as drawn today ("unknown").
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it
