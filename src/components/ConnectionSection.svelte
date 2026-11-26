@@ -10,7 +10,6 @@
 </script>
 
 <section aria-label="Connection">
-  <h3>Connection</h3>
   {#if conn.kind === 'connected'}
     <p class="status ok" data-help="Connected: the editor listens to this port · UC4: a dump you send arrives here">Connected to <strong>{conn.port.name}</strong>. The editor is listening; it sends only when you ask it to.</p>
   {:else if conn.kind === 'choose-port'}
@@ -32,7 +31,6 @@
 </section>
 
 <style>
-  h3 { margin: 0 0 var(--space-1); font-size: var(--text-md); }
   .status { margin: 0 0 var(--space-2); overflow-wrap: anywhere; }
   .status.error { color: var(--danger); }
   .ports { list-style: none; margin: 0 0 var(--space-2); padding: 0; display: flex; flex-direction: column; gap: var(--space-1); }

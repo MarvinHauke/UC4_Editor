@@ -322,7 +322,7 @@
     grid-template-areas: 'top top top top top' 'conn props centre split list' 'foot foot foot foot foot';
   }
   /* 1320 = WIDE_PX in connections.ts: the Connections column is a real column from there. */
-  @media (min-width: 1320px) { .app.conn-open { --left-col: 280px; } }
+  @media (min-width: 1320px) { .app.conn-open { --left-col: 320px; } }
   @media (min-width: 1100px) { .app { --device-min: 516px; } .centre { padding-inline: var(--space-2); } }
   .app > :global(footer) { grid-area: foot; }
   .app > :global(.handle) { grid-area: split; }

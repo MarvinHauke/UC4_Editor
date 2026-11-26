@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INPUT_KEY, loadSelection, pickerOptions, rowLabel, rowText, saveSelection, sourceName } from '../../src/app/monitorRows.ts';
+import { INPUT_KEY, loadSelection, pickerOptions, rowLabel, rowText, saveSelection, sourceName, statusLine, matchText } from '../../src/app/monitorRows.ts';
 import type { LiveRow } from '../../src/live/index.ts';
 
 const row = (p: Partial<LiveRow>): LiveRow => ({
@@ -50,5 +50,19 @@ describe('pickerOptions', () => {
   it('lists all, the inputs and keeps an unplugged choice', () => {
     expect(pickerOptions(inputs, 'all').map((o) => o.label)).toEqual(['All inputs', 'Faderfox UC4 (UC4)', 'Synth']);
     expect(pickerOptions(inputs, 'gone').at(-1)).toEqual({ value: 'gone', label: 'Chosen input (not connected)' });
+  });
+});
+
+describe('statusLine and matchText', () => {
+  it('folds the clock note into the status line', () => {
+    expect(statusLine('Listening to 6 inputs…', true, true)).toBe('Listening to 6 inputs · clock ignored');
+    expect(statusLine('Listening to 6 inputs…', true, false)).toBe('Listening to 6 inputs…');
+    expect(statusLine('No MIDI input found.', false, true)).toBe('No MIDI input found.');
+  });
+  it('shows the best match with its count, or the mapped control', () => {
+    const control = { name: 'FAd7 · FG1' } as never;
+    expect(matchText({ best: { control, tier: 1, via: 'message' }, more: 1, mappedTo: null })).toBe('FAd7 · FG1 +1');
+    expect(matchText({ best: { control, tier: 1, via: 'message' }, more: 0, mappedTo: { name: 'Enc1 · EG1' } as never })).toBe('→ Enc1 · EG1');
+    expect(matchText({ best: null, more: 0, mappedTo: null })).toBe('');
   });
 });

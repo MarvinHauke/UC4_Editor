@@ -10,6 +10,7 @@
   import type { DeviceProfile } from '../protocol/profile.ts';
   import { stripInfo } from '../app/connections.ts';
   import ConnectionSection from './ConnectionSection.svelte';
+  import FoldSection from './FoldSection.svelte';
   import DumpNotice from './DumpNotice.svelte';
   import DumpsList from './DumpsList.svelte';
   import type { Match } from '../live/index.ts';
@@ -51,11 +52,17 @@
   {#if open}
     <div class="panel" role="region" tabindex="-1" aria-label="Connections" bind:this={panel}>
       <h2><span class="dot {info.tone}" aria-hidden="true"></span>Connections</h2>
-      <ConnectionSection {device} {profile} onconnect={() => { void live.connect(); }} />
+      <FoldSection id="connection" title="Connection" summary={info.text} attention={['denied', 'unsupported', 'choose-port'].includes(device.state.kind)}>
+        <ConnectionSection {device} {profile} onconnect={() => { void live.connect(); }} />
+      </FoldSection>
       {#if queue.length > 0}
         <section aria-label="Received"><h3>Received</h3><DumpNotice {queue} {onreview} {onexport} {ondismiss} /></section>
       {/if}
-      {#if store}<DumpsList {store} {confirm} />{/if}
+      {#if store}
+        <FoldSection id="dumps" title="Kept dumps" summary={store.state.dumps.length === 0 ? 'none yet' : String(store.state.dumps.length)}>
+          <DumpsList {store} {confirm} />
+        </FoldSection>
+      {/if}
       <button type="button" class="how" data-help="How to send a dump · UC4: shows the steps on the device view; the editor only listens" onclick={() => { onsenddump(); }}>How to send a dump from the {profile.deviceName}</button>
       <MidiMonitor {live} {onselectmatch} />
     </div>
@@ -69,7 +76,7 @@
     display: flex; flex-direction: column; align-items: center; gap: var(--space-2); width: 100%; height: 100%; padding: var(--space-3) 0; font: inherit; font-size: var(--text-sm);
     color: var(--text); background: transparent; border: 0; border-radius: 0; cursor: pointer; position: relative; overflow: hidden;
   }
-  .conn.open .strip { width: var(--target); height: var(--target); flex-direction: row; justify-content: center; padding: 0; position: absolute; top: 6px; left: 246px; z-index: 1; overflow: visible; }
+  .conn.open .strip { width: var(--target); height: var(--target); flex-direction: row; justify-content: center; padding: 0; position: absolute; top: 6px; left: 286px; z-index: 1; overflow: visible; }
   .conn.open .word { display: none; }
   .strip:hover { background: var(--accent-soft); }
   .strip:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
@@ -82,8 +89,9 @@
   .badge { min-width: 18px; padding: 0 4px; text-align: center; font-size: var(--text-sm); color: var(--on-accent); background: var(--accent); border-radius: 9px; animation: pulse 700ms ease-out 1; }
   @keyframes pulse { 0% { transform: scale(1.7); } 100% { transform: scale(1); } }
   @media (prefers-reduced-motion: reduce) { .badge { animation: none; } }
-  .panel { display: flex; flex-direction: column; position: absolute; top: 0; left: 0; width: 280px; height: 100%; overflow-y: auto; box-sizing: border-box; padding: var(--space-3); background: var(--surface); border-right: 1px solid var(--border); scrollbar-width: thin; }
+  .panel { display: flex; flex-direction: column; position: absolute; top: 0; left: 0; width: 320px; height: 100%; overflow-y: auto; box-sizing: border-box; padding: var(--space-3); background: var(--surface); border-right: 1px solid var(--border); scrollbar-width: thin; }
   .panel > :global(*) { flex: none; }
+  .panel > :global(.monitor) { flex: 1 1 auto; }
   .panel:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   /* 1320 = WIDE_PX in connections.ts */
   @media (min-width: 1320px) { .panel { position: static; width: auto; } .conn.open .strip { left: auto; right: 6px; } }

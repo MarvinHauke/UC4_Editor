@@ -57,3 +57,14 @@ export function pickerOptions(inputs: readonly InputInfo[], selection: InputSele
   if (selection !== 'all' && !inputs.some((i) => i.id === selection)) options.push({ value: selection, label: 'Chosen input (not connected)' });
   return options;
 }
+
+/** The monitor's status line; the clock note joins it ("Listening to 6 inputs · clock ignored") instead of a line of its own. */
+export function statusLine(message: string, listening: boolean, clockIgnored: boolean): string {
+  return listening && clockIgnored ? `${message.replace(/…$/, '')} · clock ignored` : message;
+}
+
+/** The one-line match text: "FAd7 · FG1 +1", or "→ Enc1 · EG1" once the row is mapped. */
+export function matchText(row: Pick<LiveRow, 'best' | 'more' | 'mappedTo'>): string {
+  if (row.mappedTo) return `→ ${row.mappedTo.name}`;
+  return row.best ? `${row.best.control.name}${row.more > 0 ? ` +${row.more}` : ''}` : '';
+}
