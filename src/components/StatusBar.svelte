@@ -5,8 +5,8 @@
   import type { Warning } from '../model/index.ts';
   import { offerShort, type SwitchUi } from '../app/switchNote.svelte.ts';
 
-  interface Props { waiting?: number; onopenconnections?: () => void; help: string; state: LibraryState | null; problemAt: number; onstep: (delta: 1 | -1) => void; warnings?: readonly Warning[]; warningAt?: number; onstepwarning?: (delta: 1 | -1) => void; switchUi?: SwitchUi | null }
-  let { waiting = 0, onopenconnections, help, state: lib, problemAt: at, onstep, warnings = [], warningAt = -1, onstepwarning, switchUi = null }: Props = $props();
+  interface Props { waiting?: number; onopenconnections?: () => void; help: string; state: LibraryState | null; problemAt: number; onstep: (delta: 1 | -1) => void; warnings?: readonly Warning[]; onopenwarnings?: () => void; exportWarnings?: number; onopenexport?: () => void; switchUi?: SwitchUi | null }
+  let { waiting = 0, onopenconnections, help, state: lib, problemAt: at, onstep, warnings = [], onopenwarnings, exportWarnings = 0, onopenexport, switchUi = null }: Props = $props();
   const label = $derived(lib ? { saved: 'saved', saving: 'saving…', failed: 'not saved' }[lib.saveStatus] : '');
   const count = $derived(lib?.problems.length ?? 0);
   const wcount = $derived(warnings.length);
@@ -14,6 +14,10 @@
 
 <footer>
   <p class="help" aria-live="polite">{help}</p>
+  {#if exportWarnings > 0}
+    <button type="button" class="warnings exported" onclick={() => { onopenexport?.(); }}
+      data-help="The file was written as it is: these warnings are in it, nothing is blocked · click to review them"><span aria-hidden="true">▲</span>&nbsp;{exportWarnings} warning{exportWarnings === 1 ? '' : 's'}</button>
+  {/if}
   {#if waiting > 0}
     <button type="button" class="received" onclick={() => { onopenconnections?.(); }}
       data-help="Dump received: your work is unchanged · click to review or dismiss it in Connections">Dump received: open Connections</button>
@@ -39,12 +43,9 @@
           <button type="button" aria-label="Next problem" onclick={() => { onstep(1); }}>›</button>
         </span>
       {/if}
-      {#if wcount > 0 && !switchUi?.offer}
-        <span class="warnings" data-help="Warnings in this setup: two controls that can play together send the same message; nothing is blocked · ‹ › step through them">
-          <button type="button" aria-label="Previous warning" onclick={() => { onstepwarning?.(-1); }}>‹</button>
-          <span><span aria-hidden="true">▲</span>&nbsp;{warningAt >= 0 ? `${warningAt + 1} of ${wcount}` : wcount} warning{wcount === 1 ? '' : 's'}</span>
-          <button type="button" aria-label="Next warning" onclick={() => { onstepwarning?.(1); }}>›</button>
-        </span>
+      {#if wcount > 0 && !switchUi?.offer && exportWarnings === 0}
+        <button type="button" class="warnings" onclick={() => { onopenwarnings?.(); }}
+          data-help="Warnings in this setup: two controls that can play together send the same message; nothing is blocked · click to review, show or waive them"><span aria-hidden="true">▲</span>&nbsp;{wcount} warning{wcount === 1 ? '' : 's'}</button>
       {/if}
       <span data-help="Last exported: when you last exported all setups as a configuration">last exported: {formatExported(lib.exportState.lastWholeExportAt)}</span>
       <span class="saved" class:failed={lib.saveStatus === 'failed'} data-help="Library status: every change is saved in this browser">{label}</span>
@@ -61,9 +62,11 @@
   .help { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .status { flex: none; display: flex; gap: var(--space-4); align-items: center; color: var(--text-muted); font-size: var(--text-sm); }
   .problems { display: flex; align-items: center; gap: var(--space-1); color: var(--danger); }
-  .warnings { display: flex; align-items: center; gap: var(--space-1); color: var(--warn); }
-  .problems button, .warnings button { min-width: 24px; min-height: 24px; background: transparent; border: 1px solid var(--border); border-radius: var(--radius); color: inherit; cursor: pointer; font-size: 14px; line-height: 1; }
-  .problems button:focus-visible, .warnings button:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+  .warnings { flex: none; display: inline-flex; align-items: center; min-height: 24px; padding: 0 var(--space-2); font: inherit; font-size: var(--text-sm); color: var(--warn); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .warnings:hover { background: var(--accent-soft); }
+  .warnings:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+  .problems button { min-width: 24px; min-height: 24px; background: transparent; border: 1px solid var(--border); border-radius: var(--radius); color: inherit; cursor: pointer; font-size: 14px; line-height: 1; }
+  .problems button:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .switch { flex: none; display: flex; align-items: center; gap: var(--space-2); color: var(--text); font-size: var(--text-sm); }
   .switch button { min-width: 24px; min-height: 24px; padding: 0 var(--space-2); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .switch button:hover { background: var(--accent-soft); }

@@ -1,11 +1,11 @@
 // The library as Svelte state: components read `state` and call commands. No editing logic here.
 import type { Warning } from '../model/index.ts';
-import type { Library, LibraryState, AnyControl, SelectionChange, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
+import type { Library, LibraryState, ListedWarning, AnyControl, SelectionChange, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
 import type { FlowLibrary } from './importFlow.ts';
 import type { SyxLibrary } from './syxFlow.ts';
 import { problemText } from './controlProblems.ts';
 import { problemKey, relocate } from './problemCursor.ts';
-import { parseControlPath, relocateWarning, setupWarnings, warningKey } from './warningMarks.ts';
+import { showSelection } from './warningList.ts';
 
 export function createStore(library: Library, openMessage?: string) {
   let state = $state.raw<LibraryState>(library.getState());
@@ -18,25 +18,23 @@ export function createStore(library: Library, openMessage?: string) {
     const p = state.problems[at];
     problemId = p ? problemKey(p) : null;
   };
-  // Warnings of the open setup (plan 0008 step 5): not problems, so they have their own stepper and never block.
-  let warningAt = $state(-1);
-  let warningId: string | null = null;
-  let warningCache: { configuration: unknown; setupId: string; list: Warning[] } | null = null;
-  const warningsOpen = (s: LibraryState): Warning[] => {
-    if (warningCache?.configuration !== s.configuration || warningCache.setupId !== s.selection.setupId) {
-      warningCache = { configuration: s.configuration, setupId: s.selection.setupId, list: setupWarnings(s.configuration, s.selection.setupId) };
-    }
-    return warningCache.list;
+  // Warnings (plan 0008 step 6): the library lists every one with its state; the counts, marks and the property panel's line use the open ones of the open setup.
+  let openWarnings = $state.raw<Warning[]>([]);
+  let warningCache: { list: readonly ListedWarning[]; setupId: string } | null = null;
+  const openOf = (s: LibraryState): void => {
+    if (warningCache?.list === s.warnings && warningCache.setupId === s.selection.setupId) return;
+    warningCache = { list: s.warnings, setupId: s.selection.setupId };
+    openWarnings = s.warnings.filter((w) => w.setupId === s.selection.setupId && w.state === 'open');
   };
-  const rememberWarning = (at: number, list: Warning[]): void => { warningAt = at; const w = list[at]; warningId = w ? warningKey(w) : null; };
-  let openWarnings = $state.raw<Warning[]>(warningsOpen(state));
+  openOf(library.getState());
   library.subscribe((s) => {
     state = s;
     remember(relocate(s.problems, problemAt, problemId));
-    openWarnings = warningsOpen(s);
-    rememberWarning(relocateWarning(openWarnings, warningAt, warningId), openWarnings);
+    openOf(s);
   });
-  const done = <T>(r: T): T => { startMessage = undefined; return r; };
+  let exportNote = $state.raw<{ count: number; scope: string } | null>(null);
+  const openCountOf = (s: LibraryState, scope: string): number => s.warnings.filter((w) => w.state === 'open' && (scope === 'all' || w.setupId === scope)).length;
+  const done = <T>(r: T): T => { startMessage = undefined; exportNote = null; return r; };
   /** The commands the import and export flow needs. */
   const flow: FlowLibrary = {
     getState: () => state,
@@ -61,7 +59,9 @@ export function createStore(library: Library, openMessage?: string) {
     /** Ids of kept dumps the UC4 sent again this session (nothing new was kept). */
     get sentAgain() { return again; },
     /** A line for the help line that stays until the next command (what a file action did). */
-    say: (text: string) => { startMessage = text; },
+    say: (text: string, warnFor?: string) => { startMessage = text; exportNote = warnFor === undefined ? null : { count: openCountOf(state, warnFor), scope: warnFor }; },
+    /** The export line's "n warnings" link: the open warnings of what was exported, when there are any. Goes with the line. */
+    get exportNote() { return exportNote; },
     /** Which problem the stepper is on (0-based), or -1 before the first step. */
     get problemAt() { return problemAt; },
     /** Steps to the next or previous problem (wrapping), selects it and says what it is. */
@@ -72,28 +72,18 @@ export function createStore(library: Library, openMessage?: string) {
       done(library.selectProblem(problemAt));
       startMessage = `Problem ${problemAt + 1} of ${problems.length}: ${problemText(problems[problemAt]!)}`;
     },
-    /** The open setup's warnings, in the model's order (`visibleWarnings` is where waivers will filter, step 6). */
+    /** The open setup's OPEN warnings (not waived, not the factory layout): counts, control marks, the property panel's line. */
     get warnings() { return openWarnings; },
-    /** Which warning the stepper is on (0-based), or -1 before the first step. */
-    get warningAt() { return warningAt; },
-    /** Steps to the next or previous warning of the open setup (wrapping) and selects its first control, switching groups as needed. */
-    stepWarning(delta: 1 | -1): void {
-      const list = openWarnings;
-      if (list.length === 0) return;
-      const at = warningAt < 0 ? (delta === 1 ? 0 : list.length - 1) : (warningAt + delta + list.length) % list.length;
-      rememberWarning(at, list);
-      const w = list[at]!;
-      // Both controls come into view: each one's group is shown (the two sit in different halves, or in one group), the first is selected.
-      const places = w.controls.map(parseControlPath);
-      for (const ref of [...places].reverse()) {
-        if (!ref) continue;
-        const upper = ref.area === 'encoders' || ref.area === 'pushButtons';
-        library.select(upper ? { encoderGroup: ref.group } : { faderButtonGroup: ref.group });
-      }
-      const first = places[0];
-      if (first) library.select({ control: { area: first.area, index: first.index } });
-      startMessage = `Warning ${at + 1} of ${list.length}: ${w.message}`;
-    },
+    /** Every warning of every setup with its state, for the Warnings dialog and `isWarned` (waived and factory still count there). */
+    get allWarnings(): readonly ListedWarning[] { return state.warnings; },
+    /** How many warnings of `scope` ('all' or a setup id) are open, for the export line. */
+    openCount: (scope: string): number => openCountOf(state, scope),
+    /** Waive (one undo step; "Send anyway" and the dialog's Waive) and unwaive. */
+    waive: (list: readonly Warning[]) => done(library.waive(list)),
+    unwaive: (w: Warning) => done(library.unwaive(w)),
+    /** The dialog's Show: the warning's setup, groups and a control as ordinary selections (no undo step). */
+    showWarning: (w: Warning, path?: string) => done(library.select(showSelection(w, path))),
+    showProblem: (index: number) => done(library.selectProblem(index)),
     get state() { return state; },
     /** What `openLibrary` said on start; gone after the first command. */
     get startMessage() { return startMessage; },

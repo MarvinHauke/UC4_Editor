@@ -5,6 +5,8 @@
   import { controlAt, groupOf, selectedSetup } from '../app/selectors.ts';
   import { controlPath, problemsOf } from '../app/controlProblems.ts';
   import { warningsOf } from '../app/warningMarks.ts';
+  import { otherName } from '../app/warningList.ts';
+  import { useWarningsDialog } from '../app/warningsDialog.svelte.ts';
   import { NOTICE_SHORT } from '../app/links.ts';
   import PropertyField from './PropertyField.svelte';
   import type { Confirm } from '../app/confirm.svelte.ts';
@@ -16,6 +18,7 @@
 
   let { store, confirm }: { store: Store; confirm: Confirm } = $props();
   const copy = useCopyHold();
+  const warningsDialog = useWarningsDialog();
   const panel = $derived.by(() => {
     const state = store.state;
     const sel = state.selection.control;
@@ -25,15 +28,16 @@
     const control = controlAt(state.configuration, setup.id, sel.area, group, sel.index);
     if (!control) return null;
     const problems = problemsOf(state.problems, controlPath(setupIndex, sel.area, group, sel.index));
-    const warned = warningsOf(store.warnings, controlPath(setupIndex, sel.area, group, sel.index));
-    return { sel, group, control, setup, problems, warned };
+    const path = controlPath(setupIndex, sel.area, group, sel.index);
+    const warned = warningsOf(store.warnings, path);
+    return { sel, group, control, setup, problems, warned, path };
   });
 </script>
 
 <section class="panel" data-copy-level="control" aria-label="Properties">
   <GroupsSection {store} {confirm} />
   {#if panel}
-    {@const { sel, group, control, setup, problems, warned } = panel}
+    {@const { sel, group, control, setup, problems, warned, path } = panel}
     <header>
       <div class="head">
         <div class="titles">
@@ -50,9 +54,12 @@
       </div>
     </header>
     {#if warned.length > 0}
-        <ul class="warned" aria-label="Warnings" data-help="Warnings: this control sends the same message as another one that can play at the same time; allowed, but check it is intended">
-          {#each warned as w (w.message)}<li><span aria-hidden="true">▲</span> {w.message}</li>{/each}
-        </ul>
+      <ul class="warned" aria-label="Warnings">
+        {#each warned as w (w.message)}
+          <li><button type="button" onclick={() => { warningsDialog.show({ control: path }); }}
+            data-help="Warning: {w.message} · allowed, but check it is intended · click to review, show or waive it"><span aria-hidden="true">▲</span> Also sent by {otherName(w, path)}</button></li>
+        {/each}
+      </ul>
     {/if}
     {#key `${setup.id}/${sel.area}/${group}/${sel.index}`}
       <div class="fields">
@@ -86,6 +93,9 @@
   .where { margin: 0; color: var(--text-muted); font-size: var(--text-sm); }
   .warned { margin: 0 0 var(--space-3); padding: 0; list-style: none; font-size: var(--text-sm); color: var(--warn); }
   .warned li { margin-bottom: var(--space-1); }
+  .warned button { display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; min-height: 24px; padding: 0 var(--space-2); font: inherit; font-size: var(--text-sm); text-align: left; color: var(--warn); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .warned button:hover { background: var(--accent-soft); }
+  .warned button:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .fields { display: flex; flex-direction: column; gap: var(--space-2); }
   .empty p { color: var(--text-muted); }
   .empty .unofficial { font-size: var(--text-sm); }

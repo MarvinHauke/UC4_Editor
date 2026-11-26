@@ -11,10 +11,10 @@ export interface SyxUi extends FlowUi {
   downloadBytes(name: string, bytes: Uint8Array): void;
 }
 
-function deliver(result: SyxExportResult, what: string, json: () => void, ui: SyxUi): void {
+function deliver(result: SyxExportResult, what: string, warnFor: string, json: () => void, ui: SyxUi): void {
   if (result.file) {
     ui.downloadBytes(result.file.name, result.file.bytes);
-    ui.say(`Exported ${what} as ${result.file.name}. It is in your browser's downloads.`);
+    ui.say(`Exported ${what} as ${result.file.name}. It is in your browser's downloads.`, warnFor);
     return;
   }
   const refusal = result.refusal;
@@ -30,7 +30,7 @@ function deliver(result: SyxExportResult, what: string, json: () => void, ui: Sy
 
 /** "Export all as .syx": a `SndA` of the 18 setups. */
 export const exportAllSyx = (lib: SyxLibrary, ui: SyxUi): void => {
-  deliver(lib.exportAllSyx(), 'all setups', () => { exportAll(lib, ui); }, ui);
+  deliver(lib.exportAllSyx(), 'all setups', 'all', () => { exportAll(lib, ui); }, ui);
 };
 
 /** "Export SEnn as .syx": a `Sndc` of the selected setup. */
@@ -38,5 +38,5 @@ export function exportOneSyx(lib: SyxLibrary, ui: SyxUi): void {
   const state = lib.getState();
   const id = state.selection.setupId;
   const name = state.setups.find((s) => s.id === id)?.name ?? 'setup';
-  deliver(lib.exportSetupSyx(id), `"${name}"`, () => { exportOne(lib, ui); }, ui);
+  deliver(lib.exportSetupSyx(id), `"${name}"`, id, () => { exportOne(lib, ui); }, ui);
 }

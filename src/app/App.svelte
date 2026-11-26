@@ -32,6 +32,8 @@
   import { matchKey } from './keyTable.ts';
   import KeysHelp from '../components/KeysHelp.svelte';
   import { createSender } from './sender.svelte.ts';
+  import WarningsDialog from '../components/WarningsDialog.svelte';
+  import { createWarningsDialog, WARNINGS_CONTEXT } from './warningsDialog.svelte.ts';
   import SendDialog from '../components/SendDialog.svelte';
   import DumpGuide from '../components/DumpGuide.svelte';
   import TourOverlay from '../components/TourOverlay.svelte';
@@ -66,6 +68,8 @@
   const live = createLive(createMidiInputs({ portName: faderfoxUc4.portName, env: midiEnv, connectLabel: `Connect ${faderfoxUc4.deviceName}` }));
   setContext(LIVE_CONTEXT, live);
   setContext(GUIDE_CONTEXT, createGuide());
+  const warningsDialog = createWarningsDialog();
+  setContext(WARNINGS_CONTEXT, warningsDialog);
   const notices = createNotices();
   const dumpGuide = createDumpGuide();
   const tour = createTour();
@@ -175,7 +179,7 @@
   });
   const mapUi: MapUi = {
     flow: mapFlow, get targets() { return mapTargets; },
-    canReset: (ref) => (store ? isWarned(store.state.configuration, store.warnings, ref) && factoryReset(store.state.configuration, ref, '') !== null : false),
+    canReset: (ref) => (store ? isWarned(store.state.configuration, store.allWarnings, ref) && factoryReset(store.state.configuration, ref, '') !== null : false),
   };
   setContext(MAP_CONTEXT, mapUi);
   // Map by touch: the first UC4 message that matches a control while armed picks it.
@@ -320,11 +324,13 @@
   <ListResizeHandle width={shownWidth > 0 ? shownWidth : listWidth} onresize={(w) => { listWidth = w; }} oncommit={saveWidth} />
   <aside class="list" bind:offsetWidth={shownWidth} data-area="setups" data-copy-level="setup" data-help={listHelp}>{#if store}<LibraryList {store} {confirm} {device} {sender} profile={faderfoxUc4} />{/if}</aside>
   <ConfirmDialog {confirm} />
+  {#if store}<WarningsDialog {store} warnings={warningsDialog} />{/if}
   {#if store}<SendDialog {store} {device} {sender} profile={faderfoxUc4} />{/if}
   <TourOverlay {tour} onget={getSetups} profile={faderfoxUc4} />
   <WelcomeCard {welcome} profile={faderfoxUc4} />
   {#if store}<DumpGuide {dumpGuide} {device} {sender} profile={faderfoxUc4} />{/if}
-  <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)} switchUi={connOpen ? null : switchUi} warnings={store?.warnings ?? []} warningAt={store?.warningAt ?? -1} onstepwarning={(d) => store?.stepWarning(d)}
+  <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)} switchUi={connOpen ? null : switchUi} warnings={store?.warnings ?? []} onopenwarnings={() => { warningsDialog.show(); }}
+    exportWarnings={store?.startMessage !== undefined ? (store.exportNote?.count ?? 0) : 0} onopenexport={() => { const n = store?.exportNote; if (n) warningsDialog.show({ scope: n.scope === 'all' ? 'all' : 'this' }); }}
     waiting={notices.queue.length} onopenconnections={openConnections} />
 </div>
 

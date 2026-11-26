@@ -10,6 +10,7 @@
   import { useGuide } from '../app/guide.svelte.ts';
   import { RECEIVE_GUIDE } from '../app/profile/uc4Guides.ts';
   import { formatExported } from '../app/format.ts';
+  import { useWarningsDialog } from '../app/warningsDialog.svelte.ts';
 
   let { store, device, sender, profile }: { store: Store; device: Device; sender: Sender; profile: Pick<DeviceProfile, 'deviceName' | 'sendSteps'> } = $props();
   let dialog = $state<HTMLDialogElement | null>(null);
@@ -38,6 +39,9 @@
   // Beside the device view, not over it (decision 33): the dialog is not modal and sits over the properties column, so the
   // drawn UC4 stays in sight with what the guide lights on it.
   const guide = useGuide();
+  const warningsDialog = useWarningsDialog();
+  // Unwaived warnings of the setup that goes out (plan 0008 decision 7): listed here; "Send anyway" waives them and sends. A restore sends a backup, not this setup.
+  const pending = $derived(target && target.kind === 'send' ? store.allWarnings.filter((w) => w.state === 'open' && w.slot === target.slot) : []);
   let dock = $state({ left: 0, top: 0, width: 288, height: 400 });
   function place(): void {
     const r = document.querySelector('[data-area="properties"]')?.getBoundingClientRect();
@@ -56,14 +60,19 @@
       const restoring = target.kind === 'restore';
       const card = {
         text: `Put the ${profile.deviceName} in receive mode (rc00), then ${restoring ? 'Restore' : 'Send'}.`,
-        confirmLabel: restoring ? 'Restore' : 'Send', canConfirm, onconfirm: send, oncancel: () => { sender.close(); },
+        confirmLabel: restoring ? 'Restore' : pending.length > 0 ? 'Send anyway' : 'Send', canConfirm, onconfirm: send, oncancel: () => { sender.close(); },
       };
       mine = card;
       guide.show(RECEIVE_GUIDE, card);
     } else if (mine) { guide.clear(mine); mine = null; }
   });
   onMount(() => { window.addEventListener('resize', place); return () => { window.removeEventListener('resize', place); if (mine) guide.clear(mine); if (dialog?.open) dialog.close(); }; });
-  function send(): void { if (target && plan?.ok && device.connected) sender.send(target.slot, plan, target.kind); }
+  function send(): void {
+    if (!target || !plan?.ok || !device.connected) return;
+    const p = plan, t = target, accepted = pending;
+    if (accepted.length > 0) store.waive(accepted); // "Send anyway": accepted for good, one undo step
+    sender.send(t.slot, p, t.kind);
+  }
   // A non-modal dialog has no Esc of its own.
   function key(e: KeyboardEvent): void {
     // Not when another question (a modal confirm) is on top: its Esc is its own.
@@ -91,6 +100,15 @@
         {#if view.moreLine}<li class="more">{view.moreLine}</li>{/if}
       </ul>
     {/if}
+    {#if pending.length > 0}
+      <h3 class="warn"><span aria-hidden="true">▲</span> {pending.length} warning{pending.length === 1 ? '' : 's'} in this setup</h3>
+      <ul class="changes" aria-label="Warnings">
+        {#each pending.slice(0, 5) as w, i (i)}<li>{w.message}</li>{/each}
+        {#if pending.length > 5}<li class="more">+ {pending.length - 5} more</li>{/if}
+      </ul>
+      <p class="muted">A warning blocks nothing. “Send anyway” waives these, so they stop counting; Undo brings them back.
+        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to show or waive them one by one · this dialog stays">Review…</button></p>
+    {/if}
     {#if view.backup.text}<p title={view.backup.has ? undefined : sndaHelp} data-help={view.backup.has ? undefined : sndaHelp}>{view.backup.text}</p>{/if}
   {:else if view?.kind === 'refused'}
     <h2 id="send-title">{view.title}</h2>
@@ -103,6 +121,8 @@
 </dialog>
 
 <style>
+  .warn { color: var(--warn); }
+  .review { margin-left: var(--space-2); }
   h3 { margin: var(--space-2) 0 var(--space-1); font-size: var(--text-md); }
   dialog { position: fixed; margin: 0; z-index: 20; box-sizing: border-box; overflow-y: auto; padding: var(--space-3); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
   h2 { margin: 0 0 var(--space-2); font-size: var(--text-lg); overflow-wrap: anywhere; }

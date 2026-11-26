@@ -11,8 +11,9 @@ async function setup() {
   const asked: ConfirmSpec[] = [];
   const downloads: ExportFile[] = [];
   const said: string[] = [];
-  const ui = { ask: (s: ConfirmSpec) => { asked.push(s); }, download: (f: ExportFile) => { downloads.push(f); }, say: (t: string) => { said.push(t); } };
-  return { library: library as FlowLibrary, lib: library, asked, downloads, said, ui };
+  const warnFor: (string | undefined)[] = [];
+  const ui = { ask: (s: ConfirmSpec) => { asked.push(s); }, download: (f: ExportFile) => { downloads.push(f); }, say: (t: string, w?: string) => { said.push(t); warnFor.push(w); } };
+  return { library: library as FlowLibrary, lib: library, asked, downloads, said, warnFor, ui };
 }
 const edit = (lib: Awaited<ReturnType<typeof setup>>['lib']) => {
   const id = lib.getState().selection.setupId;
@@ -25,6 +26,13 @@ describe('export', () => {
     exportAll(t.library, t.ui);
     expect(t.downloads[0]!.name).toMatch(/^uc4-config-\d{4}-\d{2}-\d{2}\.json$/);
     expect(t.said[0]).toContain(t.downloads[0]!.name);
+  });
+  it('asks the line to offer the warnings of what was exported', async () => {
+    const t = await setup();
+    exportAll(t.library, t.ui);
+    expect(t.warnFor[0]).toBe('all');
+    exportOne(t.library, t.ui);
+    expect(t.warnFor[1]).toBe(t.lib.getState().selection.setupId);
   });
   it('downloads one setup with its slot in the name', async () => {
     const t = await setup();
