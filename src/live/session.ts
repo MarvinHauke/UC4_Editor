@@ -5,6 +5,7 @@
 // Step 4 added the switch offer (`offer`, `acceptOffer`, `dismissOffer`, `silenceOffers`). Step 3 added pairs (a `CCAh` pair or a note's on and off as one row, `split`/`join`) and `valueText`; the rows never
 // leave memory (decision 11), only the splits are session state the UI saves (`getState`).
 import { rowKey, type ChannelEvent, type MessageKind } from './messages.ts';
+import { planMap, refusalFor, type MapOptions, type MapPlan } from './mapping.ts';
 import {
   buildIndex, matchesFor, nextState, relativeDelta, signatureOf,
   type ControlRef, type ControlState, type LiveContext, type Match, type MatchIndex,
@@ -51,6 +52,8 @@ export interface LiveRow extends MonitorRow {
   more: number;
   /** True when `best` is the user's pin. */
   pinned: boolean;
+  /** The control this row was mapped to (`markMapped`), for "→ Enc3 · EG1"; null before. */
+  mappedTo: ControlRef | null;
   /** Set for a `CCAh` match and for every note row; null otherwise. A joined `CCAh` row has `kind: 'cc'`, the coarse CC as `number` and the 14-bit value 0–16383 as `value`. */
   pair: PairInfo | null;
   /** What the monitor prints as the value: `64`, `8192`, `on 127` / `off 0`, `+1` / `−1` for a `CCr1`/`CCr2` match, `—` for a program change (its number is the key). */
@@ -63,6 +66,20 @@ export interface LiveSessionState {
   splits: string[];
   /** "Don't ask again" on the switch offer. */
   silenceOffers: boolean;
+}
+
+/** Whether a control of the open groups can take a row's message (for dimming while Map is armed); `reason` is the help-line sentence. */
+export interface MapTarget { control: ControlRef; ok: boolean; reason: string | null }
+
+/**
+ * The control a UC4 message picked while Map was armed (decision 20: Map by touch), and what the editor has to switch to
+ * so the control is shown: only the parts that differ from the open setup and groups are set.
+ */
+export interface TouchTarget {
+  control: ControlRef;
+  switch: { setupId?: string; encoderGroup?: number; faderButtonGroup?: number };
+  /** The message that picked it. */
+  at: number;
 }
 
 /**
@@ -113,6 +130,29 @@ export interface LiveSession {
   /** "Don't ask again": no offers at all while on (saved with `getState`). */
   silenceOffers(on: boolean): void;
 
+  /**
+   * Plans what mapping the row onto a control would do (decisions 8, 14, 17): a planned edit or a refusal for the help line.
+   * Applies nothing; the UI makes the edit as one undo step (with the group switch of a `touchTarget`) and then calls `markMapped`.
+   * A row from any input can be mapped; a joined `CCAh` row maps as CC n. A click target must be in the open setup; the control a
+   * `touchTarget` picked may be in another one: the UI then switches setup and groups and applies the edit as one step, and the
+   * result line names the setup. Call `mapPlan` before `disarm()`: a touch target is only known while armed.
+   */
+  mapPlan(rowKey: string, target: string | ControlRef, options?: MapOptions): MapPlan;
+  /** For every control of the open setup's two selected groups: can it take this row's message (dim the others, show `reason`). Empty without a context or row. */
+  mapTargets(rowKey: string): MapTarget[];
+  /** Remembers that the row was mapped to the control (shown as `mappedTo`); `null` forgets. Rows are kept in memory only, like the rows. */
+  markMapped(rowKey: string, controlId: string | null): void;
+  /** The next row after `rowKey` in the list (older ones, wrapping to the newest) that is not mapped yet, or null when all are. Without a key, the first. */
+  nextUnmapped(rowKey?: string): LiveRow | null;
+  /** Arms Map for a row: the next UC4 message picks the target (`touchTarget`) and does not count as evidence for the switch offer. */
+  armMap(rowKey: string): void;
+  /** Ends Map (after a mapping, Esc, Map again). Clears `touchTarget`. */
+  disarm(): void;
+  /** The key of the armed row, or null. */
+  readonly armed: string | null;
+  /** Set by the first UC4 message that matches a control while armed; later messages don't replace it until `armMap` again. */
+  readonly touchTarget: TouchTarget | null;
+
   /** Splits a pair into its single messages (`row.pair.key`); `join` puts it back. Unknown keys are ignored. Session state: see `getState`. */
   split(pairKey: string): void;
   join(pairKey: string): void;
@@ -152,6 +192,10 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
   const notify = () => { view = null; for (const l of [...listeners]) l(); };
 
   const splits = new Set<string>();
+  const mapped = new Map<string, ControlRef>();
+  const seen = new Map<string, { count: number; values: Set<number> }>();
+  let armedKey: string | null = null;
+  let touch2: TouchTarget | null = null;
   let silenced = false;
   let offer: SwitchOffer | null = null;
   const dismissed = new Set<string>();
@@ -188,7 +232,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
     return {
       ...row, matches, best: matches[0] ?? null, more: Math.max(0, matches.length - 1),
       pinned: matches.length > 0 && pins.get(row.key) === matches[0]!.control.id,
-      pair, valueText: valueText(row, matches[0] ?? null),
+      mappedTo: mapped.get(row.key) ?? null, pair, valueText: valueText(row, matches[0] ?? null),
     };
   }
 
@@ -315,7 +359,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
    * meant, an unambiguous message says where the UC4 is.
    */
   function collect(row: MonitorRow) {
-    if (!context) return;
+    if (!context || armedKey !== null) return;
     const found = matchesFor(index, context, row);
     if (found.length === 0) return;
     if (found.some((m) => m.tier === 1)) { streak = []; offer = null; return; }
@@ -371,6 +415,12 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       }
       base = next;
       lastMovedKey = key;
+      if (m.kind === 'cc') {
+        const history = seen.get(key) ?? { count: 0, values: new Set<number>() };
+        history.count++;
+        history.values.add(m.value);
+        seen.set(key, history);
+      }
       if (m.kind === 'note') {
         const parts2 = noteParts.get(key) ?? { on: null, off: null, last: 'on' as 'on' | 'off' };
         const which = on ? 'on' : 'off';
@@ -381,6 +431,16 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       if (isUc4 && context) {
         const best = rank(row)[0];
         if (best) touch(event, best);
+        if (armedKey !== null && touch2 === null && best) {
+          const c = best.control;
+          const sw: TouchTarget['switch'] = {};
+          if (c.setupId !== context.setupId) sw.setupId = c.setupId;
+          const encHalf = c.area === 'encoders' || c.area === 'pushButtons';
+          if (encHalf && c.group !== context.encoderGroup) sw.encoderGroup = c.group;
+          if (!encHalf && c.group !== context.faderButtonGroup) sw.faderButtonGroup = c.group;
+          // another setup shows its own groups: keep the selection of the half that wasn't touched
+          touch2 = { control: c, switch: sw, at };
+        }
         collect(row);
       }
       notify();
@@ -390,6 +450,10 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       base = [];
       lastMovedKey = null;
       noteParts.clear();
+      mapped.clear();
+      seen.clear();
+      armedKey = null;
+      touch2 = null;
       notify();
     },
     setContext(next) {
@@ -410,6 +474,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       states = kept;
       resetCache();
       if (lastTouched && !index.controls.has(lastTouched.control.id)) lastTouched = null;
+      for (const [k, c] of [...mapped]) if (!index.controls.has(c.id)) mapped.delete(k);
       // A pin whose control no longer sends the row's message is dropped.
       const rows = derive();
       for (const [key, id] of [...pins]) {
@@ -454,6 +519,60 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       notify();
     },
     get offer() { return offer; },
+    get armed() { return armedKey; },
+    get touchTarget() { return touch2; },
+    mapPlan(key, target, options) {
+      const row = rowsView().find((r) => r.key === key);
+      if (!row) return { ok: false, reason: 'That row is not in the monitor any more.' };
+      if (!context) return { ok: false, reason: 'Open a setup first.' };
+      const ref = typeof target === 'string' ? index.controls.get(target)?.ref : index.controls.get(target.id)?.ref;
+      if (!ref) return { ok: false, reason: 'That control is not in the open configuration.' };
+      // A click is limited to the open setup; only the control a touch picked may be in another one (decision 8, exceptions).
+      const elsewhere = ref.setupId !== context.setupId;
+      if (elsewhere && touch2?.control.id !== ref.id) return { ok: false, reason: 'That control is not in the open setup.' };
+      const plan = planMap(context.configuration, ref, { kind: row.kind, channel: row.channel, number: row.number, value: row.value, seen: seen.get(row.key) }, options);
+      if (plan.ok && elsewhere) plan.resultText = `${ref.slot === undefined ? ref.setupName : `SE${String(ref.slot).padStart(2, '0')}`} · ${plan.resultText}`;
+      return plan;
+    },
+    mapTargets(key) {
+      const row = rowsView().find((r) => r.key === key);
+      if (!row || !context) return [];
+      const order: Record<string, number> = { encoders: 0, pushButtons: 1, faders: 2, buttons: 3 };
+      return [...index.controls.values()]
+        .map((c) => c.ref)
+        .filter((r) => r.setupId === context!.setupId && r.group === (r.area === 'encoders' || r.area === 'pushButtons' ? context!.encoderGroup : context!.faderButtonGroup))
+        .sort((a, b) => order[a.area]! - order[b.area]! || a.index - b.index)
+        .map((control) => { const reason = refusalFor(control.area, row.kind); return { control, ok: reason === null, reason }; });
+    },
+    markMapped(key, controlId) {
+      if (controlId === null) { if (mapped.delete(key)) { resetCache(); notify(); } return; }
+      const ref = index.controls.get(controlId)?.ref;
+      if (!ref) return;
+      mapped.set(key, ref);
+      resetCache();
+      notify();
+    },
+    nextUnmapped(key) {
+      const rows = rowsView();
+      const start = key === undefined ? -1 : rows.findIndex((r) => r.key === key);
+      for (let i = 1; i <= rows.length; i++) {
+        const row = rows[(start + i) % rows.length]!;
+        if (row.key !== key && !mapped.has(row.key)) return row;
+      }
+      return null;
+    },
+    armMap(key) {
+      if (!rowsView().some((r) => r.key === key)) return;
+      armedKey = key;
+      touch2 = null;
+      notify();
+    },
+    disarm() {
+      if (armedKey === null && touch2 === null) return;
+      armedKey = null;
+      touch2 = null;
+      notify();
+    },
     acceptOffer() {
       const taken = offer;
       if (!taken) return null;
