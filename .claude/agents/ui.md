@@ -45,7 +45,7 @@ team (see `CLAUDE.md`, "Agent team"):
   user to look at (through the architect) before building it for real; never commit the prototype.
 - Check every change in the browser against the dev server (the `claude-in-chrome` tools, when the
   architect says it's your turn) with sample data: an empty library, 18 setups, long names, an
-  invalid import.
+  invalid import. Selectors, `fakeMidi`, measuring edges and the clean-up: `docs/agents/browser-checks.md`.
 - **UX checklist.** Every page change passes it before you commit:
   1. Click targets are at least 24 px; icons at least the text size.
   2. Every input looks like an input and shows focus (an accent ring).
@@ -78,7 +78,7 @@ A task is a step of a decided plan: read the step, its plan and the glossary, an
 
 1. Implement; run `npm test` and `npm run build`; check the page in the browser when the architect
    gives you the turn, and save screenshots of what changed (`save_to_disk`): dark and light, a wide
-   window and 1024 px.
+   window and 1024 px; with them, the measured right edges of every list or button group you changed.
 2. Send `uc4-reviewer` the changed files and the screenshot paths; fix its findings and send the fixes back, however
    small. Commit only after its OK on them.
 3. Commit on the task's branch, your own files by path (`git commit -- <files>`; never a bare
