@@ -83,8 +83,7 @@
         <span><span class="where">From</span>{' '}{row.isUc4 ? 'the UC4' : source}</span>
         {#if onmap}
           <button type="button" class="act mapbtn" class:on={armed} aria-pressed={armed} aria-label={armed ? 'Cancel Map' : 'Map to a control'}
-            data-help={armed ? 'Map is armed: click a control, or move one on the UC4 · Esc or this button cancels' : 'Map: then click a control, or move one on the UC4, and it sends this message'} onclick={onmap}>{armed ? 'Cancel' : 'Map'}
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" /></svg></button>
+            data-help={armed ? 'Map is armed: click a control, or move one on the UC4 · Esc or this button cancels' : 'Map: then click a control, or move one on the UC4, and it sends this message'} onclick={onmap}>{armed ? 'Cancel' : 'Map'}</button>
         {/if}
       </p>
       {#if row.matches.length > 0}
@@ -151,8 +150,8 @@
   .split[aria-pressed='true'] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
   .details { grid-column: 1 / -1; padding: var(--space-1) 0 var(--space-2) calc(14px + var(--space-1)); font-family: var(--font); cursor: default; }
   .src { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: 28px; margin: 0; overflow: hidden; white-space: nowrap; }
-  .mapbtn { display: inline-flex; align-items: center; gap: var(--space-1); flex: none; }
-  .mapbtn.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+  .src .mapbtn { flex: none; width: 46px; padding: 0 var(--space-1); }
+  .src .mapbtn.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
   .where { color: var(--text-muted); }
   .alts { margin: 0; padding: 0; list-style: none; }
   /* Actions in fixed right-aligned columns: Show and Pin/Unpin always stand in the same place. */
