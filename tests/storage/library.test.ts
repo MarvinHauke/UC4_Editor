@@ -3,7 +3,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { openLibrary, memoryStorage } from '../../src/storage/index.ts';
 import type { ControlAddress, Library } from '../../src/storage/index.ts';
-import { factorySetup, load, save, validate } from '../../src/model/index.ts';
+import { changeType, factorySetup, load, save, validate } from '../../src/model/index.ts';
 import type { Uc4Config } from '../../src/model/index.ts';
 
 const clock = () => new Date('2026-11-14T10:00:00.000Z');
@@ -872,4 +872,62 @@ test('setProperty with a refused selection changes nothing; an edit that changes
   assert.equal(lib.getState().selection.encoderGroup, 2);
   lib.undo();
   assert.equal(lib.getState().selection.encoderGroup, 0);
+});
+
+// --- setControl ---
+test('setControl replaces a whole control in one undo step, with the selection if given', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[2]!.encoders[1]!;
+  const control = { ...(changeType(old, 'CCr1') as { control: object }).control, channel: 7, number: 12 };
+  const before = lib.getState().selection;
+  const r = lib.setControl(enc(id, 1, 2), control as never, { selection: { encoderGroup: 2, control: { area: 'encoders', index: 1 } } });
+  assert.equal(r.message, undefined);
+  const now = lib.getState().configuration.setups[0]!.encoderGroups[2]!.encoders[1]!;
+  assert.deepEqual([now.type, now.channel, now.number], ['CCr1', 7, 12]);
+  assert.equal(lib.getState().selection.encoderGroup, 2);
+  lib.undo();
+  assert.deepEqual(lib.getState().configuration.setups[0]!.encoderGroups[2]!.encoders[1], old);
+  assert.deepEqual(lib.getState().selection, before);
+  assert.equal(lib.getState().canUndo, false);
+  lib.redo();
+  assert.equal(lib.getState().configuration.setups[0]!.encoderGroups[2]!.encoders[1]!.channel, 7);
+  assert.equal(lib.getState().selection.encoderGroup, 2);
+});
+
+test('setControl refuses a control the device cannot hold, an unknown target or selection, and changes nothing', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!;
+  const config = lib.getState().configuration;
+  assert.ok(lib.setControl(enc(id), { ...old, type: 'CCr1x' } as never).message);
+  assert.ok(lib.setControl(enc(id), { ...old, channel: 99 } as never).message);
+  assert.ok(lib.setControl(enc('nope'), old).message);
+  assert.ok(lib.setControl(enc(id, 99), old).message);
+  assert.ok(lib.setControl(enc(id), old, { selection: { setupId: 'nope' } }).message);
+  assert.equal(lib.getState().configuration, config);
+  assert.equal(lib.getState().canUndo, false);
+});
+
+test('setControl with the same control is no step, unless a selection comes with it', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!;
+  lib.setControl(enc(id), { ...old });
+  assert.equal(lib.getState().canUndo, false);
+  lib.setControl(enc(id), { ...old }, { selection: { encoderGroup: 3 } });
+  assert.equal(lib.getState().selection.encoderGroup, 3);
+  lib.undo();
+  assert.equal(lib.getState().selection.encoderGroup, 0);
+});
+
+test('setControl: a control with an unknown key is refused (validate flags unknown fields)', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!;
+  const r = lib.setControl(enc(id), { ...old, channel: 5, bogus: 1 } as never);
+  const now = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]! as unknown as Record<string, unknown>;
+  assert.ok(r.message);
+  assert.equal('bogus' in now, false);
+  assert.equal(lib.getState().canUndo, false);
 });

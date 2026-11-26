@@ -173,6 +173,12 @@ export interface Library {
    */
   select(change: SelectionChange, options?: { asStep?: boolean }): CommandResult;
   /**
+   * Replaces a whole control in one undo entry (Map: type, channel, number, Upper together). The control is checked as
+   * `validate` checks it; a control the device cannot hold is refused with the reason and changes nothing. `options.selection`
+   * as in `setProperty`. Marks of every property that changed go. The same control is no change (no step, unless a selection).
+   */
+  setControl(address: ControlAddress, control: AnyControl, options?: { selection?: SelectionChange }): CommandResult;
+  /**
    * `options.selection` changes the selection in the same undo step as the edit (Map by touch: open the setup, switch the
    * groups, apply the edit; one undo reverts both). A refused selection refuses the whole command.
    */
@@ -311,7 +317,7 @@ function deepFreeze<T>(value: T): T {
   }
   return value;
 }
-type AnyControl = Encoder | PushButton | GreenButton | Fader;
+export type AnyControl = Encoder | PushButton | GreenButton | Fader;
 
 function freshConfiguration(now: Date): Uc4Config {
   const stamp = now.toISOString();
@@ -885,6 +891,27 @@ function createLibrary(
         return nextSelection ? selectStep(nextSelection) : result();
       }
       return commit(writeControl(state.configuration, address, control), message, dropMarkPaths(marks, setupId, touched), undefined, nextSelection);
+    },
+
+    setControl(address, control, options) {
+      const { setupId, area, group, index } = address;
+      if (setupIndex(setupId) < 0) return refuse(`There is no setup "${setupId}".`);
+      if (!(area in AREA_COUNT) || !isGroup(group) || !Number.isInteger(index) || index < 0 || index >= AREA_COUNT[area]) {
+        return refuse('There is no such control.');
+      }
+      const nextSelection = options?.selection ? resolveSelection(options.selection) : undefined;
+      if (typeof nextSelection === 'string') return refuse(nextSelection);
+      const old = readControl(state.configuration, address);
+      if (!old) return refuse('There is no such control.');
+      const candidate = writeControl(state.configuration, address, control);
+      const path = `setups[${setupIndex(setupId)}].${groupKey(area)}[${group}].${area}[${index}]`;
+      const problem = validate(candidate).find((p) => p.path === path || p.path.startsWith(path + '.') || p.path.startsWith(path + '['));
+      if (problem) return refuse(`This control cannot be set: ${problem.message}`);
+      const base = `${groupKey(area)}[${group}].${area}[${index}].`;
+      const touched = Object.keys({ ...old, ...control }).filter((k) =>
+        JSON.stringify((old as unknown as Record<string, unknown>)[k]) !== JSON.stringify((control as unknown as Record<string, unknown>)[k])).map((k) => base + k);
+      if (touched.length === 0) return nextSelection ? selectStep(nextSelection) : result();
+      return commit(candidate, undefined, dropMarkPaths(marks, setupId, touched), undefined, nextSelection);
     },
 
     setGroupName(setupId, encoderGroup, input) {
