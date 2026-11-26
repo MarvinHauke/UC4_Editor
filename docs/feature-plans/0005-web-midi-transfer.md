@@ -292,6 +292,8 @@ After the first send from the editor (user, 2026-11-18, `dumps/2026-11-18-editor
     shows `rEc`, then `rc00`). Back/Next or a click on a step; the last step is the user's "rc00 shows", and only
     then is Send active, because the UC4 reports nothing. Steps from the manual (`uc4-device.md`, Setup mode), not
     from the Configurator ("Setup twice"). The same guide later explains `Sndc` and `SndA` in the help section.
+34. **The change list uses the device's spelling** (architect, 2026-11-18, first editor send): names as the display
+    shows them (`GrP1 → SEnd`), codes as in `uc4-device.md`; the editor's lowercase stays internal.
 35. **The guide is callouts on the dimmed device view** (user, 2026-11-18, Q20, from the Configurator's screen; changes
     decision 33's stepper): starting a send or restore dims the device view except Shift, Edit with the Setup LED and
     encoder 7; three numbered callouts sit beside them, at most two lines each with key words as chips: ① "Hold
@@ -300,8 +302,6 @@ After the first send from the editor (user, 2026-11-18, `dumps/2026-11-18-editor
     Send. No stepper, no "rc00 shows" gate. The docked panel keeps the title, the changes and the backup line, without
     the `rEc` text. Callouts are profile data, reused later for `Sndc`/`SndA` help. Why: the step list was too much
     text; the callouts show where to press.
-34. **The change list uses the device's spelling** (architect, 2026-11-18, first editor send): names as the display
-    shows them (`GrP1 → SEnd`), codes as in `uc4-device.md`; the editor's lowercase stays internal.
 
 ## Open questions
 

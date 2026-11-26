@@ -63,11 +63,11 @@ each barrier gets in the way.
    1024 px and light theme included.
 2. **Audit** (decision 1) — done 2026-11-19 (Playwright on :5176, demo library and MIDI stub; 26 shots in the architect's scratchpad; list below) — architect · blocked by: none · the journeys, the ranked list written into this plan.
 3. **Fixes from the list** — uc4-ui · blocked by: 2 · one step per finding or small group, blocks first.
+4. **Guide shots retaken** — uc4-docs or architect · blocked by: 3 · `npm run docs:shots`, text checked.
 5. **Dump overlay** (decision 6) — done 2026-11-25 (`5231f47`, reviewed; auto-close unit-tested, the real-UC4 check is the user's; at 1024 px the card slightly overlaps `SndA` callout 3) — uc4-ui · blocked by: none · the button in Connections, the overlay from the
    guide data, the auto-close on a received dump; tests for the callouts per choice.
 6. **Compact dumps list** (decision 8) — done 2026-11-25 (`3a0ac6f` storage, `34606af` list; reviewed; the real clear is the user's to try) — uc4-model (the hidden mark, the clear rule, tests), then uc4-ui (the
    list, Show all, the question's text) · blocked by: none.
-4. **Guide shots retaken** — uc4-docs or architect · blocked by: 3 · `npm run docs:shots`, text checked.
 
 ## Audit findings (2026-11-19)
 

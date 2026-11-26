@@ -50,13 +50,6 @@ device — above all **export and import complete setups**.
 15. **The manual is not in the repo**: `docs/reference/uc4-device.md` cites its version and links
     to faderfox.de (user, 2026-11-13). Why: the PDF is Faderfox's. The same holds for Faderfox's
     scripts and firmware: read them, write down facts, never commit them.
-18. **The repo is private** (user, 2026-11-13; GitHub `MarvinHauke/UC4_Editor`): the dump format is
-    worked out from the device, and the user wants to show the editor to Faderfox before anything
-    about it is published. Publishing (repo, docs, the protocol notes) is the user's decision
-    later, ideally after talking to Faderfox (decision 14). While private, `dumps/` is committed:
-    the user's backup of all 18 setups and every raw capture the fixtures were cut from (user,
-    2026-11-13, Q16: the work should be backed up). **Before the repo goes public, `dumps/` leaves
-    git** (history included), since it holds the user's personal setups.
 16. **Firmware 02.05** is the version the fixtures are taken with (user, 2026-11-13).
 17. **Svelte instead of React** (user, 2026-11-13): the user knows Vue and Svelte; Svelte 5's runes
     suit a device view of many small controls that each follow one value; the official Svelte MCP
@@ -69,6 +62,13 @@ its "neutral" MIDI model (`Absolute/Relative 1/Relative 2/14-bit`, `Jump/Pickup/
 on buttons, no display scale) doesn't match the device; 0002 uses the manual's properties
 (`docs/reference/uc4-device.md`), because the neutral model can express states the device can't
 hold and misses ones it can, which would make encoding lossy. Its sketch is not reused as code.
+18. **The repo is private** (user, 2026-11-13; GitHub `MarvinHauke/UC4_Editor`): the dump format is
+    worked out from the device, and the user wants to show the editor to Faderfox before anything
+    about it is published. Publishing (repo, docs, the protocol notes) is the user's decision
+    later, ideally after talking to Faderfox (decision 14). While private, `dumps/` is committed:
+    the user's backup of all 18 setups and every raw capture the fixtures were cut from (user,
+    2026-11-13, Q16: the work should be backed up). **Before the repo goes public, `dumps/` leaves
+    git** (history included), since it holds the user's personal setups.
 19. **The repo is public** (user, 2026-11-25; plan 0011): Faderfox agreed to publication. The public repository
     `MarvinHauke/UC4_Editor` starts from a clean first commit; the history before it, with `dumps/`, stays in the
     private `MarvinHauke/UC4_Editor-workshop`. Replaces decision 18 from that date: `dumps/` is local only.
