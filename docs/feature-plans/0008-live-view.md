@@ -354,7 +354,8 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    - **Row details** (architect, 2026-11-26, from the user's screenshot, built in step 10): on an open row, Map is a
      "Map →" button on the "From …" line (a closed row keeps the hover arrow); on an open pair the Split switch takes
      the match's place on line 1; actions sit in fixed columns; the next-to-map row has a dashed left border; the
-     focus ring shows on keyboard focus only. For the user to judge.
+     focus ring shows on keyboard focus only. For the user to judge. The details' button reads **"Map"** without the arrow, as wide as
+     Show, so the buttons share one column (user, 2026-11-26); the hover arrow on a closed row stays.
    - **Offer placement kept, one info in the status bar** (user, 2026-11-26, after round 5): the switch offer stays
      under the monitor heading; with Connections folded it takes the warnings' place in the status bar while it
      shows, and the warning count comes back after Switch or No, so the bar holds one info at a time.
