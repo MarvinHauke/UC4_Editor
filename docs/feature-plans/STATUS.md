@@ -53,7 +53,10 @@ _Last updated: 2026-11-26 (0008 live view: all steps 1–11 built; the user's re
 - **0008 live view** (user, 2026-11-26, branch `feat/live-view`, local): MIDI monitor, matching, pins, Follow, switch
   offer, warnings with waivers and the Problems and warnings dialog, Map by click and by touch, clearing a colliding
   mapping. Grilled in five rounds (decisions 3–26). **All steps 1–11 built and browser-checked 2026-11-26**; last
-  commits `fa3432c` (waivers), `49bd8f3`/`d4e898e`/`e75c2b8` (dialog, names, row alignment). Dialog buttons aligned after. Left: the user's hands-on
+  commits `fa3432c` (waivers), `49bd8f3`/`d4e898e`/`e75c2b8` (dialog, names, row alignment). Dialog buttons aligned after. In work 2026-11-26: fixes from the
+  user's `/code-review` (9 findings; one important: an imported `PrGC` range beyond 0–127 freezes the tab in
+  warnings and matching), split across uc4-model, uc4-protocol, uc4-ui; "Send anyway" now waives only after a
+  successful send (reverses the architect's earlier call). Left: the user's hands-on
   review, the hardware list (listen only), the "● n problems" button not
   browser-checked; then the PR on the user's word. Later: sort the monitor by type, channel or last touched
   (decision 25 Q5); DAW feedback, Learn, check mode (decisions 16, 9, 19).
