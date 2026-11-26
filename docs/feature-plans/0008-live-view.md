@@ -392,6 +392,15 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    was not understood, "Unwaive" even less. Rejected: Accept (the architect's pick), Suppress (developer jargon),
    Dismiss (already closes a dump notice). Earlier decisions that say "waive" mean this.
 
+30. **The check is always reachable** (user, 2026-11-27): the status bar's warning item never disappears: "▲ n
+   warnings" while some are open, otherwise "✓ No warnings · n ignored" (just "✓ No warnings" with none ignored);
+   a click opens the Problems and warnings dialog. The Send dialog always has a check line above the steps: the
+   open warnings as today, otherwise "✓ No open warnings · n ignored" with Review…. Why: with every warning ignored
+   (factory collisions start ignored) the count was gone and so was the only way in; Send went straight to the
+   steps without saying what was checked. Rejected: a "Check…" button in the header (a second way in for the same
+   list), a separate check page before the steps (a click on every send). Open: the word for un-ignoring and a
+   Resolve action (to grill); "Show" stays, as in the MIDI monitor.
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it
@@ -500,6 +509,10 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    own target; split rows as indented sub-lines under the pair, updating in place; Split/Join a small switch on
    the open row's first line; the match text is cut ("F…") at 320 px today, make it fit (uc4-ui, step 9). Checks:
    live-module tests, browser list.
+13. **Check always reachable** (decision 30) — uc4-ui · blocked by: none · status bar item always shown (open count,
+   or "✓ No warnings · n ignored"), Send dialog check line with Review…; the switch note still hides the count
+   (decision 25). Checks: statusInfo tests, browser list (all ignored → item stays and opens the dialog; Send with
+   none open shows the line).
 
 11. **Clear a colliding mapping** (decision 26) — done 2026-11-26: uc4-ui (`295faeb`, `f1b6e4a`; reviewed; browser-checked by the architect: no ✕ without a collision, reset, result-line Undo brings the mark back) — uc4-ui · blocked by: 10 · ✕ on an open mapped row's target when
    the control has a warning; resets the control to factory (one undo step, result line); the mark goes. Checks:
