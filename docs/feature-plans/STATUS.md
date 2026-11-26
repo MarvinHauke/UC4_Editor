@@ -56,7 +56,8 @@ _Last updated: 2026-11-26 (0008 live view: steps 1–5, 7, 8 built; round 5 gril
   2026-11-26): one highlight language, Follow instead of One line, row polish, split in place, a warnings dialog;
   factory collisions start waived (B). Step 9 done `cda7fdd` (browser-checked). Bug found in the check and fixed `5fbdfa0` (folds and the Connections
   column shared one browser key). Step 10 done (`4768de4`, `8d416f5`, `586a8c3`). Step 11 done (`295faeb`). Frontier: step 6 reshaped (warnings
-  dialog and waivers; uc4-model's half in work 2026-11-26, then uc4-ui) (row polish, uc4-protocol then uc4-ui), then step 6 reshaped (warnings dialog and waivers,
+  dialog and waivers; model half `fa3432c` done; uc4-ui's half in work 2026-11-26). Also `a852461`: one right edge in
+  Connections (row polish, uc4-protocol then uc4-ui), then step 6 reshaped (warnings dialog and waivers,
   uc4-model then uc4-ui). With step 6: `warnings.ts` names green buttons `Btn3`, must be `btn3`. Later: sort the
   monitor by type, channel or last touched (decision 25 Q5). Offer placement settled (kept; shares the warnings'
   place in the status bar when Connections is folded). Hardware list (listen only) for the user.
