@@ -15,6 +15,20 @@ type Sender = { type: string; channel: number; number: number; lower?: number; u
 
 // What a control sends: CC types and the button `CC` are all CC; `CCAh` is CC n and n + 32; `OFF` sends nothing.
 // PrGC sends programs: a button's is its upper value, an encoder's or fader's the range lower…upper.
+/**
+ * The programs a PrGC control sends, 0–127 only (load() accepts out-of-range values as problems, so a bad file must
+ * not build a huge list or an invented program): a button sends its upper value; an encoder or fader the range
+ * lower…upper (either order) cut to 0–127. Non-integers or nothing left in range → none.
+ */
+export function programsOf(c: { lower?: number; upper?: number }, isButton: boolean): number[] {
+  const { lower, upper } = c;
+  if (!Number.isInteger(upper)) return [];
+  if (isButton || typeof lower !== 'number') return upper! >= 0 && upper! <= 127 ? [upper!] : [];
+  if (!Number.isInteger(lower)) return [];
+  const lo = Math.max(0, Math.min(lower, upper!)), hi = Math.min(127, Math.max(lower, upper!));
+  return Array.from({ length: Math.max(0, hi - lo + 1) }, (_, i) => lo + i);
+}
+
 function keysOf(c: Sender, isButton: boolean): MessageKey[] {
   const channel = c.channel;
   if (typeof channel !== 'number' || typeof c.number !== 'number') return [];
@@ -23,11 +37,7 @@ function keysOf(c: Sender, isButton: boolean): MessageKey[] {
     case 'CCAh': return [{ kind: 'cc', channel, number: c.number }, { kind: 'cc', channel, number: c.number + 32 }];
     case 'notE': return [{ kind: 'note', channel, number: c.number }];
     case 'PrGC': {
-      const { lower, upper } = c;
-      if (typeof upper !== 'number') return [];
-      if (isButton || typeof lower !== 'number') return [{ kind: 'program', channel, number: upper }];
-      const lo = Math.min(lower, upper), hi = Math.max(lower, upper);
-      return Array.from({ length: hi - lo + 1 }, (_, i) => ({ kind: 'program', channel, number: lo + i }));
+      return programsOf(c, isButton).map((n) => ({ kind: 'program' as const, channel, number: n }));
     }
     case 'Pbnd': return [{ kind: 'pitchBend', channel }];
     case 'AFtt': return [{ kind: 'aftertouch', channel }];

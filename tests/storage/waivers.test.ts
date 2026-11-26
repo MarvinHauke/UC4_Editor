@@ -52,12 +52,21 @@ test('changing EG4 Enc1 to collide elsewhere gives an open warning; the other fa
   assert.equal(w.filter((x) => x.state === 'factory').length, 7); // Enc2…Enc8 against FAd2…FAd8
 });
 
-test('a factory warning lapses to open when one of its controls changes but still collides', async () => {
+test('a factory warning lapses to open when what a control sends changes but it still collides', async () => {
   const { lib } = await open();
-  // FAd1 keeps CC 32; change only its label: it is no longer the factory control, the collision stays.
-  lib.setProperty(fad(SE01, 0, 0), 'label', 'kick');
+  // FAd1 still sends CC 32 but its lower value differs from the factory control: the collision stays, now open.
+  lib.setProperty(fad(SE01, 0, 0), 'type', 'CCAb');
+  lib.setProperty(fad(SE01, 0, 0), 'number', 32);
+  lib.setProperty(fad(SE01, 0, 0), 'lower', 5);
   const w = lib.getState().warnings.find((x) => x.message.startsWith('Enc1 · EG4 and FAd1'))!;
   assert.equal(w.state, 'open');
+});
+
+test('labelling a factory control keeps its factory collision "factory"', async () => {
+  const { lib } = await open();
+  lib.setProperty(fad(SE01, 0, 0), 'label', 'kick');
+  const w = lib.getState().warnings.find((x) => x.message.startsWith('Enc1 · EG4 and FAd1'))!;
+  assert.equal(w.state, 'factory');
 });
 
 test('waive: the warning is waived, one undo step; unwaive reopens it, one undo step', async () => {

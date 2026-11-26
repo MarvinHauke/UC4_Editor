@@ -931,3 +931,16 @@ test('setControl: a control with an unknown key is refused (validate flags unkno
   assert.equal('bogus' in now, false);
   assert.equal(lib.getState().canUndo, false);
 });
+
+test('setControl refuses only problems the edit introduces, not an existing unrelated one', async () => {
+  const c = structuredClone(await open().then((o) => o.lib.getState().configuration));
+  c.setups[0]!.encoderGroups[0]!.encoders[0]!.lower = 200; // an existing problem
+  const { library: lib } = await openLibrary(memoryStorage(save(c)), { now: clock });
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!;
+  const r = lib.setControl(enc(id), { ...old, label: 'x' });
+  assert.equal(r.message, undefined);
+  assert.equal(lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!.label, 'x');
+  // an edit that adds a new problem is still refused
+  assert.ok(lib.setControl(enc(id), { ...old, label: 'x', channel: 99 } as never).message);
+});

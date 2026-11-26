@@ -87,7 +87,14 @@ function at(root: unknown, parts: string[]): unknown {
 }
 const factories = new Map<number, ReturnType<typeof factorySetup>>();
 const factoryOf = (slot: number) => { let f = factories.get(slot); if (!f) { f = factorySetup(slot); factories.set(slot, f); } return f; };
-/** Both controls equal the same controls of the factory setup of their slot. */
+/** What decides what a control sends. The editor-only `label` and the display scale are left out. */
+const SENDS = ['type', 'mode', 'channel', 'number', 'lower', 'upper'] as const;
+function sendsLike(a: unknown, b: unknown): boolean {
+  if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+  const x = a as Record<string, unknown>, y = b as Record<string, unknown>;
+  return SENDS.every((k) => canon(x[k]) === canon(y[k]));
+}
+/** Both controls send like the same controls of the factory setup of their slot. */
 function isFactoryLayout(config: Uc4Config, w: Warning): boolean {
   const setup = config.setups.find((s) => s.id === w.setupId);
   const slot = setup?.slot;
@@ -96,8 +103,7 @@ function isFactoryLayout(config: Uc4Config, w: Warning): boolean {
   return w.controls.every((path) => {
     const parts = relative(path);
     if (!parts) return false;
-    const mine = at(setup, parts);
-    return mine !== undefined && canon(mine) === canon(at(factory, parts));
+    return sendsLike(at(setup, parts), at(factory, parts));
   });
 }
 

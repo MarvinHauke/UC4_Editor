@@ -942,7 +942,10 @@ function createLibrary(
       if (!old) return refuse('There is no such control.');
       const candidate = writeControl(state.configuration, address, control);
       const path = `setups[${setupIndex(setupId)}].${groupKey(area)}[${group}].${area}[${index}]`;
-      const problem = validate(candidate).find((p) => p.path === path || p.path.startsWith(path + '.') || p.path.startsWith(path + '['));
+      const under = (p: { path: string }) => p.path === path || p.path.startsWith(path + '.') || p.path.startsWith(path + '[');
+      // Refuse only what the edit introduces: a problem already there (a bad file) must not block Map or the reset.
+      const before = new Set(validate(state.configuration).filter(under).map((p) => `${p.path}|${p.message}`));
+      const problem = validate(candidate).find((p) => under(p) && !before.has(`${p.path}|${p.message}`));
       if (problem) return refuse(`This control cannot be set: ${problem.message}`);
       const base = `${groupKey(area)}[${group}].${area}[${index}].`;
       const touched = Object.keys({ ...old, ...control }).filter((k) =>

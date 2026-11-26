@@ -2,7 +2,7 @@
 export { factorySetup } from './factory.ts';
 export { load, save } from './document.ts';
 export { validate } from './validate.ts';
-export { warnings, describeKey } from './warnings.ts';
+export { warnings, describeKey, programsOf } from './warnings.ts';
 export { NAME_CHARS, nameProblems, normalizeGroupName, suggestGroupName } from './names.ts';
 export { changeType } from './edit.ts';
 export * from './types.ts';

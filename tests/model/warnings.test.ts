@@ -1,7 +1,7 @@
 // Warnings through the public interface (plan 0008 step 5).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { factorySetup, validate, warnings } from '../../src/model/index.ts';
+import { factorySetup, programsOf, validate, warnings } from '../../src/model/index.ts';
 import type { Setup, Uc4Config } from '../../src/model/index.ts';
 
 const cfgOf = (...setups: Setup[]): Uc4Config => ({
@@ -209,4 +209,50 @@ test('different channels do not collide on a PrGC program', () => {
   const a = s.encoderGroups[0]!.pushButtons[0]!; a.type = 'PrGC'; a.channel = 1; a.upper = 3;
   const b = s.encoderGroups[0]!.pushButtons[1]!; b.type = 'PrGC'; b.channel = 2; b.upper = 3;
   assert.deepEqual(w(s), []);
+});
+
+test('a PrGC control with an out-of-range lower/upper does not blow up: the range is clamped to 0–127', () => {
+  const s = base();
+  const e = s.encoderGroups[0]!.encoders[0]!;
+  e.type = 'PrGC'; e.channel = 5; e.lower = 0; e.upper = 100000000;
+  const f = s.faderButtonGroups[0]!.faders[0]!;
+  f.type = 'PrGC'; f.channel = 5; f.lower = -50; f.upper = 100;
+  const t = Date.now();
+  const r = w(s);
+  assert.ok(Date.now() - t < 1000);
+  assert.ok(r.length >= 1); // programs 0–127 and 0–100 on ch 5 overlap
+});
+
+test('a PrGC control with a non-integer bound sends nothing', () => {
+  const s = base();
+  const e = s.encoderGroups[0]!.encoders[0]!;
+  e.type = 'PrGC'; e.channel = 5; e.lower = 0; e.upper = 3.5;
+  const f = s.faderButtonGroups[0]!.faders[0]!;
+  f.type = 'PrGC'; f.channel = 5; f.lower = 0; f.upper = 3.5;
+  assert.deepEqual(w(s), []);
+});
+
+test('PrGC values entirely outside 0–127 make no key (no invented program 127)', () => {
+  const s = base();
+  const b = s.faderButtonGroups[0]!.buttons[0]!;
+  b.type = 'PrGC'; b.channel = 5; b.upper = 200;
+  const f = s.faderButtonGroups[0]!.faders[0]!;
+  f.type = 'PrGC'; f.channel = 5; f.lower = 150; f.upper = 200;
+  const e = s.encoderGroups[0]!.encoders[0]!;
+  e.type = 'PrGC'; e.channel = 5; e.lower = 127; e.upper = 127;
+  assert.deepEqual(w(s), []);
+});
+
+test('programsOf: button = upper only if 0–127; encoder/fader = lower…upper cut to 0–127; non-integers or empty → none', () => {
+  assert.deepEqual(programsOf({ lower: 9, upper: 5 }, true), [5]);
+  assert.deepEqual(programsOf({ upper: 200 }, true), []);
+  assert.deepEqual(programsOf({ upper: -1 }, true), []);
+  assert.deepEqual(programsOf({ lower: 5, upper: 7 }, false), [5, 6, 7]);
+  assert.deepEqual(programsOf({ lower: 7, upper: 5 }, false), [5, 6, 7]);
+  assert.deepEqual(programsOf({ lower: -3, upper: 1 }, false), [0, 1]);
+  assert.equal(programsOf({ lower: 0, upper: 100000000 }, false).length, 128);
+  assert.deepEqual(programsOf({ lower: 150, upper: 200 }, false), []);
+  assert.deepEqual(programsOf({ lower: 1.5, upper: 3 }, false), []);
+  assert.deepEqual(programsOf({ lower: 1, upper: 3.5 }, false), []);
+  assert.deepEqual(programsOf({ lower: 1.5, upper: 3 }, true), [3]);
 });
