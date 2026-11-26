@@ -8,6 +8,7 @@
   import type { Match } from '../live/index.ts';
   import MonitorRow from './MonitorRow.svelte';
   import MonitorResizeHandle from './MonitorResizeHandle.svelte';
+  import SwitchOffer from './SwitchOffer.svelte';
 
   let { live, onselectmatch }: { live: Live; onselectmatch: (match: Match) => void } = $props();
   /** The row whose other matches are listed ("+2"). */
@@ -32,6 +33,7 @@
     <button type="button" class="fold" aria-expanded={!size.oneLine} data-help={size.oneLine ? 'Show the list: all rows again' : 'One line: shows only the last message with its match'}
       onclick={() => { setSize({ oneLine: !size.oneLine }); }}>{size.oneLine ? 'Show list' : 'One line'}</button>
   </h3>
+  <SwitchOffer />
   {#if size.oneLine}
     <div class="oneline" aria-live="off">
       {#if last}

@@ -1,7 +1,7 @@
 // The monitor's state as Svelte state (plan 0008 step 1): the MIDI inputs and the live session, read by the monitor.
 // Listening only. Later steps add matches and live values to the same store.
 import { getContext } from 'svelte';
-import { createLiveSession, type ControlRef, type ControlState, type LiveContext, type LiveRow, type LiveSession } from '../live/index.ts';
+import { createLiveSession, type ControlRef, type ControlState, type LiveContext, type LiveRow, type LiveSession, type SwitchOffer } from '../live/index.ts';
 import type { IgnoredCounts, InputInfo, InputSelection, ListenStatus, MidiInputs } from '../midi/inputs.ts';
 import { loadSessionState, saveSessionState, type SessionStorageLike } from './liveSessionState.ts';
 import { loadSelection, saveSelection, type KeyValueStorage } from './monitorRows.ts';
@@ -9,6 +9,8 @@ import { loadSelection, saveSelection, type KeyValueStorage } from './monitorRow
 export function createLive(inputs: MidiInputs, session: LiveSession = createLiveSession(), storage?: KeyValueStorage | null, sessionStore?: SessionStorageLike | null) {
   let rows = $state.raw<readonly LiveRow[]>(session.rows);
   let states = $state.raw<ReadonlyMap<string, ControlState>>(session.controlStates);
+  let offer = $state.raw<SwitchOffer | null>(session.offer);
+  let silenced = $state(session.getState().silenceOffers);
   let touched = $state.raw<{ control: ControlRef; at: number } | null>(session.lastTouched);
   let list = $state.raw<readonly InputInfo[]>(inputs.inputs);
   let selection = $state.raw<InputSelection>(inputs.selection);
@@ -29,7 +31,7 @@ export function createLive(inputs: MidiInputs, session: LiveSession = createLive
   let sentContext = false;
   const stops = [
     inputs.onMessage((e) => { session.receive(e); }),
-    session.subscribe(() => { saveState(); rows = session.rows; states = session.controlStates; touched = session.lastTouched; }),
+    session.subscribe(() => { saveState(); rows = session.rows; states = session.controlStates; touched = session.lastTouched; offer = session.offer; silenced = session.getState().silenceOffers; }),
     inputs.subscribe(() => { list = inputs.inputs; selection = inputs.selection; status = inputs.status; clock = inputs.ignored.clock > 0; }),
   ];
   return {
@@ -50,6 +52,14 @@ export function createLive(inputs: MidiInputs, session: LiveSession = createLive
       session.setContext(context);
     },
     pin(rowKey: string, controlId: string | null): void { session.pin(rowKey, controlId); },
+    /** "The UC4 seems to be on encoder group 3 — switch?": set after 3 UC4 messages in a row that match only elsewhere; the UI only offers. */
+    get offer() { return offer; },
+    /** "Don't ask again" is on (until the tab closes). */
+    get silenced() { return silenced; },
+    /** The user said yes: gives the target once and clears the offer; the caller switches the selections. */
+    acceptOffer(): SwitchOffer | null { return session.acceptOffer(); },
+    /** "No": no offer for this target until the open setup changes; with `silence`, no more offers at all this session. */
+    declineOffer(silence: boolean): void { session.dismissOffer(); if (silence) session.silenceOffers(true); },
     /** A pair's single messages (Split) or the joined row (Join); `row.pair.key`. */
     split(pairKey: string): void { session.split(pairKey); },
     join(pairKey: string): void { session.join(pairKey); },

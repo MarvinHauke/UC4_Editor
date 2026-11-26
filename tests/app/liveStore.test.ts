@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SESSION_STATE_KEY } from '../../src/app/liveSessionState.ts';
 import { createLive } from '../../src/app/liveStore.svelte.ts';
+import { factorySetup } from '../../src/model/index.ts';
 import { createLiveSession, type LiveContext } from '../../src/live/index.ts';
 import { createMidiInputs } from '../../src/midi/inputs.ts';
 import { FakeInput, fakeEnv } from '../midi/fakeMidi.ts';
@@ -89,5 +90,37 @@ describe('session state', () => {
     u2.emit(0x91, 60, 100); u2.emit(0x81, 60, 0);
     expect(b.rows).toHaveLength(2);
     expect(createLive(createMidiInputs({ portName: 'x', env: fakeEnv().env }), undefined, memory(), memory()).rows).toEqual([]);
+  });
+});
+
+describe('switch offer', () => {
+  const config = { format: 'uc4-config', schemaVersion: 1, device: { profile: 'faderfox-uc4' }, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z', setups: [factorySetup(1)] } as unknown as LiveContext['configuration'];
+  const open = async () => {
+    const f = fakeEnv();
+    const uc4 = new FakeInput('u', 'Faderfox UC4'); f.access.inputs.set('u', uc4);
+    const live = createLive(createMidiInputs({ portName: 'Faderfox UC4', env: f.env }), undefined, memory(), memory());
+    await live.connect();
+    live.setContext({ configuration: config, setupId: factorySetup(1).id, encoderGroup: 0, faderButtonGroup: 0 });
+    return { live, uc4 };
+  };
+  it('is offered after three messages of another encoder group, and accepting gives the target once', async () => {
+    const { live, uc4 } = await open();
+    uc4.emit(0xb0, 24, 1); uc4.emit(0xb0, 25, 1);
+    expect(live.offer).toBeNull();
+    uc4.emit(0xb0, 26, 1);
+    expect(live.offer?.text).toContain('encoder group 3');
+    const target = live.acceptOffer()?.target;
+    expect(target?.encoderGroup).toBe(2);
+    expect(live.offer).toBeNull();
+    expect(live.acceptOffer()).toBeNull();
+  });
+  it('"No" holds, and with the box it stops all offers and is remembered as silenced', async () => {
+    const { live, uc4 } = await open();
+    for (const n of [24, 25, 26]) uc4.emit(0xb0, n, 1);
+    live.declineOffer(true);
+    expect(live.offer).toBeNull();
+    expect(live.silenced).toBe(true);
+    for (const n of [32, 33, 34]) uc4.emit(0xb0, n, 1);
+    expect(live.offer).toBeNull();
   });
 });

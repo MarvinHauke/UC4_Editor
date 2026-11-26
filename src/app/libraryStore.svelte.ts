@@ -98,6 +98,9 @@ export function createStore(library: Library, openMessage?: string) {
     /** What `openLibrary` said on start; gone after the first command. */
     get startMessage() { return startMessage; },
     selectSetup: (setupId: string) => done(library.select({ setupId, control: null })),
+    /** The switch offer's yes: setup and both groups as ONE undo step (decision 19); Back is `undo`. */
+    switchTo: (target: { setupId: string; encoderGroup: number; faderButtonGroup: number }) =>
+      done(library.select({ setupId: target.setupId, encoderGroup: target.encoderGroup, faderButtonGroup: target.faderButtonGroup }, { asStep: true })),
     selectGroup: (kind: 'encoder' | 'faderButton', group: number) =>
       done(library.select(kind === 'encoder' ? { encoderGroup: group } : { faderButtonGroup: group })),
     setGroupName: (encoderGroup: number, input: string) => done(library.setGroupName(state.selection.setupId, encoderGroup, input)),

@@ -20,6 +20,7 @@
   import { createMidiInputs } from '../midi/inputs.ts';
   import { createLive, LIVE_CONTEXT } from './liveStore.svelte.ts';
   import { selectMatch } from './liveView.ts';
+  import { createSwitchNote, SWITCH_CONTEXT, type SwitchUi } from './switchNote.svelte.ts';
   import type { Match } from '../live/index.ts';
   import { GUIDE_CONTEXT, createGuide } from './guide.svelte.ts';
   import { COPY_CONTEXT, createCopyHold } from './copyHold.svelte.ts';
@@ -121,6 +122,35 @@
   function showMatch(match: Match): void {
     if (store) selectMatch(store, match, store.state.selection.setupId);
   }
+  /** The offer's yes: the target's setup and both groups in one selection change. */
+  const switchNote = createSwitchNote();
+  function acceptOffer(silence: boolean): void {
+    if (!store) return;
+    const offer = live.acceptOffer();
+    if (!offer) return;
+    store.switchTo(offer.target); // one undo step
+    if (silence) live.declineOffer(true);
+    switchNote.show(offer, store.state.configuration);
+  }
+  /** Back is the undo of the switch step. */
+  function switchBack(): void {
+    if (!switchNote.note || !store) return;
+    switchNote.clear();
+    store.undo();
+  }
+  // The offer and its Back note: shown in the Connections column, or in the status bar while the column is closed.
+  const switchUi: SwitchUi = {
+    get offer() { return live.offer; },
+    get note() { return switchNote.note; },
+    accept: acceptOffer,
+    decline: (silence) => { live.declineOffer(silence); },
+    back: switchBack,
+  };
+  setContext(SWITCH_CONTEXT, switchUi);
+  $effect(() => {
+    const state = store?.state;
+    if (state) switchNote.changed({ setupId: state.selection.setupId, encoderGroup: state.selection.encoderGroup, faderButtonGroup: state.selection.faderButtonGroup }, state.configuration);
+  });
   onMount(() => {
     const mq = matchMedia(`(min-width: ${WIDE_PX}px)`);
     const onWide = (): void => { wide = mq.matches; };
@@ -255,7 +285,7 @@
   <TourOverlay {tour} onget={getSetups} profile={faderfoxUc4} />
   <WelcomeCard {welcome} profile={faderfoxUc4} />
   {#if store}<DumpGuide {dumpGuide} {device} {sender} profile={faderfoxUc4} />{/if}
-  <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)} warnings={store?.warnings ?? []} warningAt={store?.warningAt ?? -1} onstepwarning={(d) => store?.stepWarning(d)}
+  <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)} switchUi={connOpen ? null : switchUi} warnings={store?.warnings ?? []} warningAt={store?.warningAt ?? -1} onstepwarning={(d) => store?.stepWarning(d)}
     waiting={notices.queue.length} onopenconnections={openConnections} />
 </div>
 
