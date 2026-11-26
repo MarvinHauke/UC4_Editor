@@ -190,17 +190,21 @@ The user's pick of which match a message key is, held until the active setup cha
 _Avoid_: lock, bind
 
 **Warning**:
-Something in a setup that may be a mistake but is allowed, such as two controls sending the same message; it never
-blocks a send.
+Something in a setup that may be a mistake but is allowed, such as two controls that can play at the same time
+sending the same message; it never blocks a send.
 _Avoid_: problem (the validator rejects), error
 
 **Waive**:
-To hide a warning on purpose; "Show waived" brings it back.
+To accept a warning before a send; the editor remembers it and hides the warning until "Show waived".
 _Avoid_: ignore, dismiss, mute
 
+**Map**:
+Giving a control the command type, channel and number of a MIDI monitor row's message.
+_Avoid_: learn (the later quick mode), assign, bind
+
 **Learn**:
-Taking a control's command type, channel and number from the next message of another MIDI device.
-_Avoid_: MIDI learn mapping, capture
+A later quick mode that maps each new incoming message to the next control in turn.
+_Avoid_: map (one row to one control); the UC4's own learn is the device's (hold encoder 6)
 
 **Connections**:
 The column for the UC4's MIDI connection, the dumps it received and kept, and later the sends to it and other MIDI

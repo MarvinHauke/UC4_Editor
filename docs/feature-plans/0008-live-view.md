@@ -64,13 +64,52 @@ Listen only (CLAUDE.md, "Hardware safety"): the app opens the UC4's MIDI input a
 6. **Follow the evidence, as an offer only** (user, 2026-11-26): when messages keep matching another group (or
    setup) better than the active one, the editor offers "The UC4 seems to be on encoder group 3 — switch?". It
    never switches by itself.
-7. **Collisions are warnings, not problems, and can be waived** (user, 2026-11-26): two controls that send the
-   same message in the same active groups (or the same setup) give a **warning**; it does not block a send or an
-   export, since mapping one CC twice can be intended. The user can **waive** a warning (like a DRC waiver in a
-   circuit-board designer): it is hidden, and a "Show waived" switch brings it back, where it can be un-waived.
-   A waiver belongs to the setup and names the two controls and the message; when either control's message
-   changes, the waiver no longer applies. Why: a problem (0006) means the validator rejects a value and blocks a
-   send; a collision is a valid choice the user may have made on purpose.
+7. **Collisions are warnings, not problems** (user, 2026-11-26; refined in grilling R2-Q1–Q3): the validator gives
+   a **warning** when two controls of one setup send the same message (type, channel, number) and can play at the
+   same time: an encoder-group control and a fader/button-group control in any groups, or two controls of the
+   same group (Enc3 in EG1 and Enc3 in EG2 never play together). A warning blocks nothing, since mapping one CC
+   twice can be intended. The Send dialog lists the warnings and **Send anyway** waives them; export only says
+   "2 warnings" with a link. A waiver is kept in the library in the browser, never in a `.json` or `.syx` file (no
+   `schemaVersion` change); the problem list hides waived warnings and "Show waived" brings them back, like a DRC
+   waiver. It lapses when either control's message changes. Why: a waiver is a check before sending, not part of
+   the setup; a file field would add clutter without value.
+8. **Map, from a monitor row** (user, grilling 2026-11-26, Q1–Q7): every row has a **Map** button. Map arms the
+   row; the next click on a control in the device view sets that control's command type, channel and number from
+   the row's message, as one undo step, with a result line ("FAd3 · FG2 now sends CC 74 ch 2 · Undo"). Esc, Map
+   again or a click on empty space cancels; one click maps one control. Controls whose kind can't send the message
+   are dimmed and not clickable while Map is armed, and the help line says why ("Faders can't send notes").
+   Type per kind: CC → encoder `CCAb`, fader `CCAb`, button `CC`; note → button `notE`; program change → `PrGC`;
+   pitch bend → encoder or fader `Pbnd`; aftertouch → `AFtt`; `CCAh` never by itself. Spotting `CCr1`/`CCr2` from
+   the values seen (only 1/127, only 63/65) is an option the user turns on. Only type, channel and number change;
+   mode, lower, upper and display scale stay, and the type goes through `changeType`. A mapping that makes a
+   collision goes through and becomes a warning (decision 7; "also sent by Enc3 · EG1"). Rows from the UC4 can be
+   mapped too (an encoder's CC on a push button that sets it back to a value); clicking a UC4 row selects its match.
+   Why: a mapping is an ordinary edit with a different source; dimming shows beforehand where the message fits.
+9. **"Map" now, "Learn" later** (user, 2026-11-26, Q1): Learn is a later quick mode that maps each new message to
+   the next control slot, from any input, not only the UC4. The UC4's own learn (hold encoder 6) is the device's.
+10. **The switch offer can be silenced** (user, 2026-11-26, Q11): after 3 messages in a row that match only another
+   group or setup; the offer has a checkbox "don't ask again" that holds for the session.
+11. **Monitor size** (user, 2026-11-26, Q12): about 8 rows, scrolling, newest key on top, Clear; it can be shrunk
+   to one line at the bottom; the Connections column stays foldable. Rows are not saved.
+12. **Pairs as one row, unchainable** (user, 2026-11-26, Q13): a `CCAh` pair (CC n and n+32) is one row with a
+   14-bit value, a `notE` press and release one row; a pair can be split into its single messages, and the
+   monitor remembers the split for the session.
+13. **Code and order** (user, 2026-11-26, Q14): matching, ranking, the evidence check and the mapping table in a new
+   `src/live/` (pure TypeScript on the model, uc4-protocol); the monitor's input in `src/midi/`; warnings in the
+   validator (uc4-model); the UI with uc4-ui. Steps: monitor and input picker → matching, highlight, pinning →
+   warnings → Map → the switch offer; live values in the device view (Design, "Live view in the device view") are
+   part of the matching step.
+
+14. **Spotting relative modes is a Settings switch, off by default** (user, R2-Q4); the result line names the
+   choice ("as `CCr1`: only 1/127 seen"). Settings keeps clear, separate sections (a "MIDI monitor" section).
+15. **Session = until the tab closes** (user, R2-Q5): "don't ask again" and split pairs survive a reload and end
+   with the tab.
+16. **DAW feedback is a later step** (user, R2-Q6): a second input (an IAC bus the DAW copies to) whose values the
+   device view shows; the same step serves the ARS test rig (brief below), so the editor can be the rig for
+   developing Remote Scripts with the remote-script MCP. Version 1 shows the UC4's own messages.
+17. **After mapping a CC onto a button** (user, R2-Q7): the property panel opens on it with Upper focused (the
+   value the press sends); any other mapping just selects the control.
+18. **The one-line monitor** (user, R2-Q8) shows the last message with its match and keeps Map.
 
 ## Open questions
 
@@ -84,16 +123,12 @@ sends nothing on a group change; it also has a **learn** mode worth grilling.
    in the app, and the app suggests a switch when messages match another group better.
 2. ~~Two controls with the same message~~ — answered by decisions 4 and 7: both light up, ranked; a warning,
    waivable.
-3. **Where the matching lives**: `src/protocol/` (MIDI meaning of a command) or `src/live/`.
-   Recommended: a small `src/live/` module that uses the model only; the protocol engine stays
-   SysEx-only.
+3. ~~Where the matching lives~~ — answered by decision 13: `src/live/`.
 4. **Push buttons and Shift layers**: does the UC4 send the push of encoder n and Shift
    combinations as their own commands? Check in the same listen session as question 1.
 5. **Note-type commands** (velocity, note off as note on with 0): which forms does the UC4 send?
    Same listen session.
-6. **What the DAW sends back to the UC4** (LED feedback) is not visible to the browser. Show
-   nothing, or let the user route a copy (`routemidi`) to a second input? Recommended: show
-   nothing in the first version.
+6. ~~What the DAW sends back~~ — answered by decision 16: a later step with a second input.
 
 **Listen check, 2026-11-16** (`receivemidi` in a visible pane, listen only; log
 `dumps/listen/2026-11-16-listen.txt`; SE16 with the combined-dump changes, groups 1/1 then fader/button group 8):
@@ -130,21 +165,9 @@ script against the setup's real messages. To grill:
 3. Which setup and groups apply (the script expects SE17; the rig can't know the UC4's active group).
 4. Relative modes other than `CCr1` are untested.
 
-### To grill (2026-11-26)
+### Grilled (2026-11-26)
 
-1. Where a waiver is stored: in the setup in the `uc4-config` file (a `schemaVersion` change, the user's call), or
-   in the library beside it. Recommended: in the file, so a waiver survives export and import.
-2. Where warnings show: the problem list (0006) with a warning mark, or a list of their own. Recommended: the same
-   list, warnings after problems, with the "Show waived" switch.
-3. Do warnings cover other setups, or only collisions inside one setup's groups? Recommended: inside one setup
-   (an encoder group and a fader/button group can be active together; across setups never).
-4. "Evidence": how many messages, and how they are weighed. Recommended: three messages in a row that match only
-   another group.
-5. The monitor's size, a clear button, and whether rows from other inputs are matched (learn) or only listed.
-6. Learn from the monitor ("Assign to…" on a row) and/or the next message while a control is selected.
-7. `CCAh` (CC n and n+32) and `notE` (on/off) as one row each.
-8. Where matching lives (question 3 above) and the order of steps: monitor first, then matching, then
-   warnings, then learn.
+Questions 1–8 of the first list answered in decisions 7–18.
 
 ## Steps
 
