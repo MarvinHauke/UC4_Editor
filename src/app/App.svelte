@@ -190,6 +190,8 @@
     const state = store?.state;
     if (state) switchNote.changed({ setupId: state.selection.setupId, encoderGroup: state.selection.encoderGroup, faderButtonGroup: state.selection.faderButtonGroup }, state.configuration);
   });
+  // The monitor listens whenever the UC4 connection holds MIDI access, whichever Connect button got it (the access is shared).
+  $effect(() => { if (device.state.kind === 'connected') void live.connect(); });
   onMount(() => {
     const mq = matchMedia(`(min-width: ${WIDE_PX}px)`);
     const onWide = (): void => { wide = mq.matches; };
