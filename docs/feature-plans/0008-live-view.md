@@ -343,7 +343,8 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    - **A warnings dialog** (Q6–Q8; reshapes step 6): a click on the status bar's warning count, or on the warning
      line in the property panel, opens one list of all problems and warnings, filtered to "this setup" or "all
      setups"; each entry has **Show** (selects the control, closes the dialog), warnings also **Waive**, plus "Show
-     waived". The ‹ › stepper goes. The property panel keeps a short line naming the other control ("Also sent by
+     waived". The ‹ › stepper goes, for problems too: the problem count also opens the dialog (architect,
+     2026-11-26, from the step 6 review). The property panel keeps a short line naming the other control ("Also sent by
      Enc3 · EG1"), and the device view keeps the mark on the control, so it stays visible which control is
      affected. **Factory collisions start waived** (B), marked "factory layout", until one of the two controls
      changes: a fresh library shows no warning. Send lists unwaived warnings with "Send anyway" (waives them) and
