@@ -50,6 +50,8 @@ export interface MapResult {
 
 export const RESULT_MS = 12000;
 
+const place = (x: MapStore['state']): string => `${x.selection.setupId}|${x.selection.encoderGroup}|${x.selection.faderButtonGroup}|${x.selection.control?.area ?? ''}|${x.selection.control?.index ?? ''}`;
+
 export function createMapFlow(options: {
   live: MapLive;
   store: () => MapStore | null;
@@ -81,7 +83,6 @@ export function createMapFlow(options: {
     const e = p.edit;
     const address: ControlAddress = { setupId: e.setupId, area: e.area, group: e.group, index: e.index };
     const before = store.state;
-    const place = (x: MapStore['state']) => `${x.selection.setupId}|${x.selection.encoderGroup}|${x.selection.faderButtonGroup}|${x.selection.control?.area ?? ''}|${x.selection.control?.index ?? ''}`;
     const was = { configuration: before.configuration, place: place(before) };
     const answer = store.setControl(address, e.control, selection) as { message?: string } | undefined;
     // The library refuses with a message and changes nothing: say so, claim no edit, keep Map armed to pick another control.
@@ -163,7 +164,7 @@ export function createMapFlow(options: {
       if (!plan) { show({ text: `${ref.name} has no factory settings to go back to`, alsoSentBy: [], notes: [], error: true, undoable: false, rowKey: null, configuration: null }); return; }
       const toEncoder = ref.area === 'encoders' || ref.area === 'pushButtons';
       const selection: SelectionChange = { setupId: ref.setupId, ...(toEncoder ? { encoderGroup: ref.group } : { faderButtonGroup: ref.group }), control: { area: ref.area, index: ref.index } };
-      const before = store.state.configuration;
+      const before = store.state.configuration, placeBefore = place(store.state);
       const answer = store.setControl({ setupId: ref.setupId, area: ref.area, group: ref.group, index: ref.index }, plan.control, selection) as { message?: string } | undefined;
       if (answer && typeof answer === 'object' && typeof answer.message === 'string' && answer.message !== '') {
         show({ text: answer.message, alsoSentBy: [], notes: [], error: true, undoable: false, rowKey: null, configuration: null });
@@ -171,8 +172,11 @@ export function createMapFlow(options: {
       }
       const prior = marks.get(rowKey);
       live.markMapped(rowKey, null); marks.delete(rowKey);
+      // A control already at factory makes no undo entry (unless the selection moved): say so, offer no Undo.
+      const changed = store.state.configuration !== before;
+      const undoable = changed || place(store.state) !== placeBefore;
       show({
-        text: plan.text, alsoSentBy: [], notes: [], error: false, undoable: store.state.configuration !== before, rowKey, configuration: store.state.configuration,
+        text: changed ? plan.text : `${ref.name} is already factory`, alsoSentBy: [], notes: [], error: false, undoable, rowKey, configuration: store.state.configuration,
         ...(prior ? { restoreMark: { rowKey, controlId: controlId(ref.setupId, ref.area, ref.group, ref.index), mark: prior } } : {}),
       });
     },

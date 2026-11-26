@@ -8,7 +8,7 @@ const ok = (over: Partial<Extract<MapPlan, { ok: true }>> = {}): MapPlan => ({
   ok: true, edit, resultText: 'Enc3 · EG1 now sends CC 74 ch 2', alsoSentBy: [], focusUpper: false, spotted: null, changed: true, notes: [], ...over,
 });
 
-function setup(plan: MapPlan, touch: TouchTarget | null = null, behave: { refuse?: string; nothingChanges?: boolean } = {}) {
+function setup(plan: MapPlan, touch: TouchTarget | null = null, behave: { refuse?: string; nothingChanges?: boolean; moveSelection?: boolean } = {}) {
   const calls: string[] = [];
   let armed: string | null = null;
   const live: MapLive = {
@@ -28,6 +28,7 @@ function setup(plan: MapPlan, touch: TouchTarget | null = null, behave: { refuse
       calls.push(`set ${a.area} ${a.group} ${a.index} ${JSON.stringify(sel)}`);
       if (behave.refuse) return { message: behave.refuse };
       if (!behave.nothingChanges) state.configuration = { v: 2 }; // an edit makes a new configuration
+      if (behave.moveSelection) state.selection.control = { area: 'encoders', index: 2 };
       return undefined;
     },
     selectControl: () => {},
@@ -200,6 +201,20 @@ describe('reset to factory', () => {
     t.flow.resetToFactory('r', ref);
     t.flow.undo();
     expect(t.calls.slice(-3)).toEqual(['mapped r null', 'undo', `mapped r ${controlId('s1', 'encoders', 0, 2)}`]);
+  });
+  it('a control already at factory says so and offers no Undo', () => {
+    const t = setup(ok(), null, { nothingChanges: true });
+    withSetups(t);
+    t.flow.resetToFactory('r', ref);
+    expect(t.flow.result?.text).toBe('Enc3 · EG1 is already factory');
+    expect(t.flow.result?.undoable).toBe(false);
+  });
+  it('already factory but the selection moved: says so, and Undo stays for the selection step', () => {
+    const t = setup(ok(), null, { nothingChanges: true, moveSelection: true });
+    withSetups(t);
+    t.flow.resetToFactory('r', ref);
+    expect(t.flow.result?.text).toBe('Enc3 · EG1 is already factory');
+    expect(t.flow.result?.undoable).toBe(true);
   });
   it('a setup without a slot says so and changes nothing', () => {
     const t = setup(ok());
