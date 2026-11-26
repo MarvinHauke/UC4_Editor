@@ -317,4 +317,16 @@ describe('PrGC out of range', () => {
     send(s, { kind: 'program', channel: 1, number: 127, value: 0 });
     expect(s.rows[0]!.matches.some((m) => m.control.id === enc('factory-se01', 0, 0))).toBe(true);
   });
+
+  it('a button with upper outside 0–127 matches nothing; a non-integer lower does not matter for a button', () => {
+    const c = twoSetups((se) => {
+      const a = se.encoderGroups[0]!.pushButtons[0]!; a.type = 'PrGC'; a.channel = 1; a.upper = 200;
+      const b = se.encoderGroups[0]!.pushButtons[1]!; b.type = 'PrGC'; b.channel = 1; b.upper = 9; b.lower = 0.5;
+    });
+    const s = live(c);
+    send(s, { kind: 'program', channel: 1, number: 127, value: 0 });
+    expect(s.rows[0]!.matches.some((m) => m.control.id === push('factory-se01', 0, 0))).toBe(false);
+    send(s, { kind: 'program', channel: 1, number: 9, value: 0 });
+    expect(s.rows[0]!.matches.some((m) => m.control.id === push('factory-se01', 0, 1))).toBe(true);
+  });
 });
