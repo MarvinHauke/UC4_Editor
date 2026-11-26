@@ -26,15 +26,15 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
 
 ## Next (2026-11-27)
 
-- **Rename Waive → Ignore** (0008 decision 29): UI text, code names, tests; uc4-model (storage/model) then uc4-ui.
-- **From the user's /code-review of `feat/live-view`** (2026-11-27): Map by touch after a refusal, the status bar's
-  note vs. warning count, dead `pin()` keys fixed (`d26800d`); the `PrGC` waiver lapse (story 43) with uc4-model.
-  Judgement calls still open: one model helper for the message key, "what a control sends", the encoder half and
-  slot names.
+- **Review judgement calls** (user's /code-review of `feat/live-view`, 2026-11-27): one model helper for the message
+  key, "what a control sends", the encoder half and slot names. Done from that review: `d26800d`, `c760681`, `809ab0e`
+  (Ignore rename, 0008 decision 29).
+- **Wording question for the user:** "Show" (go to the control) beside "Show again" (un-ignore) in an ignored row of
+  the Problems and warnings dialog; the architect suggests "Go to".
 
 ## Waiting for the user
 
-- **0008:** the hands-on review and the listen-only hardware list; Connect from the dump guide on the real UC4.
+- **0008:** Ignore checks by hand (ignore, reload, Show again, `PrGC` widen re-opens, "Send anyway" wording); the hands-on review and the listen-only hardware list; Connect from the dump guide on the real UC4.
 - **Look and size checks:** light theme and 1024 px of the Connections column, the guide, Copy / Paste flash,
   Reset all; light theme `--border` `#b9b9b3` on white is 1.97:1 (below 3:1 for field edges; a token pass).
 - **Hardware look list** (look only): what the display shows on entering edit mode and whether a value falls back
