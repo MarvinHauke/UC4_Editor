@@ -359,7 +359,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    top, last-moved marked); the monitor at the bottom of Connections with the input picker ("All inputs",
    remembered), Clear, "Listening…" or why not, "MIDI clock ignored". Stories 1–7, 13. Checks: connection tests with
    `fakeMidi`, live-module tests, browser list with a MIDI stub.
-2. **Matching and live values** — uc4-protocol, then uc4-ui · blocked by: 1 · UC4 rows name their match, ranked in
+2. **Matching and live values** — uc4-protocol (done `66dfa17`, reviewed), then uc4-ui · blocked by: 1 · UC4 rows name their match, ranked in
    three tiers, "+n" with the list, pins, a click on a UC4 row selects its control; the device view lights the
    match and shows live values (fader, ring, press), "unknown" until first sent. Stories 14–21. Hardware list.
 3. **Pairs, values and monitor size** — uc4-protocol, then uc4-ui · blocked by: 2 · `CCAh` pair and `notE` press and
