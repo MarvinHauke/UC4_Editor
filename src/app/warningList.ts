@@ -13,11 +13,11 @@ export interface ListOptions { scope: Scope; showWaived: boolean; setupId: strin
 /** The setup a problem's path lies in, or -1. */
 const problemSetup = (path: string): number => { const m = /^setups\[(\d+)\]/.exec(path); return m ? Number(m[1]) : -1; };
 
-/** Problems (with their index in `state.problems`, which `selectProblem` takes) and warnings to list. Problems never hide, and carry no control filter. */
+/** Problems (with their index in `state.problems`, which `selectProblem` takes) and warnings to list. Problems never hide (one that belongs to no setup shows in every scope), and carry no control filter. */
 export function listEntries(problems: readonly Problem[], warnings: readonly ListedWarning[], o: ListOptions): { problems: ProblemEntry[]; warnings: ListedWarning[] } {
   const here = (setupId: string): boolean => o.scope === 'all' || setupId === o.setupId;
   return {
-    problems: problems.map((problem, index) => ({ index, problem })).filter((e) => o.scope === 'all' || problemSetup(e.problem.path) === o.setupIndex),
+    problems: problems.map((problem, index) => ({ index, problem })).filter((e) => { const at = problemSetup(e.problem.path); return o.scope === 'all' || at === -1 || at === o.setupIndex; }),
     warnings: warnings.filter((w) =>
       here(w.setupId) && (o.showWaived || w.state === 'open') && (o.control === null || w.controls.includes(o.control))),
   };

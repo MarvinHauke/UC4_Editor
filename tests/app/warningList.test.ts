@@ -20,6 +20,10 @@ describe('listEntries', () => {
     expect(listEntries(problems, list, { ...base, scope: 'all' }).problems).toHaveLength(2);
     expect(listEntries(problems, list, { ...base, showWaived: true }).warnings).toHaveLength(3);
   });
+  it('lists a problem that belongs to no setup in every scope', () => {
+    const whole = [{ path: 'setups', message: 'z' }, ...problems];
+    expect(listEntries(whole, list, base).problems.map((e) => e.index)).toEqual([0, 1]);
+  });
   it('filters to one control', () => {
     expect(listEntries([], list, { ...base, showWaived: true, control: 'x' }).warnings).toEqual([list[1]]);
   });
