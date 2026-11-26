@@ -193,6 +193,9 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    stopped. An input picker: "All inputs" or one input; rows from the UC4's port carry a UC4 mark. An output
    picker comes later (sending is its own decision, decision 1). Why: a log of every value buries the controls;
    one row per control is what learn and matching need.
+   **The message key includes the input** (architect, 2026-11-26, from step 1's review): the same CC from the UC4
+   and from a synth are two rows, so a row always has one source for matching and Map. Why: one shared row would
+   show the latest sender only and mix a UC4 match with a synth's message.
 4. **A message from the UC4 is matched to its controls and ranked by context** (user, 2026-11-26): the active
    setup and its two active groups first, then the other groups of the active setup, then the other setups. The
    device view lights the best match; the row names it ("FAd3 · FG2") with "+n" for the others. Why: the UC4
@@ -340,7 +343,7 @@ Grilled in four rounds with the user; answers in decisions 7–22. Open for the 
 
 Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names who builds it and what gates it.
 
-1. **Monitor, first rows** — uc4-protocol (connection, live module), then uc4-ui (monitor) · blocked by: none ·
+1. **Monitor, first rows** — uc4-protocol (connection, live module: done `2101d1b`, reviewed), then uc4-ui (monitor) · blocked by: none ·
    the connection lists every input with plug and unplug and delivers channel messages of the chosen inputs,
    real-time dropped and counted; the live module turns messages into rows (one per key, value in place, newest on
    top, last-moved marked); the monitor at the bottom of Connections with the input picker ("All inputs",
@@ -389,6 +392,9 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    stopped. An input picker: "All inputs" or one input; rows from the UC4's port carry a UC4 mark. An output
    picker comes later (sending is its own decision, decision 1). Why: a log of every value buries the controls;
    one row per control is what learn and matching need.
+   **The message key includes the input** (architect, 2026-11-26, from step 1's review): the same CC from the UC4
+   and from a synth are two rows, so a row always has one source for matching and Map. Why: one shared row would
+   show the latest sender only and mix a UC4 match with a synth's message.
 4. **A message from the UC4 is matched to its controls and ranked by context** (user, 2026-11-26): the active
    setup and its two active groups first, then the other groups of the active setup, then the other setups. The
    device view lights the best match; the row names it ("FAd3 · FG2") with "+n" for the others. Why: the UC4
