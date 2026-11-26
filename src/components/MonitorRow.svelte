@@ -88,7 +88,7 @@
         {/if}
       </p>
       {#if row.matches.length > 0}
-        <ul class="alts" aria-label="Controls that send this message">
+        <ul class="alts" class:single={row.matches.length === 1} aria-label="Controls that send this message">
           {#each row.matches as m, i (m.control.id)}
             {@const w = m.tier === 3 ? whereWord(m) : null}
             <li>
@@ -149,7 +149,7 @@
   @media (prefers-reduced-motion: no-preference) { .map { transition: opacity 120ms; } }
   .split { justify-self: start; font-family: var(--font); font-size: var(--text-sm); }
   .split[aria-pressed='true'] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
-  .details { grid-column: 1 / -1; padding: var(--space-1) 0 var(--space-2) calc(var(--space-4) + var(--space-1)); font-family: var(--font); cursor: default; }
+  .details { grid-column: 1 / -1; padding: var(--space-1) 0 var(--space-2) calc(14px + var(--space-1)); font-family: var(--font); cursor: default; }
   .src { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: 28px; margin: 0; overflow: hidden; white-space: nowrap; }
   .mapbtn { display: inline-flex; align-items: center; gap: var(--space-1); flex: none; }
   .mapbtn.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
@@ -158,10 +158,12 @@
   /* Actions in fixed right-aligned columns: Show and Pin/Unpin always stand in the same place. */
   .alts li { display: grid; grid-template-columns: minmax(0, 1fr) 46px 46px; align-items: center; gap: var(--space-2); min-height: 28px; }
   .alts .show { grid-column: 2; } .alts .pinbtn { grid-column: 3; }
+  /* One match has nothing to pin: Show is the rightmost button, on the same edge as Map. */
+  .alts.single li { grid-template-columns: minmax(0, 1fr) 46px; }
   .pinmark { margin-right: var(--space-1); color: var(--text-muted); }
   .altname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .alts .act { padding: 0 var(--space-1); }
-  .act { min-height: 24px; min-width: 24px; padding: 0 var(--space-2); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .act { box-sizing: border-box; height: 24px; min-width: 24px; padding: 0 var(--space-2); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .act:hover { background: var(--accent-soft); }
   .act:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
 </style>

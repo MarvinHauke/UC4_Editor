@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { controlNames, hiddenCount, listEntries, otherName, showSelection } from '../../src/app/warningList.ts';
+import { hiddenCount, listEntries, otherName, showSelection } from '../../src/app/warningList.ts';
 import type { ListedWarning } from '../../src/storage/index.ts';
 
 const w = (setupId: string, a: string, b: string, state: ListedWarning['state'] = 'open'): ListedWarning =>
@@ -29,9 +29,8 @@ describe('listEntries', () => {
   });
 });
 
-describe('names', () => {
-  it('reads the two names of the message, in order', () => {
-    expect(controlNames(w('a', enc, fad))).toEqual(['Enc5 · EG4', 'FAd5 · FG1']);
+describe('otherName', () => {
+  it('names the other control from the paths', () => {
     expect(otherName(w('a', enc, fad), enc)).toBe('FAd5 · FG1');
     expect(otherName(w('a', enc, fad), fad)).toBe('Enc5 · EG4');
   });

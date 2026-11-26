@@ -2,6 +2,7 @@
 // Pure: the dialog renders it, the store's commands act on it.
 import type { Problem, Warning } from '../model/index.ts';
 import type { ListedWarning, SelectionChange } from '../storage/index.ts';
+import { nameOfPath } from '../live/mapping.ts';
 import { parseControlPath } from './warningMarks.ts';
 
 export type Scope = 'this' | 'all';
@@ -27,17 +28,10 @@ export function hiddenCount(warnings: readonly ListedWarning[], o: Pick<ListOpti
   return warnings.filter((w) => (o.scope === 'all' || w.setupId === o.setupId) && w.state !== 'open').length;
 }
 
-/** The two names in a warning's message ("Enc3 · EG1 and FAd5 · FG2 both send …"), in the order of `controls`. */
-export function controlNames(w: Pick<Warning, 'message'>): [string, string] | null {
-  const m = /^(.+?) and (.+?) both send /.exec(w.message);
-  return m ? [m[1]!, m[2]!] : null;
-}
-
-/** The name of the control that is not `path`. */
+/** The name of the control that is not `path` ("FAd5 · FG1"), from the control paths, not from the message text. */
 export function otherName(w: Warning, path: string): string {
-  const names = controlNames(w);
-  if (!names) return w.message;
-  return w.controls[0] === path ? names[1] : names[0];
+  const other = w.controls[0] === path ? w.controls[1] : w.controls[0];
+  return nameOfPath(other) ?? w.message;
 }
 
 /** The selection that brings a warning's control(s) into view: its setup, the group of each half it lies in, and the first control. */
