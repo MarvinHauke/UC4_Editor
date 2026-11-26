@@ -3,14 +3,14 @@
   import type { LibraryState } from '../storage/index.ts';
   import { formatExported } from '../app/format.ts';
   import type { Warning } from '../model/index.ts';
-  import { showWarningCount } from '../app/statusInfo.ts';
+  import { showWarningItem, warningItem } from '../app/statusInfo.ts';
   import { offerShort, type SwitchUi } from '../app/switchNote.svelte.ts';
 
-  interface Props { waiting?: number; onopenconnections?: () => void; help: string; state: LibraryState | null; onopenproblems?: () => void; warnings?: readonly Warning[]; onopenwarnings?: () => void; exportWarnings?: number; onopenexport?: () => void; switchUi?: SwitchUi | null }
-  let { waiting = 0, onopenconnections, help, state: lib, onopenproblems, warnings = [], onopenwarnings, exportWarnings = 0, onopenexport, switchUi = null }: Props = $props();
+  interface Props { waiting?: number; onopenconnections?: () => void; help: string; state: LibraryState | null; onopenproblems?: () => void; warnings?: readonly Warning[]; onopenwarnings?: () => void; exportWarnings?: number; onopenexport?: () => void; switchUi?: SwitchUi | null; ignored?: number }
+  let { waiting = 0, onopenconnections, help, state: lib, onopenproblems, warnings = [], onopenwarnings, exportWarnings = 0, onopenexport, switchUi = null, ignored = 0 }: Props = $props();
   const label = $derived(lib ? { saved: 'saved', saving: 'saving…', failed: 'not saved' }[lib.saveStatus] : '');
   const count = $derived(lib?.problems.length ?? 0);
-  const wcount = $derived(warnings.length);
+  const item = $derived(warningItem(warnings.length, ignored));
 </script>
 
 <footer>
@@ -41,9 +41,9 @@
         <button type="button" class="problems" onclick={() => { onopenproblems?.(); }}
           data-help="Problems: values the UC4 would not accept, marked in red · click to review and show them"><span aria-hidden="true">●</span>&nbsp;{count} problem{count === 1 ? '' : 's'}</button>
       {/if}
-      {#if showWarningCount({ warnings: wcount, offer: !!switchUi?.offer, note: !!switchUi?.note, exportWarnings })}
-        <button type="button" class="warnings" onclick={() => { onopenwarnings?.(); }}
-          data-help="Warnings in this setup: two controls that can play together send the same message; nothing is blocked · click to review, show or ignore them"><span aria-hidden="true">▲</span>&nbsp;{wcount} warning{wcount === 1 ? '' : 's'}</button>
+      {#if showWarningItem({ offer: !!switchUi?.offer, note: !!switchUi?.note, exportWarnings })}
+        <button type="button" class="warnings" class:clear={item.clear} onclick={() => { onopenwarnings?.(); }}
+          data-help={item.clear ? (ignored > 0 ? 'Warnings in this setup: none are open · click to review the ignored ones' : 'Warnings in this setup: none · click to open the list') : 'Warnings in this setup: two controls that can play together send the same message; nothing is blocked · click to review, show or ignore them'}><span aria-hidden="true">{item.clear ? '✓' : '▲'}</span>&nbsp;{item.text}</button>
       {/if}
       <span data-help="Last exported: when you last exported all setups as a configuration">last exported: {formatExported(lib.exportState.lastWholeExportAt)}</span>
       <span class="saved" class:failed={lib.saveStatus === 'failed'} data-help="Library status: every change is saved in this browser">{label}</span>
@@ -63,6 +63,7 @@
   .problems:hover { background: var(--accent-soft); }
   .problems:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .warnings { flex: none; display: inline-flex; align-items: center; min-height: 24px; padding: 0 var(--space-2); font: inherit; font-size: var(--text-sm); color: var(--warn); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .warnings.clear { color: var(--text-muted); }
   .warnings:hover { background: var(--accent-soft); }
   .warnings:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .switch { flex: none; display: flex; align-items: center; gap: var(--space-2); color: var(--text); font-size: var(--text-sm); }

@@ -6,7 +6,7 @@
   import type { Device } from '../app/deviceStore.svelte.ts';
   import type { Sender } from '../app/sender.svelte.ts';
   import type { DeviceProfile } from '../protocol/profile.ts';
-  import { restoreView, sendView } from '../app/sendFlow.ts';
+  import { restoreView, sendCheck, sendView } from '../app/sendFlow.ts';
   import { useGuide } from '../app/guide.svelte.ts';
   import { RECEIVE_GUIDE } from '../app/profile/uc4Guides.ts';
   import { formatExported } from '../app/format.ts';
@@ -42,6 +42,8 @@
   const warningsDialog = useWarningsDialog();
   // Open warnings of the setup that goes out (plan 0008 decision 7): listed here; "Send anyway" ignores them and sends. A restore sends a backup, not this setup.
   const pending = $derived(target && target.kind === 'send' ? store.allWarnings.filter((w) => w.state === 'open' && w.slot === target.slot) : []);
+  const ignoredCount = $derived(target && target.kind === 'send' ? store.allWarnings.filter((w) => w.state !== 'open' && w.slot === target.slot).length : 0);
+  const check = $derived(sendCheck(pending.length, ignoredCount));
   let dock = $state({ left: 0, top: 0, width: 288, height: 400 });
   function place(): void {
     const r = document.querySelector('[data-area="properties"]')?.getBoundingClientRect();
@@ -91,6 +93,18 @@
   {:else if view?.kind === 'confirm'}
     <h2 id="send-title">{view.title}</h2>
     <p>{view.replaces}</p>
+    {#if pending.length > 0}
+      <h3 class="warn"><span aria-hidden="true">▲</span> {check.text}</h3>
+      <ul class="changes" aria-label="Warnings">
+        {#each pending.slice(0, 5) as w, i (i)}<li>{w.message}</li>{/each}
+        {#if pending.length > 5}<li class="more">+ {pending.length - 5} more</li>{/if}
+      </ul>
+      <p class="muted">A warning blocks nothing. “Send anyway” ignores these, so they stop counting; Undo brings them back.
+        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to show or ignore them one by one · this dialog stays">Review…</button></p>
+    {:else if target?.kind === 'send'}
+      <p class="muted check"><span aria-hidden="true">✓</span> {check.text}
+        {#if ignoredCount > 0}<button type="button" class="review" onclick={() => { warningsDialog.show({ showIgnored: true }); }} data-help="Review: opens the list, to see the ignored warnings · this dialog stays">Review…</button>{/if}</p>
+    {/if}
     {#if view.changesTitle}<h3>{view.changesTitle}</h3>{/if}
     {#if view.noChanges}
       <p class="muted">{view.noChanges}</p>
@@ -99,15 +113,6 @@
         {#each view.changes as c, i (i)}<li>{c}</li>{/each}
         {#if view.moreLine}<li class="more">{view.moreLine}</li>{/if}
       </ul>
-    {/if}
-    {#if pending.length > 0}
-      <h3 class="warn"><span aria-hidden="true">▲</span> {pending.length} warning{pending.length === 1 ? '' : 's'} in this setup</h3>
-      <ul class="changes" aria-label="Warnings">
-        {#each pending.slice(0, 5) as w, i (i)}<li>{w.message}</li>{/each}
-        {#if pending.length > 5}<li class="more">+ {pending.length - 5} more</li>{/if}
-      </ul>
-      <p class="muted">A warning blocks nothing. “Send anyway” ignores these, so they stop counting; Undo brings them back.
-        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to show or ignore them one by one · this dialog stays">Review…</button></p>
     {/if}
     {#if view.backup.text}<p title={view.backup.has ? undefined : sndaHelp} data-help={view.backup.has ? undefined : sndaHelp}>{view.backup.text}</p>{/if}
   {:else if view?.kind === 'refused'}
@@ -123,6 +128,8 @@
 <style>
   .warn { color: var(--warn); }
   .review { margin-left: var(--space-2); }
+  /* The check line's button sits on its own line, flush left, so a wrapped line doesn't leave it indented. */
+  .check .review { display: block; margin: var(--space-2) 0 0; }
   h3 { margin: var(--space-2) 0 var(--space-1); font-size: var(--text-md); }
   dialog { position: fixed; margin: 0; z-index: 20; box-sizing: border-box; overflow-y: auto; padding: var(--space-3); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
   h2 { margin: 0 0 var(--space-2); font-size: var(--text-lg); overflow-wrap: anywhere; }
