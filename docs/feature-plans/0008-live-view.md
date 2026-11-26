@@ -509,11 +509,6 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    own target; split rows as indented sub-lines under the pair, updating in place; Split/Join a small switch on
    the open row's first line; the match text is cut ("F…") at 320 px today, make it fit (uc4-ui, step 9). Checks:
    live-module tests, browser list.
-13. **Check always reachable** (decision 30) — uc4-ui · blocked by: none · status bar item always shown (open count,
-   or "✓ No warnings · n ignored"), Send dialog check line with Review…; the switch note still hides the count
-   (decision 25). Checks: statusInfo tests, browser list (all ignored → item stays and opens the dialog; Send with
-   none open shows the line).
-
 11. **Clear a colliding mapping** (decision 26) — done 2026-11-26: uc4-ui (`295faeb`, `f1b6e4a`; reviewed; browser-checked by the architect: no ✕ without a collision, reset, result-line Undo brings the mark back) — uc4-ui · blocked by: 10 · ✕ on an open mapped row's target when
    the control has a warning; resets the control to factory (one undo step, result line); the mark goes. Checks:
    unit test for the factory control of a slot and group, browser list.
@@ -521,6 +516,10 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 12. **Remove Split** (decision 28) — done 2026-11-26: uc4-protocol (`f145183`, `pair.parts`), uc4-ui (`ed2d787`; reviewed; screenshots checked by the architect, parts line 5.5:1 light, 5.1:1 dark) — uc4-protocol (live: `split`/`join` and the saved `splits` go, joined rows expose
    their parts), then uc4-ui (switch and sub-rows go, parts as text in the open row) · blocked by: 10 · Checks:
    live-module tests, browser list.
+13. **Check always reachable** (decision 30) — uc4-ui · blocked by: none · status bar item always shown (open count,
+   or "✓ No warnings · n ignored"), Send dialog check line with Review…; the switch note still hides the count
+   (decision 25). Checks: statusInfo tests, browser list (all ignored → item stays and opens the dialog; Send with
+   none open shows the line).
 
 ## Out of scope
 
