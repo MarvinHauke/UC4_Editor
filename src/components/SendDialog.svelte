@@ -70,8 +70,8 @@
   function send(): void {
     if (!target || !plan?.ok || !device.connected) return;
     const p = plan, t = target, accepted = pending;
-    if (accepted.length > 0) store.waive(accepted); // "Send anyway": accepted for good, one undo step
-    sender.send(t.slot, p, t.kind);
+    // "Send anyway": the warnings are waived (one undo step) only once the UC4's port took the send.
+    sender.send(t.slot, p, t.kind, accepted.length > 0 ? () => { store.waive(accepted); } : undefined);
   }
   // A non-modal dialog has no Esc of its own.
   function key(e: KeyboardEvent): void {
