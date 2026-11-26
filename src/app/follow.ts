@@ -7,8 +7,9 @@ export const FOLLOW_KEY = 'uc4-editor-follow';
 export interface FollowStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 const browserStorage = (): FollowStorage | null => { try { return localStorage; } catch { return null; } };
 
+/** On unless the user turned it off (a stored "0"); blocked storage means on. */
 export function loadFollow(storage: FollowStorage | null = browserStorage()): boolean {
-  try { return storage?.getItem(FOLLOW_KEY) === '1'; } catch { return false; }
+  try { return storage?.getItem(FOLLOW_KEY) !== '0'; } catch { return true; }
 }
 export function saveFollow(on: boolean, storage: FollowStorage | null = browserStorage()): void {
   try { storage?.setItem(FOLLOW_KEY, on ? '1' : '0'); } catch { /* it lasts until the tab closes */ }

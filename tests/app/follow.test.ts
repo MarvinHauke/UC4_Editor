@@ -5,17 +5,17 @@ const memory = () => { const m = new Map<string, string>(); return { m, getItem:
 const blocked = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
 
 describe('follow', () => {
-  it('is off until switched on, and remembered', () => {
+  it('is on until switched off, and remembered', () => {
     const s = memory();
-    expect(loadFollow(s)).toBe(false);
-    saveFollow(true, s);
-    expect(s.m.get(FOLLOW_KEY)).toBe('1');
     expect(loadFollow(s)).toBe(true);
     saveFollow(false, s);
+    expect(s.m.get(FOLLOW_KEY)).toBe('0');
     expect(loadFollow(s)).toBe(false);
+    saveFollow(true, s);
+    expect(loadFollow(s)).toBe(true);
   });
   it('survives blocked storage', () => {
-    expect(loadFollow(blocked)).toBe(false);
+    expect(loadFollow(blocked)).toBe(true);
     expect(() => { saveFollow(true, blocked); }).not.toThrow();
   });
   it('selects only when on, not armed and not typing', () => {
