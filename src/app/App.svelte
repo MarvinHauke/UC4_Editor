@@ -329,7 +329,7 @@
   <TourOverlay {tour} onget={getSetups} profile={faderfoxUc4} />
   <WelcomeCard {welcome} profile={faderfoxUc4} />
   {#if store}<DumpGuide {dumpGuide} {device} {sender} profile={faderfoxUc4} />{/if}
-  <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)} switchUi={connOpen ? null : switchUi} warnings={store?.warnings ?? []} onopenwarnings={() => { warningsDialog.show(); }}
+  <StatusBar help={helpLine} state={store?.state ?? null} onopenproblems={() => { warningsDialog.show(); }} switchUi={connOpen ? null : switchUi} warnings={store?.warnings ?? []} onopenwarnings={() => { warningsDialog.show(); }}
     exportWarnings={store?.startMessage !== undefined ? (store.exportNote?.count ?? 0) : 0} onopenexport={() => { const n = store?.exportNote; if (n) warningsDialog.show({ scope: n.scope === 'all' ? 'all' : 'this' }); }}
     waiting={notices.queue.length} onopenconnections={openConnections} />
 </div>

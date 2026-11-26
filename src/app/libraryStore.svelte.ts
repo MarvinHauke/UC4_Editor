@@ -3,21 +3,11 @@ import type { Warning } from '../model/index.ts';
 import type { Library, LibraryState, ListedWarning, AnyControl, SelectionChange, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
 import type { FlowLibrary } from './importFlow.ts';
 import type { SyxLibrary } from './syxFlow.ts';
-import { problemText } from './controlProblems.ts';
-import { problemKey, relocate } from './problemCursor.ts';
 import { showSelection } from './warningList.ts';
 
 export function createStore(library: Library, openMessage?: string) {
   let state = $state.raw<LibraryState>(library.getState());
   let startMessage = $state<string | undefined>(openMessage);
-  // The problem stepper's place lives here, so it survives anything the page does around it.
-  let problemAt = $state(-1);
-  let problemId: string | null = null;
-  const remember = (at: number): void => {
-    problemAt = at;
-    const p = state.problems[at];
-    problemId = p ? problemKey(p) : null;
-  };
   // Warnings (plan 0008 step 6): the library lists every one with its state; the counts, marks and the property panel's line use the open ones of the open setup.
   let openWarnings = $state.raw<Warning[]>([]);
   let warningCache: { list: readonly ListedWarning[]; setupId: string } | null = null;
@@ -29,7 +19,6 @@ export function createStore(library: Library, openMessage?: string) {
   openOf(library.getState());
   library.subscribe((s) => {
     state = s;
-    remember(relocate(s.problems, problemAt, problemId));
     openOf(s);
   });
   let exportNote = $state.raw<{ count: number; scope: string } | null>(null);
@@ -62,16 +51,6 @@ export function createStore(library: Library, openMessage?: string) {
     say: (text: string, warnFor?: string) => { startMessage = text; exportNote = warnFor === undefined ? null : { count: openCountOf(state, warnFor), scope: warnFor }; },
     /** The export line's "n warnings" link: the open warnings of what was exported, when there are any. Goes with the line. */
     get exportNote() { return exportNote; },
-    /** Which problem the stepper is on (0-based), or -1 before the first step. */
-    get problemAt() { return problemAt; },
-    /** Steps to the next or previous problem (wrapping), selects it and says what it is. */
-    stepProblem(delta: 1 | -1): void {
-      const problems = state.problems;
-      if (problems.length === 0) return;
-      remember(problemAt < 0 ? (delta === 1 ? 0 : problems.length - 1) : (problemAt + delta + problems.length) % problems.length);
-      done(library.selectProblem(problemAt));
-      startMessage = `Problem ${problemAt + 1} of ${problems.length}: ${problemText(problems[problemAt]!)}`;
-    },
     /** The open setup's OPEN warnings (not waived, not the factory layout): counts, control marks, the property panel's line. */
     get warnings() { return openWarnings; },
     /** Every warning of every setup with its state, for the Warnings dialog and `isWarned` (waived and factory still count there). */

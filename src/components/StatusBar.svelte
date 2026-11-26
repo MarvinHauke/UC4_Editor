@@ -1,12 +1,12 @@
 <script lang="ts">
-  // The help line and, beside it: the problem stepper, "last exported", and the library's save status.
+  // The help line and, beside it: the problem and warning counts (both open the dialog), "last exported", and the library's save status.
   import type { LibraryState } from '../storage/index.ts';
   import { formatExported } from '../app/format.ts';
   import type { Warning } from '../model/index.ts';
   import { offerShort, type SwitchUi } from '../app/switchNote.svelte.ts';
 
-  interface Props { waiting?: number; onopenconnections?: () => void; help: string; state: LibraryState | null; problemAt: number; onstep: (delta: 1 | -1) => void; warnings?: readonly Warning[]; onopenwarnings?: () => void; exportWarnings?: number; onopenexport?: () => void; switchUi?: SwitchUi | null }
-  let { waiting = 0, onopenconnections, help, state: lib, problemAt: at, onstep, warnings = [], onopenwarnings, exportWarnings = 0, onopenexport, switchUi = null }: Props = $props();
+  interface Props { waiting?: number; onopenconnections?: () => void; help: string; state: LibraryState | null; onopenproblems?: () => void; warnings?: readonly Warning[]; onopenwarnings?: () => void; exportWarnings?: number; onopenexport?: () => void; switchUi?: SwitchUi | null }
+  let { waiting = 0, onopenconnections, help, state: lib, onopenproblems, warnings = [], onopenwarnings, exportWarnings = 0, onopenexport, switchUi = null }: Props = $props();
   const label = $derived(lib ? { saved: 'saved', saving: 'saving…', failed: 'not saved' }[lib.saveStatus] : '');
   const count = $derived(lib?.problems.length ?? 0);
   const wcount = $derived(warnings.length);
@@ -37,11 +37,8 @@
   {#if lib}
     <div class="status">
       {#if count > 0}
-        <span class="problems" data-help="Problems: values the UC4 would not accept, marked in red · ‹ › step through them">
-          <button type="button" aria-label="Previous problem" onclick={() => { onstep(-1); }}>‹</button>
-          <span>{at >= 0 ? `${at + 1} of ${count}` : count} problem{count === 1 ? '' : 's'}</span>
-          <button type="button" aria-label="Next problem" onclick={() => { onstep(1); }}>›</button>
-        </span>
+        <button type="button" class="problems" onclick={() => { onopenproblems?.(); }}
+          data-help="Problems: values the UC4 would not accept, marked in red · click to review and show them"><span aria-hidden="true">●</span>&nbsp;{count} problem{count === 1 ? '' : 's'}</button>
       {/if}
       {#if wcount > 0 && !switchUi?.offer && exportWarnings === 0}
         <button type="button" class="warnings" onclick={() => { onopenwarnings?.(); }}
@@ -61,12 +58,12 @@
   p { margin: 0; }
   .help { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .status { flex: none; display: flex; gap: var(--space-4); align-items: center; color: var(--text-muted); font-size: var(--text-sm); }
-  .problems { display: flex; align-items: center; gap: var(--space-1); color: var(--danger); }
+  .problems { flex: none; display: inline-flex; align-items: center; min-height: 24px; padding: 0 var(--space-2); font: inherit; font-size: var(--text-sm); color: var(--danger); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .problems:hover { background: var(--accent-soft); }
+  .problems:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .warnings { flex: none; display: inline-flex; align-items: center; min-height: 24px; padding: 0 var(--space-2); font: inherit; font-size: var(--text-sm); color: var(--warn); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .warnings:hover { background: var(--accent-soft); }
   .warnings:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
-  .problems button { min-width: 24px; min-height: 24px; background: transparent; border: 1px solid var(--border); border-radius: var(--radius); color: inherit; cursor: pointer; font-size: 14px; line-height: 1; }
-  .problems button:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .switch { flex: none; display: flex; align-items: center; gap: var(--space-2); color: var(--text); font-size: var(--text-sm); }
   .switch button { min-width: 24px; min-height: 24px; padding: 0 var(--space-2); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .switch button:hover { background: var(--accent-soft); }
