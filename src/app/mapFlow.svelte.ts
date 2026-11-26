@@ -66,6 +66,7 @@ export function createMapFlow(options: {
   /** The row to work on next (the next unmapped one), marked in the list. */
   let nextKey = $state<string | null>(null);
   /** Where each marked row went and what the control sent then: a mark that no longer holds (Undo by any route, an edit) is taken back. */
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain bookkeeping, nothing renders from it
   const marks = new Map<string, { ref: { setupId: string; area: ControlArea; group: number; index: number }; sent: string }>();
   // What a control sends: type, channel and number; a program change sends its Upper (button) or Lower–Upper, so those count too.
   // A Redo after an Undo puts the mapping back but not its mark (the row's mark is a note, not state of the library).
@@ -146,6 +147,7 @@ export function createMapFlow(options: {
     },
     /** The monitor's rows now: a mark whose row was trimmed away goes, so a later Undo cannot put it on a fresh row with the same key. */
     rowsChanged(rows: readonly { key: string }[]): void {
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local lookup
       const keys = new Set(rows.map((r) => r.key));
       for (const key of [...marks.keys()]) if (!keys.has(key)) marks.delete(key);
       if (result?.restoreMark && !keys.has(result.restoreMark.rowKey)) { const { restoreMark: _gone, ...rest } = result; result = rest; }

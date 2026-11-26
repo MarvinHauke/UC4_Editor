@@ -64,7 +64,7 @@
 </script>
 
 <section class="groups" data-copy-level="group" aria-label="Groups"
-  data-help="Groups: the group of the section you work in, encoder or fader/button · ( ) and {'{'} {'}'} step them">
+  data-help="Groups: the group of the section you work in, encoder or fader/button · ( ) and &#123; &#125; step them">
   <div class="head">
       <h2>{section === 'encoder' ? `Encoder group ${g.eg + 1}` : `Fader/button group ${g.fg + 1}`}{#if section === 'encoder' ? g.encPrinted : g.fbPrinted}<span class="printed">{` · ${section === 'encoder' ? g.encPrinted : g.fbPrinted}`}</span>{/if}</h2>
     <CopyBar level="group" holding={held !== null} canCopy={true} canPaste={held !== null && !isHeld(shownGroup)}

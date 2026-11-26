@@ -12,7 +12,7 @@
 
 {#if map.result}
   <div class="strip" class:error={map.result.error} role="status" data-help={map.result.error ? 'Nothing changed' : 'The mapping is one undo step · Undo takes it back · Cmd-Z does the same'}>
-    <span class="text">{map.result.text}{#if map.result.alsoSentBy.length > 0}{' '}<span class="also">· also sent by {map.result.alsoSentBy.join(', ')}</span>{/if}</span>
+    <span class="text">{map.result.text}{#if map.result.alsoSentBy.length > 0}<span class="also"> · also sent by {map.result.alsoSentBy.join(', ')}</span>{/if}</span>
     {#each map.result.notes as note (note)}<span class="note">{note}</span>{/each}
     {#if map.result.undoable}<span class="row"><button type="button" onclick={() => { map.undo(); }}>Undo</button></span>{/if}
   </div>

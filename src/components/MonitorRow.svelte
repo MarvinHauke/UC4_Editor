@@ -80,7 +80,7 @@
   {#if open}
     <div class="details">
       <p class="src">
-        <span><span class="where">From</span>{' '}{row.isUc4 ? 'the UC4' : source}</span>
+        <span><span class="where">From</span>&#32;{row.isUc4 ? 'the UC4' : source}</span>
         {#if onmap}
           <button type="button" class="act mapbtn" class:on={armed} aria-pressed={armed} aria-label={armed ? 'Cancel Map' : 'Map to a control'}
             data-help={armed ? 'Map is armed: click a control, or move one on the UC4 · Esc or this button cancels' : 'Map: then click a control, or move one on the UC4, and it sends this message'} onclick={onmap}>{armed ? 'Cancel' : 'Map'}</button>
@@ -91,7 +91,7 @@
           {#each row.matches as m, i (m.control.id)}
             {@const w = m.tier === 3 ? whereWord(m) : null}
             <li>
-              <span class="altname">{#if i === 0 && row.pinned}<span class="pinmark" title="Pinned" aria-hidden="true">◆</span><span class="sr">pinned </span>{/if}<span class="nm">{m.control.name}</span>{#if w}{' '}<span class="where">· {w}</span>{/if}</span>
+              <span class="altname">{#if i === 0 && row.pinned}<span class="pinmark" title="Pinned" aria-hidden="true">◆</span><span class="sr">pinned </span>{/if}<span class="nm">{m.control.name}</span>{#if w}<span class="where"> · {w}</span>{/if}</span>
               <button type="button" class="act show" data-help="Show {m.control.name} in the editor" onclick={() => { onselect(m); }}>Show</button>
               {#if row.matches.length > 1}
                 {#if i === 0 && row.pinned}

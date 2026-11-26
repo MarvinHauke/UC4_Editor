@@ -7,7 +7,7 @@
   import type { ListedWarning } from '../storage/index.ts';
   import { problemText } from '../app/controlProblems.ts';
   import { slotName } from '../app/format.ts';
-  import { hiddenCount, listEntries, otherName } from '../app/warningList.ts';
+  import { hiddenCount, listEntries } from '../app/warningList.ts';
   import { selectedSetup } from '../app/selectors.ts';
 
   let { store, warnings: ui }: { store: Store; warnings: WarningsDialog } = $props();

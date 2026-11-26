@@ -41,6 +41,7 @@ export function createStore(library: Library, openMessage?: string) {
     exportAllSyx: () => done(library.exportAllSyx()),
   };
   // Dumps the UC4 sent again that were kept before: the list says so.
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- $state.raw: replaced as a whole, never mutated
   let again = $state.raw<ReadonlySet<string>>(new Set());
   return {
     flow,
@@ -80,6 +81,7 @@ export function createStore(library: Library, openMessage?: string) {
     /** A dump the UC4 sent: kept as it came, nothing else changes (the notice asks what to do). */
     keepReceived: (bytes: Uint8Array) => {
       const r = library.keepDump(bytes, 'received');
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- replaces the raw state, never mutates
       if (r.status === 'kept' && r.duplicateOf) again = new Set([...again, r.duplicateOf.id]);
       return r;
     },

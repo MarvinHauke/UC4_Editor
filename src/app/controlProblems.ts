@@ -18,8 +18,6 @@ export function problemsOf(problems: Problem[], path: string): { property: strin
     .map((p) => ({ property: p.path.slice(path.length + 1), message: problemText(p) }));
 }
 
-const AREAS: readonly ControlArea[] = ['encoders', 'pushButtons', 'faders', 'buttons'];
-
 /**
  * A problem's message with the property named by its UI label: the model says "upper must be a whole
  * number 0–127", the page says "Upper value must be …". Paths and messages the page doesn't know stay as they are.
