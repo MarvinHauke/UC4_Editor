@@ -136,8 +136,8 @@
   .where { font-size: var(--text-sm); color: var(--text-muted); }
   .tag { font-size: var(--text-sm); padding: 0 var(--space-2); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); }
   /* Two fixed columns, so Show lines up down the list and Waive / Unwaive sit under each other. */
-  .actions { flex: none; display: grid; grid-template-columns: auto auto; gap: var(--space-2); }
-  .actions button { padding: 0 var(--space-2); min-width: 4.5em; }
+  .actions { flex: none; display: grid; grid-template-columns: 4.5em 6em; gap: var(--space-2); }
+  .actions button { padding: 0 var(--space-2); min-width: 0; width: 100%; }
   .actions button:first-child { grid-column: 1; }
   .actions button:nth-child(2) { grid-column: 2; }
   .empty { margin: 0; padding: var(--space-4); color: var(--text-muted); }
