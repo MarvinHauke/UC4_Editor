@@ -27,12 +27,10 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
 ## Next (2026-11-27)
 
 - **Rename Waive → Ignore** (0008 decision 29): UI text, code names, tests; uc4-model (storage/model) then uc4-ui.
-- **From the user's /code-review of `feat/live-view`** (2026-11-27): Map by touch stays stuck after a refused
-  target (decision 20; no test); a waiver keyed by the lowest shared program doesn't lapse when a `PrGC` range grows
-  (story 43); the status bar can hold the "Switched to … · Back" note and the warning count at once (decision 25);
-  dead `'#'` split keys in `pin()` and a stale comment in `switchNote.svelte.ts`. Judgement calls: one model helper
-  for the message key, "what a control sends", the encoder half and slot names. First `git fetch` and fast-forward
-  local `main`: `main...HEAD` showed 0010/0012 work as new.
+- **From the user's /code-review of `feat/live-view`** (2026-11-27): Map by touch after a refusal, the status bar's
+  note vs. warning count, dead `pin()` keys fixed (`d26800d`); the `PrGC` waiver lapse (story 43) with uc4-model.
+  Judgement calls still open: one model helper for the message key, "what a control sends", the encoder half and
+  slot names.
 
 ## Waiting for the user
 
