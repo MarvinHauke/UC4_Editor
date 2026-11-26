@@ -107,6 +107,36 @@ describe('what the library says', () => {
   });
 });
 
+describe('marks that no longer hold', () => {
+  const sending = (c: { type: string; channel: number; number: number }) => ({ setups: [{ id: 's1', encoderGroups: [{ encoders: [{}, {}, c] }], faderButtonGroups: [] }] });
+  const mapped = { type: 'CCAb', channel: 2, number: 74 };
+  it('is taken back when the control no longer sends what the row was mapped to (an undo by another route)', () => {
+    const t = setup(ok({ edit: { ...edit, control: mapped as never } }));
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    t.flow.changed(sending(mapped)); // still sends it: the mark stays
+    expect(t.calls.filter((c) => c === 'mapped r null')).toHaveLength(0);
+    t.flow.changed(sending({ type: 'CCAb', channel: 1, number: 10 })); // undone
+    expect(t.calls.filter((c) => c === 'mapped r null')).toHaveLength(1);
+    t.flow.changed(sending({ type: 'CCAb', channel: 1, number: 11 }));
+    expect(t.calls.filter((c) => c === 'mapped r null')).toHaveLength(1); // only once
+  });
+  it('counts Upper for a program change: another program no longer matches the row', () => {
+    const prog = { type: 'PrGC', channel: 1, number: 64, lower: 0, upper: 5 };
+    const t = setup(ok({ edit: { ...edit, control: prog as never } }));
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    t.flow.changed(sending({ ...prog } as never));
+    expect(t.calls.some((c) => c === 'mapped r null')).toBe(false);
+    t.flow.changed(sending({ ...prog, upper: 9 } as never));
+    expect(t.calls.some((c) => c === 'mapped r null')).toBe(true);
+  });
+  it('stays when only another property of the control changed (Upper after a CC onto a button)', () => {
+    const t = setup(ok({ edit: { ...edit, control: mapped as never } }));
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    t.flow.changed(sending({ ...mapped }));
+    expect(t.calls.some((c) => c === 'mapped r null')).toBe(false);
+  });
+});
+
 describe('map by touch', () => {
   const touch: TouchTarget = {
     control: { id: controlId('s2', 'encoders', 2, 0), setupId: 's2', setupName: 'SE05', area: 'encoders', group: 2, index: 0, name: 'Enc1 · EG3' },

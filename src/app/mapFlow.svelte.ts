@@ -4,6 +4,8 @@
 // this module only applies it. It never sends anything.
 import { getContext } from 'svelte';
 import { controlId, type LiveSession, type MapPlan, type TouchTarget } from '../live/index.ts';
+import { readControl } from '../live/mapping.ts';
+import type { Uc4Config } from '../model/index.ts';
 import type { AnyControl, ControlAddress, ControlArea, SelectionChange } from '../storage/index.ts';
 
 type PlanOk = Extract<MapPlan, { ok: true }>;
@@ -58,6 +60,12 @@ export function createMapFlow(options: {
   let result = $state.raw<MapResult | null>(null);
   /** The row to work on next (the next unmapped one), marked in the list. */
   let nextKey = $state<string | null>(null);
+  /** Where each marked row went and what the control sent then: a mark that no longer holds (Undo by any route, an edit) is taken back. */
+  const marks = new Map<string, { ref: { setupId: string; area: ControlArea; group: number; index: number }; sent: string }>();
+  // What a control sends: type, channel and number; a program change sends its Upper (button) or Lower–Upper, so those count too.
+  // A Redo after an Undo puts the mapping back but not its mark (the row's mark is a note, not state of the library).
+  const sentBy = (c: { type?: string; channel?: number; number?: number; lower?: number; upper?: number } | null): string =>
+    c ? `${c.type}|${c.channel}|${c.number}${c.type === 'PrGC' ? `|${c.lower}|${c.upper}` : ''}` : '';
   let timer: ReturnType<typeof setTimeout> | null = null;
   const stop = (): void => { if (timer !== null) { clearTimeout(timer); timer = null; } };
   const show = (r: MapResult): void => { stop(); result = r; timer = setTimeout(() => { result = null; timer = null; }, ms); };
@@ -82,6 +90,7 @@ export function createMapFlow(options: {
     const after = store.state;
     const undoable = after.configuration !== was.configuration || place(after) !== was.place;
     live.markMapped(rowKey, controlId(e.setupId, e.area, e.group, e.index));
+    marks.set(rowKey, { ref: address, sent: sentBy(e.control) });
     nextKey = live.nextUnmapped(rowKey)?.key ?? null;
     live.disarm();
     show({
@@ -126,12 +135,17 @@ export function createMapFlow(options: {
       const r = result;
       stop(); result = null;
       if (!r?.undoable) return;
-      if (r.rowKey) live.markMapped(r.rowKey, null);
+      if (r.rowKey) { live.markMapped(r.rowKey, null); marks.delete(r.rowKey); }
       nextKey = null;
       options.store()?.undo();
     },
     /** The configuration now: any change other than the mapping itself ends the result line. */
     changed(configuration: unknown): void {
+      // A row's "→ control" mark only stays while that control still sends what it was mapped to.
+      const readable = Array.isArray((configuration as Uc4Config | null)?.setups);
+      for (const [key, m] of readable ? [...marks] : []) {
+        if (sentBy(readControl(configuration as Uc4Config, m.ref)) !== m.sent) { marks.delete(key); live.markMapped(key, null); }
+      }
       if (result && !result.error && configuration !== result.configuration) { stop(); result = null; }
     },
     dismiss(): void { stop(); result = null; },
