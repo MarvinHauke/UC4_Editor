@@ -3,7 +3,9 @@
   import type { Device } from '../app/deviceStore.svelte.ts';
   import type { DeviceProfile } from '../protocol/profile.ts';
 
-  let { device, profile }: { device: Device; profile: Pick<DeviceProfile, 'deviceName'> } = $props();
+  let { device, profile, onconnect }: { device: Device; profile: Pick<DeviceProfile, 'deviceName'>; onconnect: () => void } = $props();
+  // One Connect for both listeners: the browser's permission is asked once, the monitor then lists every input.
+  const connect = (): void => { void device.connect(); onconnect(); };
   const conn = $derived(device.state);
 </script>
 
@@ -22,9 +24,9 @@
     <p class="status" class:error={conn.kind === 'denied' || conn.kind === 'unsupported'} role={conn.kind === 'denied' ? 'alert' : undefined}>{conn.message}</p>
     {#if conn.kind === 'not-connected' && !conn.access}
       <button type="button" data-help="Connect {profile.deviceName}: the browser asks for MIDI access once; the editor then only listens"
-        onclick={() => { void device.connect(); }}>Connect {profile.deviceName}</button>
+        onclick={connect}>Connect {profile.deviceName}</button>
     {:else if conn.kind === 'denied'}
-      <button type="button" data-help="Connect again: allow MIDI for this site in the browser's settings first" onclick={() => { void device.connect(); }}>Connect {profile.deviceName} again</button>
+      <button type="button" data-help="Connect again: allow MIDI for this site in the browser's settings first" onclick={connect}>Connect {profile.deviceName} again</button>
     {/if}
   {/if}
 </section>

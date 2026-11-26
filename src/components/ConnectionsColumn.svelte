@@ -5,19 +5,21 @@
   import type { Store } from '../app/libraryStore.svelte.ts';
   import type { Confirm } from '../app/confirm.svelte.ts';
   import type { Device } from '../app/deviceStore.svelte.ts';
+  import type { Live } from '../app/liveStore.svelte.ts';
   import type { DumpNotice as Notice } from '../app/dumpNotices.ts';
   import type { DeviceProfile } from '../protocol/profile.ts';
   import { stripInfo } from '../app/connections.ts';
   import ConnectionSection from './ConnectionSection.svelte';
   import DumpNotice from './DumpNotice.svelte';
   import DumpsList from './DumpsList.svelte';
+  import MidiMonitor from './MidiMonitor.svelte';
 
   interface Props {
-    device: Device; profile: Pick<DeviceProfile, 'deviceName'>; store: Store | null; confirm: Confirm;
+    device: Device; live: Live; profile: Pick<DeviceProfile, 'deviceName'>; store: Store | null; confirm: Confirm;
     queue: readonly Notice[]; arrivals: number; open: boolean; onopen: (open: boolean) => void;
     onsenddump: () => void; onreview: (n: Notice) => void; onexport: (n: Notice) => void; ondismiss: (n: Notice) => void;
   }
-  let { device, profile, store, confirm, queue, arrivals, open, onopen, onreview, onexport, ondismiss, onsenddump }: Props = $props();
+  let { device, live, profile, store, confirm, queue, arrivals, open, onopen, onreview, onexport, ondismiss, onsenddump }: Props = $props();
   let strip = $state<HTMLButtonElement | null>(null);
   let panel = $state<HTMLElement | null>(null);
   const info = $derived(stripInfo(profile.deviceName, device.state, queue.length));
@@ -44,12 +46,13 @@
   {#if open}
     <div class="panel" role="region" tabindex="-1" aria-label="Connections" bind:this={panel}>
       <h2><span class="dot {info.tone}" aria-hidden="true"></span>Connections</h2>
-      <ConnectionSection {device} {profile} />
+      <ConnectionSection {device} {profile} onconnect={() => { void live.connect(); }} />
       {#if queue.length > 0}
         <section aria-label="Received"><h3>Received</h3><DumpNotice {queue} {onreview} {onexport} {ondismiss} /></section>
       {/if}
       {#if store}<DumpsList {store} {confirm} />{/if}
       <button type="button" class="how" data-help="How to send a dump · UC4: shows the steps on the device view; the editor only listens" onclick={() => { onsenddump(); }}>How to send a dump from the {profile.deviceName}</button>
+      <MidiMonitor {live} />
     </div>
   {/if}
 </aside>
@@ -74,7 +77,8 @@
   .badge { min-width: 18px; padding: 0 4px; text-align: center; font-size: var(--text-sm); color: var(--on-accent); background: var(--accent); border-radius: 9px; animation: pulse 700ms ease-out 1; }
   @keyframes pulse { 0% { transform: scale(1.7); } 100% { transform: scale(1); } }
   @media (prefers-reduced-motion: reduce) { .badge { animation: none; } }
-  .panel { position: absolute; top: 0; left: 0; width: 280px; height: 100%; overflow-y: auto; box-sizing: border-box; padding: var(--space-3); background: var(--surface); border-right: 1px solid var(--border); scrollbar-width: thin; }
+  .panel { display: flex; flex-direction: column; position: absolute; top: 0; left: 0; width: 280px; height: 100%; overflow-y: auto; box-sizing: border-box; padding: var(--space-3); background: var(--surface); border-right: 1px solid var(--border); scrollbar-width: thin; }
+  .panel > :global(*) { flex: none; }
   .panel:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   /* 1320 = WIDE_PX in connections.ts */
   @media (min-width: 1320px) { .panel { position: static; width: auto; } .conn.open .strip { left: auto; right: 6px; } }

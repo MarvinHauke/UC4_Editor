@@ -16,7 +16,9 @@
   import { loadOpen, saveOpen, WIDE_PX } from './connections.ts';
   import { createDevice } from './deviceStore.svelte.ts';
   import { createDeviceConnection } from '../midi/connection.ts';
-  import { browserMidiEnv } from '../midi/browserEnv.ts';
+  import { appMidiEnv } from './midiEnv.ts';
+  import { createMidiInputs } from '../midi/inputs.ts';
+  import { createLive } from './liveStore.svelte.ts';
   import { GUIDE_CONTEXT, createGuide } from './guide.svelte.ts';
   import { COPY_CONTEXT, createCopyHold } from './copyHold.svelte.ts';
   import { copyKey, isTextTarget, levelOf } from './copyPaste.ts';
@@ -51,7 +53,10 @@
   const settings = createSettings();
   setContext(SETTINGS_CONTEXT, settings);
   // The device connection: listening only; it asks the browser for MIDI access only when the user presses Connect.
-  const device = createDevice(createDeviceConnection({ portName: faderfoxUc4.portName, deviceName: faderfoxUc4.deviceName, env: browserMidiEnv(), checkSendable: uc4Engine.checkSendable }));
+  const midiEnv = appMidiEnv();
+  const device = createDevice(createDeviceConnection({ portName: faderfoxUc4.portName, deviceName: faderfoxUc4.deviceName, env: midiEnv, checkSendable: uc4Engine.checkSendable }));
+  // The MIDI monitor's inputs (plan 0008): the same browser access, listening only.
+  const live = createLive(createMidiInputs({ portName: faderfoxUc4.portName, env: midiEnv, connectLabel: `Connect ${faderfoxUc4.deviceName}` }));
   setContext(GUIDE_CONTEXT, createGuide());
   const notices = createNotices();
   const dumpGuide = createDumpGuide();
@@ -111,6 +116,7 @@
     const detach = help.attach();
     const stopSysex = device.onSysex((m) => { received(m.bytes); }); // listening only
     void device.reconnect(); // silent: only when the permission is already given
+    void live.reconnect();
     opening.then(
       ({ library, message }) => {
         store = createStore(library, message);
@@ -121,7 +127,7 @@
         openError = `The library could not be opened (${e instanceof Error ? e.message : String(e)}). Reload to try again.${lost}`;
       },
     );
-    return () => { mq.removeEventListener('change', onWide); stopSysex(); detach(); device.dispose(); };
+    return () => { mq.removeEventListener('change', onWide); stopSysex(); detach(); device.dispose(); live.dispose(); };
   });
 
   // The keys that work anywhere (key table, "Anywhere"): Cmd-Z / Shift-Cmd-Z over the whole library (not while typing, nor behind a dialog), Cmd-, for Settings, ? for the key help.
@@ -222,7 +228,7 @@
     <button type="button" class="gear" data-settings-toggle bind:this={gear} aria-label="Settings" aria-expanded={settings.open}
       data-help="Settings: theme, keys and slide speed · Cmd-," onclick={() => { settings.toggle(); }}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg></button>
   </header>
-  <ConnectionsColumn bind:this={column} onsenddump={() => { dumpGuide.show(); }} {device} profile={faderfoxUc4} {store} {confirm} queue={notices.queue} open={connOpen} onopen={setConnOpen} {arrivals}
+  <ConnectionsColumn bind:this={column} {live} onsenddump={() => { dumpGuide.show(); }} {device} profile={faderfoxUc4} {store} {confirm} queue={notices.queue} open={connOpen} onopen={setConnOpen} {arrivals}
     onreview={review} onexport={exportNotice} ondismiss={(n) => { notices.remove(n.dumpId); }} />
   <SettingsPanel {settings} opener={() => gear} onallkeys={showKeys} ontour={startTour} />
   <KeysHelp open={keysOpen} vim={settings.keys === 'vim'} onclose={closeKeys} />
