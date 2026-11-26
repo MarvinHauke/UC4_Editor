@@ -3,6 +3,7 @@
   import type { LibraryState } from '../storage/index.ts';
   import { formatExported } from '../app/format.ts';
   import type { Warning } from '../model/index.ts';
+  import { showWarningCount } from '../app/statusInfo.ts';
   import { offerShort, type SwitchUi } from '../app/switchNote.svelte.ts';
 
   interface Props { waiting?: number; onopenconnections?: () => void; help: string; state: LibraryState | null; onopenproblems?: () => void; warnings?: readonly Warning[]; onopenwarnings?: () => void; exportWarnings?: number; onopenexport?: () => void; switchUi?: SwitchUi | null }
@@ -40,7 +41,7 @@
         <button type="button" class="problems" onclick={() => { onopenproblems?.(); }}
           data-help="Problems: values the UC4 would not accept, marked in red · click to review and show them"><span aria-hidden="true">●</span>&nbsp;{count} problem{count === 1 ? '' : 's'}</button>
       {/if}
-      {#if wcount > 0 && !switchUi?.offer && exportWarnings === 0}
+      {#if showWarningCount({ warnings: wcount, offer: !!switchUi?.offer, note: !!switchUi?.note, exportWarnings })}
         <button type="button" class="warnings" onclick={() => { onopenwarnings?.(); }}
           data-help="Warnings in this setup: two controls that can play together send the same message; nothing is blocked · click to review, show or waive them"><span aria-hidden="true">▲</span>&nbsp;{wcount} warning{wcount === 1 ? '' : 's'}</button>
       {/if}

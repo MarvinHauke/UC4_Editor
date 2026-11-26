@@ -151,6 +151,21 @@ describe('map by touch', () => {
     expect(t.calls[1]).toBe('set encoders 0 2 {"setupId":"s2","encoderGroup":2,"control":{"area":"encoders","index":0}}');
     expect(t.calls.indexOf('disarm')).toBeGreaterThan(1);
   });
+  it('after a refusal Map stays armed and the next touch is handled again', () => {
+    const t = setup({ ok: false, reason: 'Faders can’t send notes' }, touch);
+    t.flow.toggle('r');
+    t.flow.touch();
+    expect(t.flow.result?.error).toBe(true);
+    expect(t.flow.armed).toBe('r');
+    // the session keeps its first touchTarget until the row is armed again: the flow re-arms so the next message counts
+    expect(t.calls).toEqual(['arm r', 'arm r']);
+    // the next touch maps
+    (t.live.mapPlan as ReturnType<typeof vi.fn>).mockReturnValue(ok());
+    t.flow.touch();
+    expect(t.calls.some((c) => c.startsWith('mapped r'))).toBe(true);
+    expect(t.flow.armed).toBeNull();
+    expect(t.flow.result?.error).toBe(false);
+  });
   it('does nothing while no message has picked a control', () => {
     const t = setup(ok());
     t.flow.toggle('r'); t.flow.touch();

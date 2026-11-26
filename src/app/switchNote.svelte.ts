@@ -1,7 +1,6 @@
-// After the user accepts the switch offer (plan 0008 decision 19): "Switched to encoder group 3 · Back" for a few seconds, or
-// until the next selection change. Selections are not in the undo history, so Back restores the previous setup and groups itself.
-// After the user accepts the switch offer, the switch is ONE undo step (decision 19); this note is its Back: it calls undo, so it
-// only stays while that step is the last thing done (no other selection change and no edit since).
+// After the user accepts the switch offer (plan 0008 decision 19): "Switched to encoder group 3 · Back" for a few seconds. The switch
+// is ONE undo step; this note is its Back: it calls undo, so it only stays while that step is the last thing done (no other
+// selection change and no edit since).
 import { getContext } from 'svelte';
 import type { SwitchOffer } from '../live/index.ts';
 

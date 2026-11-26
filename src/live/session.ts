@@ -479,7 +479,6 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
         const msb = Number(row.pair.key.slice(row.pair.key.lastIndexOf(':') + 1));
         keys.push(row.pair.key, `${row.inputId}|cc:${row.channel}:${msb}`, `${row.inputId}|cc:${row.channel}:${msb + 32}`);
       }
-      if (key.includes('#')) keys.push(key.slice(0, key.indexOf('#')));
       if (controlId === null) {
         let changed = false;
         for (const k of keys) changed = pins.delete(k) || changed;

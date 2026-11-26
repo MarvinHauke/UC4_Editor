@@ -135,6 +135,8 @@ export function createMapFlow(options: {
       if (rowKey === null || !t) return;
       const plan = live.mapPlan(rowKey, t.control.id, { spotRelative: options.spotRelative() });
       apply(rowKey, plan, { ...t.switch, control: { area: t.control.area, index: t.control.index } });
+      // A refusal leaves Map armed, but the session keeps its first touch until the row is armed again: arm again so the next message counts.
+      if (live.armed === rowKey) live.armMap(rowKey);
     },
     undo(): void {
       const r = result;
