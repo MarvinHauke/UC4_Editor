@@ -166,6 +166,15 @@ describe('map plan: collisions and spotting', () => {
     expect(s.mapPlan(key(s), enc(0, 5))).toMatchObject({ ok: true, alsoSentBy: ['FAd1 · FG1'] }); // EG4 never plays with EG1
   });
 
+  it('names a control that already collided on another message of the same pair', () => {
+    const s = live((se) => {
+      const a = se.encoderGroups[0]!.encoders[0]!; a.type = 'CCAb'; a.channel = 1; a.number = 20;
+      const b = se.encoderGroups[0]!.encoders[1]!; b.type = 'CCAh'; b.channel = 1; b.number = 20; // sends CC 20 and CC 52
+    });
+    send(s, cc(52, 1, 1));
+    expect(s.mapPlan(key(s), enc(0, 0))).toMatchObject({ ok: true, alsoSentBy: expect.arrayContaining(['Enc2 · EG1']) });
+  });
+
   it('spots CCr1 from 1/127 and CCr2 from 63/65 only when the option is on, at least 3 messages, for an encoder', () => {
     const s = live();
     for (const v of [1, 1, 127]) send(s, cc(74, v));

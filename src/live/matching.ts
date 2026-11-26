@@ -88,9 +88,11 @@ function sends(c: ControlData, isButton: boolean): { key: string; via: Match['vi
       return [{ key: matchKey('cc', channel, number), via: 'msb' }, { key: matchKey('cc', channel, number + 32), via: 'lsb' }];
     case 'notE': return [{ key: matchKey('note', channel, number), via: 'message' }];
     case 'PrGC': {
-      const lo = isButton ? c.upper : Math.min(c.lower, c.upper);
-      const hi = isButton ? c.upper : Math.max(c.lower, c.upper);
-      if (!Number.isInteger(lo) || !Number.isInteger(hi)) return [];
+      if (!Number.isInteger(c.lower) || !Number.isInteger(c.upper)) return [];
+      // A program is 0–127; an imported value outside it must not build a key per program.
+      const clamp = (n: number) => Math.min(127, Math.max(0, n));
+      const lo = clamp(isButton ? c.upper : Math.min(c.lower, c.upper));
+      const hi = clamp(isButton ? c.upper : Math.max(c.lower, c.upper));
       return Array.from({ length: hi - lo + 1 }, (_, i) => ({ key: matchKey('program', channel, lo + i), via: 'message' as const }));
     }
     case 'Pbnd': return [{ key: matchKey('pitchBend', channel, null), via: 'message' }];

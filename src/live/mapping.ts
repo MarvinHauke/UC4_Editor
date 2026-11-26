@@ -136,9 +136,10 @@ export function planMap(configuration: Uc4Config, target: ControlRef, row: MapSo
   // Which controls now collide: the model's warnings of the new configuration, minus the ones that were already there.
   const setupIndex = configuration.setups.findIndex((s) => s.id === target.setupId);
   const targetPath = pathOf(setupIndex, edit);
-  const before = new Set(warnings(configuration).map((w) => w.controls.join('|')));
+  const identity = (w: { controls: readonly string[]; key: MessageKey }) => `${w.controls.join('|')}|${w.key.kind}:${w.key.channel}:${w.key.number ?? ''}`;
+  const before = new Set(warnings(configuration).map(identity));
   const alsoSentBy = warnings(withEdit(configuration, edit))
-    .filter((w) => w.setupId === target.setupId && w.controls.includes(targetPath) && !before.has(w.controls.join('|')))
+    .filter((w) => w.setupId === target.setupId && w.controls.includes(targetPath) && !before.has(identity(w)))
     .map((w) => nameOfPath(w.controls.find((c) => c !== targetPath)!))
     .filter((n): n is string => n !== null);
 

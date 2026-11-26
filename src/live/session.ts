@@ -419,7 +419,11 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       if (at0 >= 0) next[at0] = row;
       else {
         next.unshift(row);
-        if (next.length > maxRows) next.length = maxRows;
+        if (next.length > maxRows) {
+          // A trimmed key starts afresh when it returns: no old mark, pin or values.
+          for (const gone of next.slice(maxRows)) { seen.delete(gone.key); noteParts.delete(gone.key); mapped.delete(gone.key); pins.delete(gone.key); }
+          next.length = maxRows;
+        }
       }
       base = next;
       lastMovedKey = key;

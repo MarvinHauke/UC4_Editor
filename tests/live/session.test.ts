@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createLiveSession, type ChannelEvent, type ChannelMessage } from '../../src/live/index.ts';
+import { factorySetup } from '../../src/model/factory.ts';
+import { createLiveSession, controlId, type ChannelEvent, type ChannelMessage } from '../../src/live/index.ts';
 
 let t = 0;
 const ev = (message: ChannelMessage, o: { inputId?: string; isUc4?: boolean } = {}): ChannelEvent => ({
@@ -103,6 +104,22 @@ describe('monitor rows', () => {
     const s = createLiveSession({ maxRows: 3 });
     for (let n = 0; n < 5; n++) s.receive(ev(cc(1, n, 1)));
     expect(s.rows.map((r) => r.number)).toEqual([4, 3, 2]);
+  });
+});
+
+describe('row cap forgets trimmed keys', () => {
+  it('a key trimmed past maxRows comes back without its old mark or values', () => {
+    const s = createLiveSession({ maxRows: 2 });
+    s.setContext({ configuration: { format: 'uc4-config', schemaVersion: 1, device: { profile: 'faderfox-uc4' }, createdAt: '', updatedAt: '', setups: [factorySetup(1)] }, setupId: 'factory-se01', encoderGroup: 0, faderButtonGroup: 0 });
+    s.receive(ev(cc(1, 1, 5)));
+    const k = s.rows[0]!.key;
+    s.markMapped(k, controlId('factory-se01', 'encoders', 0, 0));
+    expect(s.rows[0]!.mappedTo).not.toBeNull();
+    s.receive(ev(cc(1, 2, 1)));
+    s.receive(ev(cc(1, 3, 1)));
+    expect(s.rows.map((r) => r.number)).toEqual([3, 2]);
+    s.receive(ev(cc(1, 1, 9)));
+    expect(s.rows[0]).toMatchObject({ number: 1, count: 1, mappedTo: null });
   });
 });
 

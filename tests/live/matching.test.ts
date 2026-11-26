@@ -309,3 +309,12 @@ describe('control states', () => {
     expect(before.get(fad('factory-se01', 0, 8))).toMatchObject({ value: 1 });
   });
 });
+
+describe('PrGC out of range', () => {
+  it('clamps an imported lower/upper to 0–127 instead of building a key per program', () => {
+    const c = twoSetups((se) => { const e = se.encoderGroups[0]!.encoders[0]!; e.type = 'PrGC'; e.channel = 1; e.lower = -5; e.upper = 100000000; });
+    const s = live(c);
+    send(s, { kind: 'program', channel: 1, number: 127, value: 0 });
+    expect(s.rows[0]!.matches.some((m) => m.control.id === enc('factory-se01', 0, 0))).toBe(true);
+  });
+});
