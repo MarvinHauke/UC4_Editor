@@ -14,6 +14,7 @@
   import { useActiveArea } from '../app/activeArea.svelte.ts';
   import AreaView from './AreaView.svelte';
   import GuideCard from './GuideCard.svelte';
+  import ListenCard from './ListenCard.svelte';
   import { useGuide } from '../app/guide.svelte.ts';
 
   let { store }: { store: Store } = $props();
@@ -102,7 +103,7 @@
 {/snippet}
 
 <div class="device" style:--fit-height={AREA_FIT.units}>
-  {#if guide.card}<GuideCard card={guide.card} />{/if}
+  {#if guide.card}{#if 'choices' in guide.card}<ListenCard card={guide.card} />{:else}<GuideCard card={guide.card} />{/if}{/if}
   <div class="row">
     {@render arrow('encoder', -1)}
     <AreaView {store} part="upper" {direction} {instant} ongroup={go} {activeKey} onarrow={moveFocus} onfocused={(k) => { roving = k; }} />

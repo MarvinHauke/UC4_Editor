@@ -1,9 +1,0 @@
-/* Pictures in the guide open full size on click (zoom.js). */
-.md-content img { cursor: zoom-in; }
-dialog.zoom {
-  max-width: 100vw; max-height: 100vh; width: 100vw; height: 100vh;
-  margin: 0; padding: 1rem; border: 0; box-sizing: border-box;
-  background: transparent; overflow: auto; cursor: zoom-out;
-}
-dialog.zoom::backdrop { background: rgb(0 0 0 / 0.85); }
-dialog.zoom img { display: block; margin: auto; max-width: none; width: min(100%, 1440px); height: auto; }

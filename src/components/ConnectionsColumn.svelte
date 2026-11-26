@@ -13,11 +13,11 @@
   import DumpsList from './DumpsList.svelte';
 
   interface Props {
-    device: Device; profile: Pick<DeviceProfile, 'deviceName' | 'sendSteps'>; store: Store | null; confirm: Confirm;
+    device: Device; profile: Pick<DeviceProfile, 'deviceName'>; store: Store | null; confirm: Confirm;
     queue: readonly Notice[]; arrivals: number; open: boolean; onopen: (open: boolean) => void;
-    onreview: (n: Notice) => void; onexport: (n: Notice) => void; ondismiss: (n: Notice) => void;
+    onsenddump: () => void; onreview: (n: Notice) => void; onexport: (n: Notice) => void; ondismiss: (n: Notice) => void;
   }
-  let { device, profile, store, confirm, queue, arrivals, open, onopen, onreview, onexport, ondismiss }: Props = $props();
+  let { device, profile, store, confirm, queue, arrivals, open, onopen, onreview, onexport, ondismiss, onsenddump }: Props = $props();
   let strip = $state<HTMLButtonElement | null>(null);
   let panel = $state<HTMLElement | null>(null);
   const info = $derived(stripInfo(profile.deviceName, device.state, queue.length));
@@ -49,15 +49,7 @@
         <section aria-label="Received"><h3>Received</h3><DumpNotice {queue} {onreview} {onexport} {ondismiss} /></section>
       {/if}
       {#if store}<DumpsList {store} {confirm} />{/if}
-      <details data-help="How to send a dump · UC4: do it on the device yourself; the editor never starts it">
-        <summary>How to send a dump from the {profile.deviceName}</summary>
-        <h4>One setup (<code>Sndc</code>)</h4>
-        <ol>{#each profile.sendSteps.one.slice(0, -1) as step (step)}<li>{step}</li>{/each}</ol>
-        <p class="note">{profile.sendSteps.one.at(-1)}</p>
-        <h4>All 18 setups (<code>SndA</code>)</h4>
-        <ol>{#each profile.sendSteps.all.slice(0, -1) as step (step)}<li>{step}</li>{/each}</ol>
-        <p class="note">{profile.sendSteps.all.at(-1)}</p>
-      </details>
+      <button type="button" class="how" data-help="How to send a dump · UC4: shows the steps on the device view; the editor only listens" onclick={() => { onsenddump(); }}>How to send a dump from the {profile.deviceName}</button>
     </div>
   {/if}
 </aside>
@@ -88,10 +80,7 @@
   @media (min-width: 1320px) { .panel { position: static; width: auto; } .conn.open .strip { left: auto; right: 6px; } }
   h2 { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); padding-right: 36px; font-size: var(--text-lg); line-height: 24px; }
   section :global(h3), .panel :global(h3) { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-md); }
-  h4 { margin: var(--space-2) 0 var(--space-1); font-size: var(--text-md); }
-  summary { min-height: 24px; display: flex; align-items: center; cursor: pointer; font-weight: 600; border-radius: var(--radius); margin-top: var(--space-3); }
-  summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-  ol { margin: 0; padding-left: var(--space-4); font-size: var(--text-md); }
-  .note { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--text-muted); }
-  code { font: var(--text-sm) var(--mono); }
+  .how { margin-top: var(--space-3); min-height: var(--target); width: 100%; padding: 3px var(--space-3); font: inherit; text-align: left; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .how:hover { background: var(--accent-soft); }
+  .how:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
 </style>

@@ -2,7 +2,7 @@
 // ("Keys", opened with `?`) lists it, so the two cannot drift. Rows without `presses` are keys that a control
 // handles on its own (a list, a field, a dialog); they are listed for the help only.
 
-export type KeySection = 'setups' | 'groups' | 'controls' | 'copy' | 'dialogs' | 'send' | 'anywhere';
+export type KeySection = 'setups' | 'groups' | 'controls' | 'copy' | 'dialogs' | 'send' | 'tour' | 'anywhere';
 
 /** One key press that triggers a row. `alt` and `shift` left out = ignored (character keys depend on the layout: `{` is Option + 8 on a German Mac). */
 export interface Press { key: string; /** Which way the press goes: -1 previous / left / up, 1 next / right / down. */ dir?: -1 | 1; dirName?: 'left' | 'right' | 'up' | 'down'; cmd?: boolean; alt?: boolean; shift?: boolean }
@@ -49,6 +49,11 @@ export const KEY_ROWS = [
   { id: 'dialogPress', section: 'dialogs', chips: ['Tab', 'Enter'], action: 'Move to a button, press it' },
 
   { id: 'sendClose', section: 'send', chips: ['Esc'], action: 'Close the Send or Restore window; nothing is sent until you press Send or Restore' },
+  { id: 'dumpGuideEnd', section: 'send', chips: ['Esc'], action: 'Close the guide for sending a dump from the device; nothing is sent', presses: [{ key: 'Escape' }] },
+
+  { id: 'tourPage', section: 'tour', chips: ['←', '→'], action: 'Previous or next step', presses: [arrow('ArrowLeft'), arrow('ArrowRight')] },
+  { id: 'tourEnd', section: 'tour', chips: ['Esc'], action: 'End the tour', presses: [{ key: 'Escape' }] },
+  { id: 'welcomeEnd', section: 'tour', chips: ['Esc'], action: 'Not now: close the welcome card', presses: [{ key: 'Escape' }] },
 
   { id: 'undo', section: 'anywhere', chips: ['Cmd', 'Z'], action: 'Undo', presses: [{ key: 'z', cmd: true, alt: false, shift: false }] },
   { id: 'redo', section: 'anywhere', chips: ['Shift', 'Cmd', 'Z'], action: 'Redo', presses: [{ key: 'z', cmd: true, alt: false, shift: true }] },
@@ -59,9 +64,9 @@ export const KEY_ROWS = [
 export type KeyId = (typeof KEY_ROWS)[number]['id'];
 
 export const SECTION_TITLES: Record<KeySection, string> = {
-  setups: 'Setups', groups: 'Groups', controls: 'Controls', copy: 'Copy and paste', dialogs: 'Dialogs', send: 'Send', anywhere: 'Anywhere',
+  setups: 'Setups', groups: 'Groups', controls: 'Controls', copy: 'Copy and paste', dialogs: 'Dialogs', send: 'Send', tour: 'Tour', anywhere: 'Anywhere',
 };
-export const SECTION_ORDER: readonly KeySection[] = ['setups', 'groups', 'controls', 'copy', 'dialogs', 'send', 'anywhere'];
+export const SECTION_ORDER: readonly KeySection[] = ['setups', 'groups', 'controls', 'copy', 'dialogs', 'send', 'tour', 'anywhere'];
 
 export interface KeyEventLike { key: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }
 

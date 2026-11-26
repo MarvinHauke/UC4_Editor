@@ -33,7 +33,10 @@ The UC4 sends its setups as *dumps*. A dump holds one setup (`Sndc`) or all 18 (
 3. Hold the push button of **encoder 4** until the bars have run. The UC4 sends that setup: `Sndc`.
 4. `Shift` aborts.
 
-These steps are also in **Connections**, under *How to send a dump from the UC4*.
+The editor shows these steps too. In **Connections**, press **How to send a dump from the UC4**. The
+device view then shows the UC4 with the controls to use, numbered. Choose **All setups (SndA)** or
+**One setup (Sndc)**. While the UC4 is connected, the card says *Waiting for a dump from the UC4…*. If it is not, the card says so and offers **Connect**. The card closes by itself when the dump
+arrives. **Close** or `Esc` ends it. The editor only listens: nothing is sent to the UC4.
 
 ### What the editor does with it
 
@@ -48,8 +51,11 @@ because a dump arrived**:
   can undo an import with `Cmd`+`Z`.
 - Every dump is **kept** as it came, with its date, whether you review it or not. The list
   **Kept dumps** shows the newest first. A row has an *Export .syx* button and `×` to
-  delete it; deleting asks first and cannot be undone. **Clear old dumps…** keeps the newest of each
-  kind and slot, and every dump a setup still needs.
+  delete it; deleting asks first and cannot be undone.
+  **Clear old dumps…** asks first, then deletes every dump nothing needs and **hides** your backup (the
+  newest `SndA` the UC4 sent) and the dumps your setups need. The list is then empty, and new dumps show
+  in it. **Show all** lists the hidden ones too, marked *backup* or *kept for SE05*. A hidden dump is not
+  deleted.
 - A setup that came from a dump remembers it. **Revert to its dump…**, under the setup list, takes
   back every edit since then, and **Undo** brings the edits back.
 - A dump the editor cannot read is kept too. The dump notice says *Dump received but unreadable* with the

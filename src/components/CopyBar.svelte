@@ -15,7 +15,7 @@
 
 <style>
   .bar { display: flex; flex-wrap: nowrap; flex: none; margin-left: auto; gap: var(--space-2); }
-  button { white-space: nowrap; min-height: var(--target); padding: 3px var(--space-3); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  button { white-space: nowrap; min-height: var(--target); padding: 0 var(--space-3); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   button:hover:not(:disabled) { background: var(--accent-soft); }
   button:disabled { color: var(--text-muted); cursor: not-allowed; }
   button:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }

@@ -50,6 +50,12 @@ npm run pages        # both builds joined, as deployed; preview with npm run pag
 How the project is organised (plans, decisions, the agent workflow) is in [`CLAUDE.md`](CLAUDE.md) and
 [`docs/feature-plans/`](docs/feature-plans/README.md).
 
+## Thanks
+
+Thanks to **Mathias of [Faderfox](https://faderfox.de/)** for the [UC4](https://faderfox.de/uc4.html), a small, solid
+controller that is a joy to work with. The UC4 is no longer made; this editor is a small thank-you from one of its
+users.
+
 ## Disclaimer
 
 > [!IMPORTANT]

@@ -24,6 +24,13 @@
   import KeysHelp from '../components/KeysHelp.svelte';
   import { createSender } from './sender.svelte.ts';
   import SendDialog from '../components/SendDialog.svelte';
+  import DumpGuide from '../components/DumpGuide.svelte';
+  import TourOverlay from '../components/TourOverlay.svelte';
+  import WelcomeCard from '../components/WelcomeCard.svelte';
+  import { createTour } from './tour.svelte.ts';
+  import { createWelcome } from './welcome.svelte.ts';
+  import { shouldWelcome } from './tour.ts';
+  import { createDumpGuide } from './dumpGuide.svelte.ts';
   import { createNotices } from './dumpNotices.svelte.ts';
   import { noticeOf, withImportHook, type DumpNotice as Notice } from './dumpNotices.ts';
   import { startImport, type FlowUi } from './importFlow.ts';
@@ -47,6 +54,9 @@
   const device = createDevice(createDeviceConnection({ portName: faderfoxUc4.portName, deviceName: faderfoxUc4.deviceName, env: browserMidiEnv(), checkSendable: uc4Engine.checkSendable }));
   setContext(GUIDE_CONTEXT, createGuide());
   const notices = createNotices();
+  const dumpGuide = createDumpGuide();
+  const tour = createTour();
+  const welcome = createWelcome(tour, () => { getSetups(); });
   const sender = createSender(device, faderfoxUc4.deviceName, (slot, plan) => { store?.recordSend(slot, plan); });
   // A dump can arrive before the library has opened: it waits here, then is kept like any other.
   let waiting: Uint8Array[] = [];
@@ -55,7 +65,7 @@
     const notice = noticeOf(store.keepReceived(bytes));
     // What the UC4 sends back after a send, byte for byte: kept as usual, but it is not news.
     if (notice && sender.matches(bytes)) return;
-    if (notice) { notices.add(notice); arrivals += 1; }
+    if (notice) { notices.add(notice); arrivals += 1; dumpGuide.close(); }
     else store.say('The UC4 sent a MIDI message that is not a dump. Nothing was changed.');
   }
   const flowUi: FlowUi = { ask: (spec) => { confirm.ask(spec); }, download, say: (text) => { store?.say(text); } };
@@ -134,6 +144,22 @@
     e.preventDefault();
     if (hit.id === 'redo') store.redo(); else store.undo();
   }
+  // The welcome card shows by itself once, when the library has opened empty-handed: no kept dump, factory setups, not seen.
+  let tourChecked = false;
+  $effect(() => {
+    if (!store || tourChecked) return;
+    tourChecked = true;
+    untrack(() => {
+      if (!store) return;
+      const { dumps, differsFromFactory } = store.state;
+      // Not over an open dialog (it sits in the top layer above the tour).
+      if (!document.querySelector('dialog[open]') && shouldWelcome({ seen: tour.seen, keptDumps: dumps.length, differsFromFactory })) welcome.show();
+    });
+  });
+  // Settings' Tour button: close Settings, focus back on the gear (the tour hands focus there afterwards), start.
+  function startTour(): void { settings.setOpen(false); gear?.focus(); tour.start(); }
+  // The tour's last step: the dump overlay with SndA, as the Connections column opens it.
+  function getSetups(): void { dumpGuide.choose('all'); dumpGuide.show(); }
   let keysFromSettings = false;
   function showKeys(): void { keysFromSettings = true; settings.setOpen(false); keysOpen = true; }
   // The key help opened from Settings hands focus back to the gear (the button it came from is gone).
@@ -196,9 +222,9 @@
     <button type="button" class="gear" data-settings-toggle bind:this={gear} aria-label="Settings" aria-expanded={settings.open}
       data-help="Settings: theme, keys and slide speed · Cmd-," onclick={() => { settings.toggle(); }}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg></button>
   </header>
-  <ConnectionsColumn bind:this={column} {device} profile={faderfoxUc4} {store} {confirm} queue={notices.queue} open={connOpen} onopen={setConnOpen} {arrivals}
+  <ConnectionsColumn bind:this={column} onsenddump={() => { dumpGuide.show(); }} {device} profile={faderfoxUc4} {store} {confirm} queue={notices.queue} open={connOpen} onopen={setConnOpen} {arrivals}
     onreview={review} onexport={exportNotice} ondismiss={(n) => { notices.remove(n.dumpId); }} />
-  <SettingsPanel {settings} opener={() => gear} onallkeys={showKeys} />
+  <SettingsPanel {settings} opener={() => gear} onallkeys={showKeys} ontour={startTour} />
   <KeysHelp open={keysOpen} vim={settings.keys === 'vim'} onclose={closeKeys} />
   <aside class="props" data-area="properties" data-copy-level="control" data-help={propsHelp} inert={(connOpen && !wide) || sender.dialog !== null}>{#if store}<PropertyPanel {store} {confirm} />{/if}</aside>
   <!-- Esc is the keyboard way out; the click is the pointer's. -->
@@ -208,6 +234,9 @@
   <aside class="list" bind:offsetWidth={shownWidth} data-area="setups" data-copy-level="setup" data-help={listHelp}>{#if store}<LibraryList {store} {confirm} {device} {sender} profile={faderfoxUc4} />{/if}</aside>
   <ConfirmDialog {confirm} />
   {#if store}<SendDialog {store} {device} {sender} profile={faderfoxUc4} />{/if}
+  <TourOverlay {tour} onget={getSetups} profile={faderfoxUc4} />
+  <WelcomeCard {welcome} profile={faderfoxUc4} />
+  {#if store}<DumpGuide {dumpGuide} {device} {sender} profile={faderfoxUc4} />{/if}
   <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)}
     waiting={notices.queue.length} onopenconnections={openConnections} />
 </div>

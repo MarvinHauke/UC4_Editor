@@ -44,8 +44,21 @@ export function keptRow(d: KeptDumpInfo): { kind: string; meta: string } {
   return { kind: dumpKindLabel(d), meta: `${from} · ${formatExported(d.date)}` };
 }
 
-/** The 5 newest, or all. */
-export const shownDumps = <T>(dumps: readonly T[], all: boolean): readonly T[] => (all ? dumps : dumps.slice(0, NEWEST_SHOWN));
+/** The 5 newest visible dumps (a hidden one stays out of the list), or, with Show all, every dump including the hidden ones. */
+export const shownDumps = <T extends { hidden?: true }>(dumps: readonly T[], all: boolean): readonly T[] => (all ? dumps : dumps.filter((d) => !d.hidden).slice(0, NEWEST_SHOWN));
+
+/** Why a hidden dump stays, in dim text under Show all: "backup", "kept for SE05, SE09", or both. Empty for a visible dump. */
+export function keptNote(d: Pick<KeptDumpInfo, 'keptFor'>): string {
+  return keptBecause(d.keptFor?.backup === true, d.keptFor?.setups ?? []);
+}
+const setupLabel = (n: DumpNeed): string => (n.slot !== undefined ? slotName(n.slot) : n.setupName);
+/** Up to 4 setups are named, in slot order; more are counted ("kept for 18 setups"). */
+const MAX_NAMED = 4;
+function keptBecause(backup: boolean, setups: readonly DumpNeed[]): string {
+  const sorted = [...setups].sort((a, b) => (a.slot ?? 99) - (b.slot ?? 99));
+  const names = sorted.length > MAX_NAMED ? `${sorted.length} setups` : sorted.map(setupLabel).join(', ');
+  return [backup ? 'backup' : '', sorted.length > 0 ? `kept for ${names}` : ''].filter(Boolean).join(' / ');
+}
 
 const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
 const needLine = (n: DumpNeed): string => `${n.slot !== undefined ? `${slotName(n.slot)} ` : ''}"${n.setupName}" can no longer be ${n.reasons.map((r) => NEED_TEXT[r]).join(' or ')}.`;
@@ -60,21 +73,25 @@ export function deleteNeededTexts(d: KeptDumpInfo, needs: readonly DumpNeed[]): 
   };
 }
 
-/** The question before "Clear old dumps": what goes, what stays and why. Not undoable. */
+/** The question before "Clear old dumps": what goes and what is kept, hidden. The list ends up empty; Show all brings the kept ones back. Not undoable. */
 export function clearTexts(plan: ClearPlan): Omit<ConfirmSpec, 'run'> {
   const line = (e: ClearPlan['entries'][number]): string => {
     const when = formatExported(e.date);
-    if (e.action === 'delete') return `Goes: ${e.kind}, ${when} (a newer ${e.kind} stays)`;
-    const why = [e.keepBecause.includes('newest') ? 'the newest of its kind' : '', e.neededBy.length ? `needed by ${e.neededBy.map((n) => n.slot !== undefined ? slotName(n.slot) : n.setupName).join(', ')}` : ''].filter(Boolean).join('; ');
-    return `Stays: ${e.kind}, ${when} (${why})`;
+    if (e.action === 'delete') return `Goes: ${e.kind}, ${when}`;
+    return `Kept, hidden: ${e.kind}, ${when} (${keptBecause(e.keepBecause.includes('backup'), e.neededBy)})`;
   };
+  const gone = plan.deleteIds.length;
+  const backup = plan.entries.some((e) => e.action === 'keep' && e.keepBecause.includes('backup'));
+  const needed = plan.entries.some((e) => e.action === 'keep' && e.neededBy.length > 0);
+  const stays = [backup ? 'your backup for Restore' : '', needed ? 'the dumps setups need' : ''].filter(Boolean).join(' and ');
   return {
-    title: `Clear ${plural(plan.deleteIds.length, 'old dump')}?`,
+    title: gone > 0 ? `Clear ${plural(gone, 'old dump')}?` : 'Clear the dump list?',
     body: [
-      `Lost for good: ${plural(plan.deleteIds.length, 'dump')} and their bytes. ${plural(plan.keepIds.length, 'dump')} stay: the newest of each kind and slot, and every dump a setup still needs (Revert, Sndc export).`,
-      'This cannot be undone. Export a dump first with Export .syx if you want a copy.',
-    ],
+      gone > 0 ? `Lost for good: ${plural(gone, 'dump')} and ${gone === 1 ? 'its' : 'their'} bytes. The list will be empty.` : 'Nothing is deleted. The list will be empty.',
+      plan.keepIds.length > 0 ? `${plural(plan.keepIds.length, 'dump')} ${plan.keepIds.length === 1 ? 'stays' : 'stay'}, hidden: ${stays}. Show all brings ${plan.keepIds.length === 1 ? 'it' : 'them'} back.` : '',
+      gone > 0 ? 'This cannot be undone. Export a dump first with Export .syx if you want a copy.' : '',
+    ].filter(Boolean),
     list: plan.entries.map(line),
-    confirmLabel: 'Clear old dumps',
+    confirmLabel: gone > 0 ? 'Clear old dumps' : 'Clear the list',
   };
 }

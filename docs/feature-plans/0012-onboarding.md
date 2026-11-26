@@ -1,0 +1,68 @@
+# 0012 — Onboarding: the six areas in the guide and a first-run tour
+
+_Stage: built locally (2026-11-25) on `feat/onboarding` → `feat/compact-dumps`, review fixes on `fix/review-findings`; waits for the user's try-out before a push._
+_Owner: uc4-ui (data, tour), uc4-docs (guide page) · Depends on: 0010 (dump overlay)_
+
+## Problem
+
+A new UC4 owner opens the editor and sees six areas at once, with no word on what each is for. No guide page
+explains them together. And nothing says that the 18 setups on screen are factory setups until the owner brings
+their own in (0010 audit B1).
+
+## Design
+
+```text
+ ┌──────────────── 1 Toolbar: Import, Export, Undo, Guide, Settings ───────────────┐
+ │2 Connections │ 3 Property panel │      4 Device view       │ 5 Setup list     │
+ └──────────────── 6 Help line: explains what's under the mouse ────────────────┘
+```
+
+- **Area texts, once:** each area has a title and two or three sentences, kept as data in the device profile
+  (`src/app/profile/uc4Tour.ts`). The tour reads them; the guide page is written from them, and a test checks that
+  every title appears on the guide page.
+- **Guide page "The editor":** an overview picture with six numbered markers, then one short section per area,
+  then the details that are there now.
+- **Tour in the editor:** the same look as the `rEc` guide and the dump overlay. The editor dims, one area at a
+  time is lit with its number, and a card beside it holds the title, the sentences, "n of 7" (six areas and the closing step), Back / Next / Skip.
+  Esc ends it, ← → page through. It is built on the existing guide data, not a new overlay system.
+- **Last step:** "Get your own setups from the UC4", with a button that opens the dump overlay (`SndA`). Until
+  then the setups on screen are factory setups; the step says so.
+
+## Decisions
+
+1. One text for both places, a drift test. (user, 2026-11-25, Q51)
+2. The guide page: an overview with six numbers, a short section per area. (user, 2026-11-25, Q52)
+3. The tour highlights one area at a time in the editor and explains it in a few words, with Back / Next / Skip.
+   (user, 2026-11-25, Q53)
+4. ~~It starts by itself on first open~~ (replaced by decision 8: the welcome card decides). It starts by itself on first open (nothing received or imported yet, not dismissed). Settings has a **Tour**
+   button that starts it again; it replaces Settings' "User guide" link. The guide stays reachable from the book
+   icon in the toolbar and from the key help. "Seen" is kept in this browser only. (user, 2026-11-25, Q54)
+5. The last step opens the dump overlay; this answers audit B1, and the start card is dropped.
+   (user, 2026-11-25, Q55)
+6. Its own plan, built locally on its own branch, pushed after the user has tried it. (user, 2026-11-25, Q56)
+7. **"Seen" is written when the tour starts,** not when it ends, so a reload in the middle doesn't start it again.
+   (architect, 2026-11-25, from the step 3 review)
+8. **A welcome card comes first** (user, 2026-11-25): on first open the editor dims and shows a centred card,
+   "Welcome to the UC4 Editor", with two sentences (what it does; unofficial, not from Faderfox) and three choices:
+   **Take the tour** (primary), **Get my setups from the UC4** (the dump overlay, `SndA`), **Not now**. Under them:
+   "The tour is in Settings → Tour any time; the guide is behind the book icon." The tour no longer starts by itself;
+   the card decides. Esc = Not now. "Seen" as in decision 7, written when the card shows.
+9. **One overlay card, two kinds of light** (architect, 2026-11-25, from the review): the tour and the welcome card
+   share one `OverlayCard` (dim, lit area with its number, card, focus trap, focus back to the opener) and the one
+   `.ui-card` look that the guide cards also use. The guide store stays for the device view's SVG callouts (`rEc`,
+   dump guide); the tour lights page areas by selector. Narrows the Design's "not a new overlay system": one look and
+   one card component, two ways to light.
+
+## Steps
+
+1. **Area texts as data, plus the drift test** — done (`aa394f7`) — uc4-ui · blocked by: none.
+2. **Guide page** — done (`16a8e08`, `c7ad8d2`, `70b4fb4`) — uc4-docs · blocked by: 1 · overview shot with six markers, a section per area.
+3. **Tour** — done (`b971b80`, `5de8397`; its first-run start replaced by step 5) — uc4-ui · blocked by: 1 · dim, light, card, keys, first-run start, Settings' Tour button, "seen" stored.
+4. **Last step into the dump overlay** — done (`b971b80`) — uc4-ui · blocked by: 3.
+
+5. **Welcome card** (decision 8) — done 2026-11-25 (`d6b7a9f`, reviewed) — uc4-ui · blocked by: 3 · plus the toolbar step's number badge, which sits on the
+   Connections strip instead of on the toolbar.
+
+## Out of scope
+
+Command mode; a tour per feature (Copy / Paste, Send); translations.

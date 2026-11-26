@@ -65,42 +65,58 @@ export function dumpKind(d: PlanDump): { key: string; label: string } {
   return { key: 'unknown', label: 'unreadable dump' };
 }
 
-export type KeepReason = 'newest' | 'needed';
+/** Why a dump stays: `backup` is the newest received `SndA` (what Restore and the send's base read); `needed` a setup needs it. */
+export type KeepReason = 'backup' | 'needed';
 export interface ClearEntry {
   id: string;
   date: string;
   /** `SndA`, `Sndc SE05`, `unreadable dump`. */
   kind: string;
+  /** `keep`: the dump stays and is hidden from the list; `delete`: nothing needs it. */
   action: 'keep' | 'delete';
-  /** Why it stays: newest of its kind and slot, needed by a setup, or both. Empty for `delete`. */
+  /** Why it stays (empty for `delete`). */
   keepBecause: KeepReason[];
   /** The setups that need it (empty when none does). */
   neededBy: DumpNeed[];
-  /** For `delete`: the newer dump of the same kind that stays instead. */
-  supersededBy?: string;
 }
-/** `entries` is newest first. Nothing goes when `deleteIds` is empty ("nothing to clear"). */
-export interface ClearPlan { entries: ClearEntry[]; deleteIds: string[]; keepIds: string[] }
+/** `entries` is newest first. Every id in `keepIds` is hidden by the clear; `hideIds` are those not hidden yet. Nothing to clear when `deleteIds` and `hideIds` are both empty. */
+export interface ClearPlan { entries: ClearEntry[]; deleteIds: string[]; keepIds: string[]; hideIds: string[] }
+
+/** Whether the clear has anything to do: a dump to delete or one to hide. */
+export const hasWorkToClear = (plan: Pick<ClearPlan, 'deleteIds' | 'hideIds'>): boolean => plan.deleteIds.length > 0 || plan.hideIds.length > 0;
+
+/** The part of a kept dump the backup rule reads: `received` is when the UC4 sent it (absent for a dump only imported from a file). */
+export interface BackupCandidate extends PlanDump { received?: string; unreadable?: boolean; /** Already hidden by an earlier clear. */ hidden?: boolean }
 
 /**
- * Keeps the newest dump of each kind (`SndA`; `Sndc` per slot; unreadable dumps as one kind) and every dump a
- * setup still needs; everything else goes. An older dump that a setup needs stays too, and the newest stays
- * whether needed or not.
+ * The dump Restore and the send's base read when no send names another: the newest readable `SndA` the UC4 sent
+ * (`freshBackup` in sendPlan.ts picks the same one among those received since the connection). An imported file is
+ * never a backup, so it is not kept for being one.
  */
-export function planClearOldDumps(dumps: readonly PlanDump[], needs: Record<string, DumpNeed[]>): ClearPlan {
-  const sorted = byNewest(dumps);
-  const newestOf = new Map<string, string>();
-  for (const d of sorted) { const k = dumpKind(d).key; if (!newestOf.has(k)) newestOf.set(k, d.id); }
-  const entries: ClearEntry[] = sorted.map((d) => {
-    const { key, label } = dumpKind(d);
+export function newestBackupId(dumps: readonly BackupCandidate[]): string | undefined {
+  let best: BackupCandidate | undefined;
+  for (const d of dumps) {
+    if (d.type !== 'all' || d.unreadable || d.received === undefined) continue;
+    if (!best || d.received > best.received!) best = d;
+  }
+  return best?.id;
+}
+
+/**
+ * Plan 0010 decision 8: every dump nothing needs goes, the newest `Sndc` of a slot too. What stays is the newest
+ * received `SndA` and every dump a setup needs (Revert, `Sndc` export, the send's base, a send's backup); the library
+ * hides what stays.
+ */
+export function planClearOldDumps(dumps: readonly BackupCandidate[], needs: Record<string, DumpNeed[]>): ClearPlan {
+  const backup = newestBackupId(dumps);
+  const hiddenIds = new Set(dumps.filter((d) => d.hidden).map((d) => d.id));
+  const entries: ClearEntry[] = byNewest(dumps).map((d) => {
     const keepBecause: KeepReason[] = [];
-    if (newestOf.get(key) === d.id) keepBecause.push('newest');
+    if (backup === d.id) keepBecause.push('backup');
     const neededBy = needs[d.id] ?? [];
     if (neededBy.length > 0) keepBecause.push('needed');
-    return {
-      id: d.id, date: d.date, kind: label, action: keepBecause.length > 0 ? 'keep' : 'delete', keepBecause, neededBy,
-      ...(keepBecause.length === 0 ? { supersededBy: newestOf.get(key)! } : {}),
-    };
+    return { id: d.id, date: d.date, kind: dumpKind(d).label, action: keepBecause.length > 0 ? 'keep' : 'delete', keepBecause, neededBy };
   });
-  return { entries, deleteIds: entries.filter((e) => e.action === 'delete').map((e) => e.id), keepIds: entries.filter((e) => e.action === 'keep').map((e) => e.id) };
+  return { entries, deleteIds: entries.filter((e) => e.action === 'delete').map((e) => e.id), keepIds: entries.filter((e) => e.action === 'keep').map((e) => e.id),
+    hideIds: entries.filter((e) => e.action === 'keep' && !hiddenIds.has(e.id)).map((e) => e.id) };
 }

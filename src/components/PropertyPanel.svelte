@@ -34,16 +34,18 @@
     {@const { sel, group, control, setup, problems } = panel}
     <header>
       <div class="head">
-        <h2>{AREA_NAMES[sel.area].singular} {controlNumber(sel.index)}</h2>
+        <div class="titles">
+          <h2>{AREA_NAMES[sel.area].singular} {controlNumber(sel.index)}</h2>
+          <p class="where">
+            {setup.name} ·
+            {sel.area === 'encoders' || sel.area === 'pushButtons' ? `encoder group ${group + 1}` : `fader/button group ${group + 1}`}
+          </p>
+        </div>
         <CopyBar level="control" holding={copy.held?.kind === 'control'} canCopy={true}
         canPaste={copy.held?.kind === 'control' && canPasteControl(copy.held, sel) && !isHeldControl(copy.held, setup.id, sel.area, group, sel.index)}
         what="{AREA_NAMES[sel.area].singular} {controlNumber(sel.index)}"
         onCopy={() => { copy.copy('control'); }} onPaste={() => { copy.paste('control'); }} onStop={() => { copy.stop(); }} />
       </div>
-      <p class="where">
-        {setup.name} ·
-        {sel.area === 'encoders' || sel.area === 'pushButtons' ? `encoder group ${group + 1}` : `fader/button group ${group + 1}`}
-      </p>
     </header>
     {#key `${setup.id}/${sel.area}/${group}/${sel.index}`}
       <div class="fields">
@@ -71,8 +73,10 @@
 <style>
   .panel { padding: var(--space-4); }
   .head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
-  h2 { flex: 1 1 auto; margin: 0; font-size: var(--text-lg); }
-  .where { margin: 0 0 var(--space-3); color: var(--text-muted); font-size: var(--text-sm); }
+  .titles { flex: 1 1 auto; }
+  h2 { margin: 0; font-size: var(--text-lg); }
+  header { margin-bottom: var(--space-3); }
+  .where { margin: 0; color: var(--text-muted); font-size: var(--text-sm); }
   .fields { display: flex; flex-direction: column; gap: var(--space-2); }
   .empty p { color: var(--text-muted); }
   .empty .unofficial { font-size: var(--text-sm); }

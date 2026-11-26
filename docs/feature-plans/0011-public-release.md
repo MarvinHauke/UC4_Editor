@@ -32,7 +32,8 @@ marvinhauke.github.io/UC4_Editor/guide/    the guide (Zensical → site/)
 1. Editor at the root, guide under `/guide/`. (user, 2026-11-25, Q41)
 2. `chore/agent-workflow` goes into `main` (PR #2); the user's Zensical scaffold makes way for the guide of 0009,
    keeping its theme ideas: `navigation.tabs`, `navigation.path`, `navigation.top`, `search.highlight`, `extra.css`
-   (cards, notice, rounded code and images). (user, 2026-11-25, Q42)
+   (cards, notice, rounded code and images). (user, 2026-11-25, Q42; narrowed by 0009 decision 10: no header tabs, no
+   path, the notice as an `!!! info` box)
 3. A new public repository with a clean first commit, not a rewritten history: a rewrite leaves the old commits
    reachable through PR refs on GitHub. (user, 2026-11-25, Q43, Q45)
 4. The old private repository is `MarvinHauke/UC4_Editor-workshop` (archive of the full history and the dumps);

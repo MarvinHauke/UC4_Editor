@@ -16,7 +16,7 @@ import { IMPORT_READS, describeSlots, looksLikeDump, readDump, slotName } from '
 import { markPath, pastedMarks, PASTED, dropMarkPaths, dropMarks, hasMarkPaths, hasMarks, markProblems, marksFromProblems, parseMarks } from './marks.ts';
 import type { Marks } from './marks.ts';
 import { StorageBusyError, type LibraryStorage, type StoredDump } from './storage.ts';
-import { changesBetween, freshBackup } from './sendPlan.ts';
+import { changesBetween, freshBackup, receivedAtOf } from './sendPlan.ts';
 import { chooseBackup, newerStates, type LastSend, type RestorePlan, type SentInfo } from './restorePlan.ts';
 import type { SendBackup, SendBase, SendPlan } from './sendPlan.ts';
 import { uc4Engine } from '../protocol/engine.ts';
@@ -26,7 +26,7 @@ import { ENGINE_VERSION } from '../protocol/engine.ts';
 import type { RawDump } from '../protocol/types.ts';
 import { baselineAfter, canon, exportState, fileDate, isSlot, locate, summaries } from './libraryInfo.ts';
 import type { ExportBaseline, ExportState, SetupSummary } from './libraryInfo.ts';
-import { dumpNeeds, planClearOldDumps } from './keptDumpPlan.ts';
+import { dumpNeeds, hasWorkToClear, newestBackupId, planClearOldDumps, type BackupCandidate } from './keptDumpPlan.ts';
 import type { ClearPlan, DumpNeed } from './keptDumpPlan.ts';
 
 export type ControlArea = 'encoders' | 'pushButtons' | 'faders' | 'buttons';
@@ -87,6 +87,10 @@ export interface KeptDumpInfo {
   content: string;
   /** Size in bytes. */
   size: number;
+  /** "Clear old dumps" kept it and hid it (plan 0010 decision 8): the list shows it only under "Show all". */
+  hidden?: true;
+  /** Why a hidden dump stays, for "Show all": `backup` is the newest received `SndA`; `setups` the setups that need it. Only on a hidden dump. */
+  keptFor?: { backup: boolean; setups: DumpNeed[] };
 }
 
 /** A dump to download: the bytes exactly as they came. */
@@ -432,7 +436,9 @@ function parseSends(text: string | null): Sends {
 }
 
 const sameBytes = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((v, i) => v === b[i]);
-const infoOf = (d: StoredDump): KeptDumpInfo => ({
+const planDump = (d: StoredDump): BackupCandidate => ({ id: d.id, date: d.date, type: d.type, slots: d.slots, unreadable: d.unreadable !== undefined, hidden: d.hidden === true, ...(receivedAtOf(d) !== undefined ? { received: receivedAtOf(d)! } : {}) });
+const infoOf = (d: StoredDump, keptFor?: KeptDumpInfo['keptFor']): KeptDumpInfo => ({
+  ...(d.hidden && keptFor ? { hidden: true as const, keptFor } : {}),
   id: d.id, date: d.date, source: d.source, ...(d.fileName !== undefined ? { fileName: d.fileName } : {}),
   type: d.type, slots: d.slots, firmware: d.firmware, size: d.bytes.length,
   ...(d.unreadable ? { unreadable: d.unreadable, content: 'unreadable dump' } : { content: describeSlots(d.slots) }),
@@ -448,7 +454,13 @@ function createLibrary(
   /** Which kept dump each setup came from; saved beside the library, in the undo snapshots. */
   let links = side.links;
   let writtenLinks = side.linksText ?? '{}';
-  const dumpFields = (): Pick<LibraryState, 'dumps' | 'dumpLinks'> => ({ dumps: kept.map(infoOf), dumpLinks: Object.fromEntries(Object.entries(links).map(([s, l]) => [s, l.dump])) });
+  const infos = (): KeptDumpInfo[] => {
+    if (!kept.some((d) => d.hidden)) return kept.map((d) => infoOf(d));
+    const backup = newestBackupId(kept.map(planDump));
+    const n = needs();
+    return kept.map((d) => infoOf(d, d.hidden ? { backup: backup === d.id, setups: n[d.id] ?? [] } : undefined));
+  };
+  const dumpFields = (): Pick<LibraryState, 'dumps' | 'dumpLinks'> => ({ dumps: infos(), dumpLinks: Object.fromEntries(Object.entries(links).map(([s, l]) => [s, l.dump])) });
   /** The last send per slot, with its bytes; saved beside the library (a sidecar, like the links). */
   let sends = side.sends;
   let writtenSends = side.sendsText ?? '{}';
@@ -469,12 +481,15 @@ function createLibrary(
     configuration: initial,
     selection: { setupId: initial.setups[0]!.id, encoderGroup: 0, faderButtonGroup: 0, control: null },
     ...derived(initial),
-    ...dumpFields(),
-    ...sendFields(),
+    dumps: [],
+    dumpLinks: {},
+    lastSends: {},
     canUndo: false,
     canRedo: false,
     saveStatus: blocked ? 'failed' : 'saved',
   };
+  // The dump and send fields read `state` (via `needs()`) and `marks`, `kept`, `links`, `sends`: keep those declared above this line.
+  state = { ...state, ...dumpFields(), ...sendFields() };
   let undoStack: Snapshot[] = [];
   let redoStack: Snapshot[] = [];
   const listeners = new Set<(s: LibraryState) => void>();
@@ -593,8 +608,16 @@ function createLibrary(
     const existing = kept.find((d) => sameBytes(d.bytes, bytes));
     if (existing) {
       // The same bytes again from the device: the dump stays one, but it is a fresh receive (a send's backup, decision 22).
-      if (source !== 'received') return { dump: existing, duplicate: true };
-      const again: StoredDump = { ...existing, receivedAt: now().toISOString() };
+      // A dump that arrives again is visible again (plan 0010 decision 8), whether received or imported.
+      const { hidden: _hidden, ...visible } = existing;
+      if (source !== 'received') {
+        if (!existing.hidden) return { dump: existing, duplicate: true };
+        kept = kept.map((d) => (d === existing ? visible : d));
+        publish({ ...state, ...dumpFields() });
+        persistDump(() => storage.putDump(visible), 'The dump is kept for this session only: it');
+        return { dump: visible, duplicate: true };
+      }
+      const again: StoredDump = { ...visible, receivedAt: now().toISOString() };
       kept = kept.map((d) => (d === existing ? again : d));
       publish({ ...state, ...dumpFields() });
       persistDump(() => storage.putDump(again), 'The dump is kept for this session only: it');
@@ -1111,18 +1134,22 @@ function createLibrary(
     },
 
     planClearDumps() {
-      return planClearOldDumps(kept, needs());
+      return planClearOldDumps(kept.map(planDump), needs());
     },
 
     clearOldDumps() {
-      const { deleteIds } = planClearOldDumps(kept, needs());
-      if (deleteIds.length === 0) return result('There are no old dumps to clear.');
+      const plan = planClearOldDumps(kept.map(planDump), needs());
+      const { deleteIds, keepIds, hideIds } = plan;
+      if (!hasWorkToClear(plan)) return result('There are no old dumps to clear.');
       const gone = new Set(deleteIds);
-      kept = kept.filter((d) => !gone.has(d.id));
+      const hide = new Set(keepIds);
+      kept = kept.filter((d) => !gone.has(d.id)).map((d) => (hide.has(d.id) && !d.hidden ? { ...d, hidden: true as const } : d));
       links = Object.fromEntries(Object.entries(links).filter(([, l]) => !gone.has(l.dump)));
-      const message = `Cleared ${deleteIds.length} old dump${deleteIds.length === 1 ? '' : 's'}.`;
+      const message = `Cleared ${deleteIds.length} dump${deleteIds.length === 1 ? '' : 's'}${keepIds.length > 0 ? `; ${keepIds.length} kept ${keepIds.length === 1 ? 'is' : 'are'} hidden under Show all` : ''}.`;
       publish({ ...state, ...dumpFields(), message });
       for (const id of deleteIds) persistDump(() => storage.deleteDump(id), 'The deletion');
+      const newlyHidden = new Set(hideIds);
+      for (const d of kept) if (d.hidden && newlyHidden.has(d.id)) persistDump(() => storage.putDump(d), 'The change');
       saveNow();
       return result(message);
     },

@@ -35,8 +35,9 @@ JSON is the master format; the device's SysEx dump is generated from it by a sep
   version that made it.
 - **Layers point one way:** UI → storage/midi → protocol → model. The UI never touches bytes; the
   protocol engine never touches Web MIDI, the DOM or Svelte. Everything below the UI is unit-tested.
-- **Never guess the protocol.** A byte's meaning is *confirmed* only by a fixture pair: two dumps
-  that differ by one change made on the device (plan 0003). The encoder writes only confirmed
+- **Never guess the protocol.** A byte's meaning is *confirmed* by a fixture pair: two dumps that
+  differ by one change made on the device (plan 0003). Faderfox's own documentation (private, never
+  in the repo) confirms a field only where it settles it outright (0003 decision 10). The encoder writes only confirmed
   fields. Bytes the decoder does not understand are kept and written back unchanged, so
   decode → encode of a real dump is byte-identical.
 - **Raw dumps are kept unchanged** next to their interpretation; a decode never replaces the

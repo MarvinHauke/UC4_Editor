@@ -18,6 +18,8 @@ export interface StoredDump {
   bytes: Uint8Array;
   /** Present when the engine refused this dump (not re-read when the engine changes; a later step may): kept as evidence, exportable and deletable, never imported (plan 0005 decision 10). */
   unreadable?: { reason: string; whatToDo: string };
+  /** Set by "Clear old dumps" on what it kept (plan 0010 decision 8): the list hides it until "Show all". Absent = visible, so old stored libraries need no migration. A dump that arrives or is imported later is visible. */
+  hidden?: true;
 }
 
 export interface LibraryStorage {
