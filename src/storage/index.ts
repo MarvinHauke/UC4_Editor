@@ -16,3 +16,5 @@ export type { ClearEntry, ClearPlan, DumpNeed, KeepReason, NeedReason } from './
 export { CHANGES_SHOWN } from './sendPlan.ts';
 export type { SendBase, SendBackup, SendChanges, SendPlan, SendRefusal } from './sendPlan.ts';
 export type { RestoreAgainst, RestorePlan, RestoreRefusal, SentInfo } from './restorePlan.ts';
+export { warningId } from './waivers.ts';
+export type { ListedWarning, WarningState } from './waivers.ts';

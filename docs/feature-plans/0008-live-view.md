@@ -454,6 +454,11 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    ("factory layout"); one dialog for problems and warnings from the status-bar count and the property panel's
    line, Show / Waive / "Show waived", this setup / all setups; the ‹ › stepper goes; Send lists unwaived warnings
    with "Send anyway" and "Review…"; export says "n warnings". Stories 39–45.
+   *uc4-model half, 2026-11-26:* `state.warnings` lists every warning of all setups with `state` `open | waived | factory`
+   (factory derived: both controls equal `factorySetup(slot)`'s; waived wins over factory); `waive(warnings)` and
+   `unwaive(warning)` are one undo step each (unwaive of a factory warning is refused). Waivers live in `src/storage/waivers.ts`,
+   saved as a sidecar (`readWaivers`/`writeWaivers`), in the undo snapshots, never in an export. A waiver **lapses (is dropped)**
+   as soon as no current warning matches it, so the same double made again is open; undo brings it back.
 7. **Map by click** — done 2026-11-26: uc4-protocol (`b2811df`), uc4-model (`setControl` `1e9fd47`), uc4-ui (`1be40dd`, glyphs `73cea31`, marks `cefddff`; browser-checked by the architect: dimming, result line, Upper focused, "already sends", Esc, header Undo clears the mark) · blocked by: 1, 5 · Map per row, armed state, dimming
    with the reason in the help line, one undo step with a result line, the type rule, Settings section Connections
    with the relative switch, Upper focused after a CC onto a button, the mapped row's target and the next row

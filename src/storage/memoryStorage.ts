@@ -9,6 +9,8 @@ export interface MemoryStorage extends LibraryStorage {
   linksText(): string | null;
   /** The last-sends text now stored. */
   sendsText(): string | null;
+  /** The waivers text now stored. */
+  waiversText(): string | null;
   /** The marks text now stored. */
   marksText(): string | null;
   /** The export baseline text now stored. */
@@ -27,6 +29,7 @@ export function memoryStorage(initial: string | null = null, initialBaseline: st
   let marksStored = initialMarks;
   let linksStored: string | null = null;
   let sendsStored: string | null = null;
+  let waiversStored: string | null = null;
   const dumps = new Map<string, StoredDump>();
   let baseline = initialBaseline;
   let failures = 0;
@@ -51,6 +54,9 @@ export function memoryStorage(initial: string | null = null, initialBaseline: st
     readSends: async () => sendsStored,
     writeSends: async (text) => { sendsStored = text; },
     sendsText: () => sendsStored,
+    readWaivers: async () => waiversStored,
+    writeWaivers: async (text) => { waiversStored = text; },
+    waiversText: () => waiversStored,
     readDumps: async () => { if (failRead) throw new Error('storage unavailable'); return [...dumps.values()].map((d) => ({ ...d, bytes: d.bytes.slice() })); },
     putDump: async (d) => { dumps.set(d.id, { ...d, bytes: d.bytes.slice() }); },
     deleteDump: async (id) => { dumps.delete(id); },

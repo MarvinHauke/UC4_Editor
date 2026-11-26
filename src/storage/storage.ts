@@ -41,6 +41,9 @@ export interface LibraryStorage {
   /** The last send per slot (plan 0005 step 14), as text, or null when none is stored. Kept out of the uc4-config JSON. */
   readSends(): Promise<string | null>;
   writeSends(text: string): Promise<void>;
+  /** The waived warnings (plan 0008 decision 7), as text, or null when none is stored. Kept out of the uc4-config JSON. */
+  readWaivers(): Promise<string | null>;
+  writeWaivers(text: string): Promise<void>;
   /** Every kept dump. Rejects when storage cannot be read. */
   readDumps(): Promise<StoredDump[]>;
   putDump(dump: StoredDump): Promise<void>;
