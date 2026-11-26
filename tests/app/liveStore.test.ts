@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SESSION_STATE_KEY } from '../../src/app/liveSessionState.ts';
 import { createLive } from '../../src/app/liveStore.svelte.ts';
 import { createLiveSession, type LiveContext } from '../../src/live/index.ts';
 import { createMidiInputs } from '../../src/midi/inputs.ts';
@@ -66,5 +67,27 @@ describe('live context', () => {
     live.setContext(null);
     live.setContext(null);
     expect(sent).toHaveLength(6);
+  });
+});
+
+describe('session state', () => {
+  it('saves a split and restores it in a new store of the same tab', async () => {
+    const tab = memory();
+    const f1 = fakeEnv();
+    const u1 = new FakeInput('u', 'Faderfox UC4'); f1.access.inputs.set('u', u1);
+    const a = createLive(createMidiInputs({ portName: 'Faderfox UC4', env: f1.env }), undefined, memory(), tab);
+    await a.connect();
+    u1.emit(0x91, 60, 100); u1.emit(0x81, 60, 0);
+    expect(a.rows).toHaveLength(1);
+    a.split(a.rows[0]!.pair!.key);
+    expect(a.rows).toHaveLength(2);
+    expect(tab.m.get(SESSION_STATE_KEY)).toContain('splits');
+    const f2 = fakeEnv();
+    const u2 = new FakeInput('u', 'Faderfox UC4'); f2.access.inputs.set('u', u2);
+    const b = createLive(createMidiInputs({ portName: 'Faderfox UC4', env: f2.env }), undefined, memory(), tab);
+    await b.connect();
+    u2.emit(0x91, 60, 100); u2.emit(0x81, 60, 0);
+    expect(b.rows).toHaveLength(2);
+    expect(createLive(createMidiInputs({ portName: 'x', env: fakeEnv().env }), undefined, memory(), memory()).rows).toEqual([]);
   });
 });

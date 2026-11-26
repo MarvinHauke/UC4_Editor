@@ -3,9 +3,10 @@
 import { getContext } from 'svelte';
 import { createLiveSession, type ControlRef, type ControlState, type LiveContext, type LiveRow, type LiveSession } from '../live/index.ts';
 import type { IgnoredCounts, InputInfo, InputSelection, ListenStatus, MidiInputs } from '../midi/inputs.ts';
+import { loadSessionState, saveSessionState, type SessionStorageLike } from './liveSessionState.ts';
 import { loadSelection, saveSelection, type KeyValueStorage } from './monitorRows.ts';
 
-export function createLive(inputs: MidiInputs, session: LiveSession = createLiveSession(), storage?: KeyValueStorage | null) {
+export function createLive(inputs: MidiInputs, session: LiveSession = createLiveSession(), storage?: KeyValueStorage | null, sessionStore?: SessionStorageLike | null) {
   let rows = $state.raw<readonly LiveRow[]>(session.rows);
   let states = $state.raw<ReadonlyMap<string, ControlState>>(session.controlStates);
   let touched = $state.raw<{ control: ControlRef; at: number } | null>(session.lastTouched);
@@ -16,12 +17,19 @@ export function createLive(inputs: MidiInputs, session: LiveSession = createLive
 
   inputs.select(loadSelection(storage)); // re-applied on load; an id that isn't plugged in keeps its choice and listens to nothing
   selection = inputs.selection;
+  // Split pairs and "don't ask again" live as long as the tab: restored before the first message, saved after each change that alters them.
+  session.restoreState(loadSessionState(sessionStore));
+  let savedText = JSON.stringify(session.getState());
+  const saveState = (): void => {
+    const text = JSON.stringify(session.getState());
+    if (text !== savedText) savedText = saveSessionState(session.getState(), sessionStore);
+  };
 
   let lastContext: LiveContext | null = null;
   let sentContext = false;
   const stops = [
     inputs.onMessage((e) => { session.receive(e); }),
-    session.subscribe(() => { rows = session.rows; states = session.controlStates; touched = session.lastTouched; }),
+    session.subscribe(() => { saveState(); rows = session.rows; states = session.controlStates; touched = session.lastTouched; }),
     inputs.subscribe(() => { list = inputs.inputs; selection = inputs.selection; status = inputs.status; clock = inputs.ignored.clock > 0; }),
   ];
   return {
@@ -42,6 +50,9 @@ export function createLive(inputs: MidiInputs, session: LiveSession = createLive
       session.setContext(context);
     },
     pin(rowKey: string, controlId: string | null): void { session.pin(rowKey, controlId); },
+    /** A pair's single messages (Split) or the joined row (Join); `row.pair.key`. */
+    split(pairKey: string): void { session.split(pairKey); },
+    join(pairKey: string): void { session.join(pairKey); },
     get inputs() { return list; },
     get selection() { return selection; },
     get status() { return status; },
