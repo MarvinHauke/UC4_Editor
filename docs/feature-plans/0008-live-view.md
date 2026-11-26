@@ -447,7 +447,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 8. **Map by touch** — done 2026-11-26 (`b2811df`, `1be40dd`; browser-checked: switch to EG3 and mapping in one undo step) · blocked by: 2, 7 · a UC4 message picks the target while Map is
    armed; the group switch in the same undo step. Stories 33–34.
 
-9. **One highlight language and Follow** (decision 25, Q1–Q4) — uc4-ui · blocked by: none · selected is the only
+9. **One highlight language and Follow** (decision 25, Q1–Q4) — done 2026-11-26: uc4-ui (`cda7fdd`, reviewed; browser-checked by the architect: Follow across groups, Follow + Map armed, reduced motion, states after reload, light and dark; the glow is in the control's kind colour, any text field pauses Follow) — uc4-ui · blocked by: none · selected is the only
    strong highlight; last touched a 1 s fading glow; live caps and rings without accent; encoders in their own
    muted colour; Follow switch in the monitor heading (selects fully, switches group or setup, pauses while a
    field has focus, no undo step, remembered), replacing the offer while on; One line removed; the monitor folds;
