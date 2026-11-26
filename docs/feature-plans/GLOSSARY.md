@@ -206,6 +206,26 @@ _Avoid_: learn (the later quick mode), assign, bind
 A later quick mode that maps each new incoming message to the next control in turn.
 _Avoid_: map (one row to one control); the UC4's own learn is the device's (hold encoder 6)
 
+**Map by touch**:
+Mapping a monitor row by moving the target control on the UC4 instead of clicking it in the editor.
+_Avoid_: smart learn, merge mode
+
+**Other device**:
+Any MIDI device besides the UC4: an instrument or a third-party controller.
+_Avoid_: device (the UC4)
+
+**Instrument**:
+An other device that makes or shapes sound (a synth, drum machine, effect) and may have a CC table.
+_Avoid_: synth (too narrow), target
+
+**Third-party controller**:
+An other device that is a controller itself, of another maker or model.
+_Avoid_: second controller
+
+**CC table**:
+The list of an instrument's parameters with the message each one listens to.
+_Avoid_: CC map, preset, profile (the device profile is the UC4's)
+
 **Connections**:
 The column for the UC4's MIDI connection, the dumps it received and kept, and later the sends to it and other MIDI
 inputs. Collapsed, it is a strip showing the connection state.

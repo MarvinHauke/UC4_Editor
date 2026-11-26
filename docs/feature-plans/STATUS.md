@@ -52,7 +52,9 @@ _Last updated: 2026-11-26 (public repo live, PR #1 merged and deployed; 0008 liv
 
 - **0008 live view** (user, 2026-11-26, branch `feat/live-view`): MIDI monitor at the bottom of Connections (as in
   cmdAbl), matching ranked by context, pinning, "follow the evidence" as an offer, collisions as waivable warnings
-  (decisions 3–7). Next: `/grill-with-docs` on 0008 (questions "To grill (2026-11-26)"), then `/to-spec`, `/to-tickets`.
+  (decisions 3–7). **Grilled 2026-11-26** in four rounds (decisions 3–22: Map from a monitor row and Map by touch,
+  warnings in the validator with waivers kept locally, CC tables split off as draft 0013). Next: `/to-spec` on 0008,
+  then `/to-tickets`.
 - **Public release:** the repo `MarvinHauke/UC4_Editor` is public, PR #1 merged 2026-11-26 and deployed to Pages;
   the old workshop repo is `UC4_Editor-workshop`. Open: Q47 (commit email), 0011 step 3's book icon, then 0011 built.
 

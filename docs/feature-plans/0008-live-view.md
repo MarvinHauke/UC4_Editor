@@ -1,6 +1,6 @@
 # 0008 — Live view: values from the controller
 
-_Stage: draft, to grill — proposed by the user 2026-11-15, extended by monitor and learn; monitor, matching and warnings shaped by the user 2026-11-26 (decisions 3–7)._
+_Stage: grilled 2026-11-26 (decisions 3–22); next `/to-spec`. Proposed by the user 2026-11-15._
 _Owner: uc4-ui (view), uc4-protocol (MIDI input and matching) · Depends on: 0005 step 1, 0006_
 
 ## Problem
@@ -89,8 +89,10 @@ Listen only (CLAUDE.md, "Hardware safety"): the app opens the UC4's MIDI input a
    the next control slot, from any input, not only the UC4. The UC4's own learn (hold encoder 6) is the device's.
 10. **The switch offer can be silenced** (user, 2026-11-26, Q11): after 3 messages in a row that match only another
    group or setup; the offer has a checkbox "don't ask again" that holds for the session.
-11. **Monitor size** (user, 2026-11-26, Q12): about 8 rows, scrolling, newest key on top, Clear; it can be shrunk
-   to one line at the bottom; the Connections column stays foldable. Rows are not saved.
+11. **Monitor size** (user, 2026-11-26, Q12, R3): about 8 rows by default, resizable by dragging to show more and
+   with a vertical scrollbar, so a synth's parameters can be collected first and mapped one after another; newest
+   key on top, Clear; it can be shrunk to one line at the bottom; the Connections column stays foldable. Rows are
+   not saved.
 12. **Pairs as one row, unchainable** (user, 2026-11-26, Q13): a `CCAh` pair (CC n and n+32) is one row with a
    14-bit value, a `notE` press and release one row; a pair can be split into its single messages, and the
    monitor remembers the split for the session.
@@ -101,7 +103,8 @@ Listen only (CLAUDE.md, "Hardware safety"): the app opens the UC4's MIDI input a
    part of the matching step.
 
 14. **Spotting relative modes is a Settings switch, off by default** (user, R2-Q4); the result line names the
-   choice ("as `CCr1`: only 1/127 seen"). Settings keeps clear, separate sections (a "MIDI monitor" section).
+   choice ("as `CCr1`: only 1/127 seen"). It sits in a Settings section named **Connections** (user, R3-Q6);
+   Settings keeps clear, separate sections.
 15. **Session = until the tab closes** (user, R2-Q5): "don't ask again" and split pairs survive a reload and end
    with the tab.
 16. **DAW feedback is a later step** (user, R2-Q6): a second input (an IAC bus the DAW copies to) whose values the
@@ -110,6 +113,31 @@ Listen only (CLAUDE.md, "Hardware safety"): the app opens the UC4's MIDI input a
 17. **After mapping a CC onto a button** (user, R2-Q7): the property panel opens on it with Upper focused (the
    value the press sends); any other mapping just selects the control.
 18. **The one-line monitor** (user, R2-Q8) shows the last message with its match and keeps Map.
+
+19. **Grilling round 3** (user, 2026-11-26): the active setup and groups are the editor's open setup and its two
+   group selections, and "switch" changes them as one undoable step (R3-Q1); MIDI clock, active sensing and other
+   real-time messages are not listed, a quiet note says "MIDI clock ignored", SysEx stays with the dump flow
+   (R3-Q2); check mode and the trainer come later, version 1 is monitor, matching, live values, warnings, Map and
+   the switch offer (R3-Q3); the ARS rig's points are grilled with the DAW-feedback step (R3-Q5); the input
+   picker starts on "All inputs" and remembers the choice in the browser (R3-Q7); a row shows the raw value, 14-bit
+   pairs 0–16383, notes "on 127 / off 0", and "+1"/"−1" for a relative encoder match (R3-Q8).
+
+20. **Map by touch** (user, grilling round 4, 2026-11-26, R4-Q1–Q4): while Map is armed, a message from the UC4
+   picks the target instead of a click: the device view jumps to its match (best or pinned) and the mapping is
+   made the same way. Both ways follow one rule: channel, number and the kind of message come from the monitor
+   row; mode, lower, upper and display scale stay the target's; the control's current type stays when it already
+   sends that kind of message (an encoder on `CCr1` that gets a synth's CC stays `CCr1`), otherwise decision 8's
+   table. A touched control in a group not active in the editor switches the editor to that group, in the same
+   undo step as the mapping. A mapped row shows its target ("→ Enc3 · EG1"), and after a mapping the next unmapped
+   row is marked, so Map and a touch continue the list; auto-advance stays with Learn (decision 9). Why "by
+   touch", not "smart learn": Learn is the later quick mode.
+21. **CC tables are plan 0013** (user, R4-Q5–Q7): version 1 of 0008 shows raw messages. 0013 fetches a CC table on
+   demand, never bundled (CC BY-SA data, credited in Settings → About and the monitor), suggests one from the port
+   name and lets the user pick from a list.
+
+22. **Other devices** (user, R4-Q8): any MIDI device besides the UC4 is an *other device*: an *instrument* (a
+   synth, drum machine or effect, which may have a CC table) or a *third-party controller*. "Device" alone stays
+   the UC4.
 
 ## Open questions
 
@@ -167,7 +195,8 @@ script against the setup's real messages. To grill:
 
 ### Grilled (2026-11-26)
 
-Questions 1–8 of the first list answered in decisions 7–18.
+Grilled in four rounds with the user; answers in decisions 7–22. Open for the steps that come later: the ARS rig
+(brief above) and DAW feedback (decision 16), check mode and the trainer (decision 19).
 
 ## Steps
 
