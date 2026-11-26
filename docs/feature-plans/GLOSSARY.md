@@ -180,6 +180,11 @@ The list at the bottom of Connections of the messages arriving from the chosen i
 (type, channel, number) whose value updates in place.
 _Avoid_: log, console
 
+**Message key**:
+What makes two MIDI messages the same for the editor: the kind of message, the channel and the number (none for
+pitch bend and aftertouch; the program for program change).
+_Avoid_: message id, CC address
+
 **Match**:
 A control of the library whose message is the one that arrived; several matches are ranked by the active setup and
 groups.
