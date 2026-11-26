@@ -5,9 +5,9 @@ import { getContext } from 'svelte';
 export type Theme = 'system' | 'light' | 'dark';
 /** `slideMs` is null until the user sets a speed: then the default applies, and `prefers-reduced-motion` turns the slide off. */
 export type Keys = 'standard' | 'vim';
-export interface SettingsData { theme: Theme; slideMs: number | null; open: boolean; keys: Keys }
+export interface SettingsData { theme: Theme; slideMs: number | null; open: boolean; keys: Keys; spotRelative: boolean }
 export const SLIDE = { min: 0, max: 400, step: 20, default: 160 } as const;
-export const DEFAULT_SETTINGS: SettingsData = { theme: 'dark', slideMs: null, open: false, keys: 'standard' };
+export const DEFAULT_SETTINGS: SettingsData = { theme: 'dark', slideMs: null, open: false, keys: 'standard', spotRelative: false };
 
 export const clampSlide = (n: number): number =>
   Number.isFinite(n) ? Math.min(SLIDE.max, Math.max(SLIDE.min, Math.round(n))) : SLIDE.default;
@@ -29,6 +29,7 @@ export function parseSettings(text: string | null): SettingsData {
       slideMs: typeof o.slideMs === 'number' ? clampSlide(o.slideMs) : o.animate === false ? 0 : null,
       open: typeof o.open === 'boolean' ? o.open : DEFAULT_SETTINGS.open,
       keys: o.keys === 'vim' || o.keys === 'standard' ? o.keys : DEFAULT_SETTINGS.keys,
+      spotRelative: o.spotRelative === true,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -53,6 +54,9 @@ export function createSettings(storage: KeyValueStorage | null = browserStorage(
     get slideMs() { return data.slideMs; },
     get open() { return data.open; },
     get keys() { return data.keys; },
+    /** Connections: let Map spot `CCr1`/`CCr2` from the values seen (plan 0008 decision 14); off by default. */
+    get spotRelative() { return data.spotRelative; },
+    setSpotRelative(on: boolean): void { data.spotRelative = on; save(); },
     setKeys(keys: Keys): void { data.keys = keys; save(); },
     setTheme(theme: Theme): void { data.theme = theme; save(); },
     setSlideMs(ms: number): void { data.slideMs = clampSlide(ms); save(); },

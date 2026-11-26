@@ -1,7 +1,7 @@
 // The monitor's state as Svelte state (plan 0008 step 1): the MIDI inputs and the live session, read by the monitor.
 // Listening only. Later steps add matches and live values to the same store.
 import { getContext } from 'svelte';
-import { createLiveSession, type ControlRef, type ControlState, type LiveContext, type LiveRow, type LiveSession, type SwitchOffer } from '../live/index.ts';
+import { createLiveSession, type ControlRef, type ControlState, type LiveContext, type LiveRow, type LiveSession, type MapTarget, type SwitchOffer, type TouchTarget } from '../live/index.ts';
 import type { IgnoredCounts, InputInfo, InputSelection, ListenStatus, MidiInputs } from '../midi/inputs.ts';
 import { loadSessionState, saveSessionState, type SessionStorageLike } from './liveSessionState.ts';
 import { loadSelection, saveSelection, type KeyValueStorage } from './monitorRows.ts';
@@ -9,6 +9,8 @@ import { loadSelection, saveSelection, type KeyValueStorage } from './monitorRow
 export function createLive(inputs: MidiInputs, session: LiveSession = createLiveSession(), storage?: KeyValueStorage | null, sessionStore?: SessionStorageLike | null) {
   let rows = $state.raw<readonly LiveRow[]>(session.rows);
   let states = $state.raw<ReadonlyMap<string, ControlState>>(session.controlStates);
+  let armed = $state<string | null>(session.armed);
+  let touchTarget = $state.raw<TouchTarget | null>(session.touchTarget);
   let offer = $state.raw<SwitchOffer | null>(session.offer);
   let silenced = $state(session.getState().silenceOffers);
   let touched = $state.raw<{ control: ControlRef; at: number } | null>(session.lastTouched);
@@ -31,7 +33,7 @@ export function createLive(inputs: MidiInputs, session: LiveSession = createLive
   let sentContext = false;
   const stops = [
     inputs.onMessage((e) => { session.receive(e); }),
-    session.subscribe(() => { saveState(); rows = session.rows; states = session.controlStates; touched = session.lastTouched; offer = session.offer; silenced = session.getState().silenceOffers; }),
+    session.subscribe(() => { saveState(); rows = session.rows; states = session.controlStates; touched = session.lastTouched; armed = session.armed; touchTarget = session.touchTarget; offer = session.offer; silenced = session.getState().silenceOffers; }),
     inputs.subscribe(() => { list = inputs.inputs; selection = inputs.selection; status = inputs.status; clock = inputs.ignored.clock > 0; }),
   ];
   return {
@@ -60,6 +62,16 @@ export function createLive(inputs: MidiInputs, session: LiveSession = createLive
     acceptOffer(): SwitchOffer | null { return session.acceptOffer(); },
     /** "No": no offer for this target until the open setup changes; with `silence`, no more offers at all this session. */
     declineOffer(silence: boolean): void { session.dismissOffer(); if (silence) session.silenceOffers(true); },
+    /** Map (steps 7 and 8): the armed row's key, and the control a UC4 message picked while armed. */
+    get armed() { return armed; },
+    get touchTarget() { return touchTarget; },
+    armMap(rowKey: string): void { session.armMap(rowKey); },
+    disarm(): void { session.disarm(); },
+    mapPlan: ((...args: Parameters<LiveSession['mapPlan']>) => session.mapPlan(...args)) as LiveSession['mapPlan'],
+    markMapped(rowKey: string, controlId: string | null): void { session.markMapped(rowKey, controlId); },
+    nextUnmapped(rowKey?: string): LiveRow | null { return session.nextUnmapped(rowKey); },
+    /** For every control of the open groups: can it take this row's message (dim the others). Reads `rows`, so a caller in a `$derived` updates. */
+    mapTargets(rowKey: string): MapTarget[] { void rows; return session.mapTargets(rowKey); },
     /** A pair's single messages (Split) or the joined row (Join); `row.pair.key`. */
     split(pairKey: string): void { session.split(pairKey); },
     join(pairKey: string): void { session.join(pairKey); },

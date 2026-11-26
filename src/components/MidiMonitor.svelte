@@ -9,10 +9,12 @@
   import MonitorRow from './MonitorRow.svelte';
   import MonitorResizeHandle from './MonitorResizeHandle.svelte';
   import SwitchOffer from './SwitchOffer.svelte';
+  import { useMap } from '../app/mapFlow.svelte.ts';
 
   let { live, onselectmatch }: { live: Live; onselectmatch: (match: Match) => void } = $props();
   /** The row whose other matches are listed ("+2"). */
   let openKey = $state<string | null>(null);
+  const map = useMap().flow;
   let size = $state<MonitorSize>(loadSize());
   const setSize = (next: Partial<MonitorSize>, keep = true): void => { size = { ...size, ...next }; if (keep) saveSize(size); };
   const options = $derived(pickerOptions(live.inputs, live.selection));
@@ -38,6 +40,7 @@
     <div class="oneline" aria-live="off">
       {#if last}
         <MonitorRow compact row={last} source={sourceName(last, live.inputs)} showSource={false} onselect={onselectmatch}
+          armed={map.armed === last.key} onmap={() => { map.toggle(last.key); }}
           onpin={() => {}} onsplit={() => {}} onjoin={() => {}} />
       {:else}
         <p class="empty">{listening ? 'No messages yet.' : statusText}</p>
@@ -60,6 +63,7 @@
       {#each live.rows as row (row.key)}
         <MonitorRow {row} source={sourceName(row, live.inputs)} {showSource} open={openKey === row.key}
           ontoggle={() => { openKey = openKey === row.key ? null : row.key; }}
+          armed={map.armed === row.key} next={map.nextKey === row.key} onmap={() => { map.toggle(row.key); }}
           onselect={onselectmatch} onpin={(id) => { live.pin(row.key, id); }}
           onsplit={() => { if (row.pair) live.split(row.pair.key); }} onjoin={() => { if (row.pair) live.join(row.pair.key); }} />
       {:else}

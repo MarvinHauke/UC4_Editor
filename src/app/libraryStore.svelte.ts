@@ -1,6 +1,6 @@
 // The library as Svelte state: components read `state` and call commands. No editing logic here.
 import type { Warning } from '../model/index.ts';
-import type { Library, LibraryState, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
+import type { Library, LibraryState, AnyControl, SelectionChange, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
 import type { FlowLibrary } from './importFlow.ts';
 import type { SyxLibrary } from './syxFlow.ts';
 import { problemText } from './controlProblems.ts';
@@ -101,6 +101,9 @@ export function createStore(library: Library, openMessage?: string) {
     /** The switch offer's yes: setup and both groups as ONE undo step (decision 19); Back is `undo`. */
     switchTo: (target: { setupId: string; encoderGroup: number; faderButtonGroup: number }) =>
       done(library.select({ setupId: target.setupId, encoderGroup: target.encoderGroup, faderButtonGroup: target.faderButtonGroup }, { asStep: true })),
+    /** Map: replaces a whole control in ONE undo entry, together with a selection change (the touched group, the control). */
+    setControl: (address: ControlAddress, control: AnyControl, selection?: SelectionChange) =>
+      done(library.setControl(address, control, selection ? { selection } : undefined)),
     selectGroup: (kind: 'encoder' | 'faderButton', group: number) =>
       done(library.select(kind === 'encoder' ? { encoderGroup: group } : { faderButtonGroup: group })),
     setGroupName: (encoderGroup: number, input: string) => done(library.setGroupName(state.selection.setupId, encoderGroup, input)),

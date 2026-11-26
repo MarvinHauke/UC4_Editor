@@ -10,12 +10,14 @@
     row: LiveRow; source: string; showSource: boolean; compact?: boolean; open?: boolean;
     ontoggle?: () => void; onselect: (match: Match) => void; onpin: (controlId: string | null) => void;
     onsplit: () => void; onjoin: () => void;
+    /** Map (steps 7, 8): this row is the armed one; the next row to map; the Map button. */
+    armed?: boolean; next?: boolean; onmap?: () => void;
   }
-  let { row, source, showSource, compact = false, open = false, ontoggle, onselect, onpin, onsplit, onjoin }: Props = $props();
+  let { row, source, showSource, compact = false, open = false, ontoggle, onselect, onpin, onsplit, onjoin, armed = false, next = false, onmap }: Props = $props();
   const t = $derived(rowText(row));
   const label = $derived(row.isUc4 ? matchLabel(row) : null);
   const pair = $derived(row.pair && row.pair.state !== 'waiting' ? row.pair : null);
-  const hasSub = $derived(!compact && (row.isUc4 || showSource));
+  const hasSub = $derived(!compact && (row.isUc4 || showSource || row.mappedTo !== null));
 </script>
 
 {#snippet cells()}
@@ -25,7 +27,16 @@
   <span class="val">{row.valueText}</span>
 {/snippet}
 
-<div class="row" class:moved={row.lastMoved} class:compact role="listitem" aria-label={rowLabel(row, source)}
+{#snippet mapBtn()}
+  {#if onmap}
+    <button type="button" class="icon map" class:on={armed} aria-pressed={armed} aria-label={armed ? 'Cancel Map' : 'Map to a control'} title={armed ? 'Cancel Map' : 'Map'}
+          data-help={armed ? 'Map is armed: click a control, or move one on the UC4 · Esc or this button cancels' : 'Map: then click a control, or move one on the UC4, and it sends this message'} onclick={onmap}>
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="4.5" /><path d="M8 1v3M8 12v3M1 8h3M12 8h3" /></svg>
+        </button>
+  {/if}
+{/snippet}
+
+<div class="row" class:moved={row.lastMoved} class:armed class:next class:compact role="listitem" aria-label={rowLabel(row, source)}
   data-help={`${rowLabel(row, source)}${row.lastMoved ? ' · moved last' : ''}`}>
   {#if row.best}
     <button type="button" class="pick" data-help={`Show ${row.best.control.name} in the editor`} onclick={() => { onselect(row.best!); }}>{@render cells()}</button>
@@ -34,6 +45,7 @@
   {/if}
   {#if compact}
     <span class="solo" title={label ? `${label.name}${label.more > 0 ? ` and ${label.more} more` : ''}` : undefined}>{label ? `${label.name}${label.more > 0 ? ` +${label.more}` : ''}` : ''}</span>
+    {@render mapBtn()}
   {:else}
     <!-- The action column: small icon buttons, one per action (Split or Join now, Map with step 7); two slots wide so rows never reflow. -->
     <span class="act">
@@ -49,6 +61,7 @@
           </button>
         {/if}
       {/if}
+      {@render mapBtn()}
     </span>
   {/if}
   {#if hasSub}
@@ -68,6 +81,7 @@
       {:else if showSource}
         <span class="where">{source}</span>
       {/if}
+      {#if row.mappedTo}<span class="mapped" data-help="Mapped: this row's message is now sent by {row.mappedTo.name}">→ {row.mappedTo.name}</span>{/if}
     </div>
     {#if open && row.matches.length > 1}
       <ul class="alts" aria-label="Controls that send this message">
@@ -89,9 +103,11 @@
 
 <style>
   /* The row: the message (a button when it has a match to show) and the reserved Map column; below, the match line and its list. */
-  .row { display: grid; grid-template-columns: 1fr var(--act-w, 52px); align-items: center; padding: 0 var(--space-2); border-left: 3px solid transparent; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: var(--text-sm); }
+  .row { display: grid; grid-template-columns: 1fr var(--act-w, 52px); column-gap: var(--space-3); align-items: center; padding: 0 var(--space-2); border-left: 3px solid transparent; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: var(--text-sm); }
   .row.moved { background: var(--accent-soft); border-left-color: var(--accent); }
-  .row.compact { grid-template-columns: auto 1fr; column-gap: var(--space-2); border-bottom: 0; }
+  .row.armed { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .row.next:not(.armed) { outline: 1px dashed var(--accent); outline-offset: -2px; }
+  .row.compact { grid-template-columns: auto 1fr auto; column-gap: var(--space-2); border-bottom: 0; }
   .pick { display: grid; grid-template-columns: var(--space-4) 1fr 2.2ch 6.5ch; column-gap: var(--space-2); align-items: center; min-height: 28px; margin: 0; padding: 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
   .compact .pick { grid-template-columns: var(--space-4) auto auto auto; }
   .compact .ch::before { content: 'ch '; }
@@ -110,6 +126,8 @@
   .where { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .act { display: flex; justify-content: flex-end; gap: var(--space-1); }
   .icon { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .icon.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+  .mapped { color: var(--text); font-family: var(--mono); }
   .icon:hover { background: var(--accent-soft); }
   .icon:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .more, .pinbtn { min-height: 24px; min-width: 24px; padding: 0 var(--space-2); font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }

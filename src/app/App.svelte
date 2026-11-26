@@ -21,6 +21,7 @@
   import { createLive, LIVE_CONTEXT } from './liveStore.svelte.ts';
   import { selectMatch } from './liveView.ts';
   import { createSwitchNote, SWITCH_CONTEXT, type SwitchUi } from './switchNote.svelte.ts';
+  import { createMapFlow, MAP_CONTEXT, type MapUi } from './mapFlow.svelte.ts';
   import type { Match } from '../live/index.ts';
   import { GUIDE_CONTEXT, createGuide } from './guide.svelte.ts';
   import { COPY_CONTEXT, createCopyHold } from './copyHold.svelte.ts';
@@ -147,6 +148,19 @@
     back: switchBack,
   };
   setContext(SWITCH_CONTEXT, switchUi);
+  // Map (plan 0008 steps 7 and 8): arm a monitor row, then click a control or move one on the UC4.
+  const focusUpper = (): void => { void tick().then(() => { document.querySelector<HTMLElement>('[data-property="upper"] input')?.focus(); }); };
+  const mapFlow = createMapFlow({ live, store: () => store, spotRelative: () => settings.spotRelative, focusUpper });
+  const mapTargets = $derived.by(() => {
+    const key = live.armed;
+    return key ? new Map(live.mapTargets(key).map((t) => [t.control.id, { ok: t.ok, reason: t.reason }])) : new Map<string, { ok: boolean; reason: string | null }>();
+  });
+  const mapUi: MapUi = { flow: mapFlow, get targets() { return mapTargets; } };
+  setContext(MAP_CONTEXT, mapUi);
+  // Map by touch: the first UC4 message that matches a control while armed picks it.
+  $effect(() => { if (live.armed !== null && live.touchTarget !== null) untrack(() => { mapFlow.touch(); }); });
+  // The result line goes when anything else changes the configuration (Undo would undo that instead).
+  $effect(() => { const c = store?.state.configuration; if (c !== undefined) mapFlow.changed(c); });
   $effect(() => {
     const state = store?.state;
     if (state) switchNote.changed({ setupId: state.selection.setupId, encoderGroup: state.selection.encoderGroup, faderButtonGroup: state.selection.faderButtonGroup }, state.configuration);
@@ -217,6 +231,7 @@
   // A copy that is held ends first (plan 0006 decision 30): the first Esc stops pasting, the next leaves edit mode.
   function leaveEditMode(e: KeyboardEvent): void {
     if (e.key !== 'Escape' || e.defaultPrevented) return;
+    if (mapFlow.armed !== null && !(e.target instanceof Element && e.target.closest('dialog, [role="dialog"]'))) { mapFlow.cancel(); return; }
     if (e.target instanceof Element && e.target.closest('input, select, textarea, [contenteditable], dialog, [role="dialog"]')) return;
     if (copyHold.held) { copyHold.stop(); return; }
     if (!store?.state.selection.control) return;
@@ -235,7 +250,10 @@
   }
   // A click on empty ground in the device view leaves edit mode; a control, a button or the drawn buttons do not.
   function deviceClick(e: MouseEvent): void {
-    if (!store?.state.selection.control || !(e.target instanceof Element)) return;
+    if (!(e.target instanceof Element)) return;
+    // Armed Map: a click on empty space cancels it (a click on a control maps it, handled by the control).
+    if (mapFlow.armed !== null && !e.target.closest('[data-control], button, [role="button"]')) { mapFlow.cancel(); return; }
+    if (!store?.state.selection.control) return;
     if (e.target.closest('[data-control], button, [role="button"]')) return;
     store.selectControl(null);
   }

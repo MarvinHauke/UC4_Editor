@@ -17,6 +17,7 @@
   import { controlPath, problemsOf } from '../app/controlProblems.ts';
   import { warningsOf } from '../app/warningMarks.ts';
   import { useLive } from '../app/liveStore.svelte.ts';
+  import { useMap } from '../app/mapFlow.svelte.ts';
   import { controlId } from '../live/index.ts';
   import { controlAt, groupOf, selectedSetup } from '../app/selectors.ts';
   import { printedGroupName } from '../app/printedNames.ts';
@@ -56,6 +57,7 @@
   const count = (area: ControlArea, index: number): number =>
     problemsOf(view.state.problems, controlPath(view.setupIndex, area, groupOf(view.state, area), index)).length;
   const live = useLive();
+  const map = useMap();
   const idOf = (area: ControlArea, index: number): string => controlId(view.setup.id, area, groupOf(view.state, area), index);
   const warned = (area: ControlArea, index: number): number =>
     warningsOf(store.warnings, controlPath(view.setupIndex, area, groupOf(view.state, area), index)).length;
@@ -84,6 +86,8 @@
   const duration = $derived(instant ? 0 : slideDuration(settings.slideMs, reduced));
   // Plain click selects the control; Shift-click (or Shift + Enter) on encoder n or green button n shows group n.
   function select(area: ControlArea, index: number, shift: boolean): void {
+    // While Map is armed a click maps the control; one that can't take the message does nothing (its reason is in the help line).
+    if (map.flow.armed !== null) { if (map.targets.get(idOf(area, index))?.ok) map.flow.click(area, index); return; }
     if (shift && area === 'encoders') ongroup('encoder', index);
     else if (shift && area === 'buttons') ongroup('faderButton', index);
     else { const kind = kindOfArea(area); if (kind) active.setSection(kind); store.selectControl({ area, index }); }
@@ -121,6 +125,7 @@
     warningCount={warned(area, index)}
     live={live.controlStates.get(idOf(area, index))}
     touched={live.lastTouched?.control.id === idOf(area, index)}
+    mapState={map.flow.armed === null ? undefined : (map.targets.get(idOf(area, index)) ?? { ok: false, reason: 'This control is not in the open setup.' })}
     shiftTarget={shiftTarget(area, index)}
     tabStop={activeKey === `${area}:${index}`}
     onarrow={(d) => { onarrow({ area, index }, d); }}

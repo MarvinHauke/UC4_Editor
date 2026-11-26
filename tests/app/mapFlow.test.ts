@@ -1,0 +1,151 @@
+import { describe, expect, it, vi } from 'vitest';
+import { createMapFlow, type MapLive, type MapStore } from '../../src/app/mapFlow.svelte.ts';
+import { controlId, type MapPlan, type TouchTarget } from '../../src/live/index.ts';
+
+const edit = { setupId: 's1', area: 'encoders' as const, group: 0, index: 2, control: { type: 'CCAb' } as never };
+const ok = (over: Partial<Extract<MapPlan, { ok: true }>> = {}): MapPlan => ({
+  ok: true, edit, resultText: 'Enc3 · EG1 now sends CC 74 ch 2', alsoSentBy: [], focusUpper: false, spotted: null, changed: true, notes: [], ...over,
+});
+
+function setup(plan: MapPlan, touch: TouchTarget | null = null, behave: { refuse?: string; nothingChanges?: boolean } = {}) {
+  const calls: string[] = [];
+  let armed: string | null = null;
+  const live: MapLive = {
+    get armed() { return armed; },
+    get touchTarget() { return armed ? touch : null; },
+    armMap: (k) => { armed = k; calls.push(`arm ${k}`); },
+    disarm: () => { armed = null; calls.push('disarm'); },
+    mapPlan: vi.fn(() => plan),
+    markMapped: (k, id) => { calls.push(`mapped ${k} ${id}`); },
+    nextUnmapped: () => ({ key: 'next' }),
+  };
+  const configuration = { v: 1 };
+  const state = { configuration: configuration as unknown, selection: { setupId: 's1', encoderGroup: 0, faderButtonGroup: 1, control: null as { area: 'encoders'; index: number } | null } };
+  const store: MapStore = {
+    state,
+    setControl: (a, c, sel) => {
+      calls.push(`set ${a.area} ${a.group} ${a.index} ${JSON.stringify(sel)}`);
+      if (behave.refuse) return { message: behave.refuse };
+      if (!behave.nothingChanges) state.configuration = { v: 2 }; // an edit makes a new configuration
+      return undefined;
+    },
+    selectControl: () => {},
+    undo: () => { calls.push('undo'); },
+  };
+  const focus = vi.fn();
+  const flow = createMapFlow({ live, store: () => store, spotRelative: () => false, focusUpper: focus, ms: 1000 });
+  return { flow, calls, live, focus, configuration, state };
+}
+
+describe('map by click', () => {
+  it('applies the plan as one edit with the control selected, marks the row and the next one', () => {
+    const t = setup(ok());
+    t.flow.toggle('row1');
+    expect(t.flow.armed).toBe('row1');
+    expect(t.flow.click('encoders', 2)).toBe(true);
+    expect(t.calls).toEqual(['arm row1', 'set encoders 0 2 {"control":{"area":"encoders","index":2}}', `mapped row1 ${controlId('s1', 'encoders', 0, 2)}`, 'disarm']);
+    expect(t.flow.result?.text).toBe('Enc3 · EG1 now sends CC 74 ch 2');
+    expect(t.flow.nextKey).toBe('next');
+  });
+  it('uses the group of the control kind: fader/button controls take the fader/button group', () => {
+    const t = setup(ok());
+    t.flow.toggle('r');
+    t.flow.click('faders', 0);
+    expect(t.live.mapPlan).toHaveBeenCalledWith('r', controlId('s1', 'faders', 1, 0), { spotRelative: false });
+  });
+  it('a refusal changes nothing and stays armed', () => {
+    const t = setup({ ok: false, reason: 'Faders can’t send notes' });
+    t.flow.toggle('r');
+    t.flow.click('faders', 0);
+    expect(t.calls).toEqual(['arm r']);
+    expect(t.flow.armed).toBe('r');
+    expect(t.flow.result?.error).toBe(true);
+  });
+  it('Map again cancels', () => {
+    const t = setup(ok());
+    t.flow.toggle('r'); t.flow.toggle('r');
+    expect(t.calls).toEqual(['arm r', 'disarm']);
+  });
+  it('asks to focus Upper after a CC onto a button', async () => {
+    const t = setup(ok({ focusUpper: true }));
+    t.flow.toggle('r'); t.flow.click('buttons', 0);
+    await Promise.resolve();
+    expect(t.focus).toHaveBeenCalled();
+  });
+  it('keeps what the plan says about doubles and notes', () => {
+    const t = setup(ok({ alsoSentBy: ['Enc3 · EG1'], notes: ['number lowered'] }));
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    expect(t.flow.result?.alsoSentBy).toEqual(['Enc3 · EG1']);
+    expect(t.flow.result?.notes).toEqual(['number lowered']);
+  });
+});
+
+describe('what the library says', () => {
+  it('a refusal is shown as an error, claims nothing, marks nothing and stays armed', () => {
+    const t = setup(ok(), null, { refuse: 'upper must be a whole number 0–127' });
+    t.flow.toggle('r');
+    t.flow.click('encoders', 2);
+    expect(t.flow.result).toMatchObject({ error: true, undoable: false, text: 'upper must be a whole number 0–127' });
+    expect(t.calls.some((c) => c.startsWith('mapped'))).toBe(false);
+    expect(t.calls).not.toContain('disarm');
+    expect(t.flow.armed).toBe('r');
+    t.flow.undo();
+    expect(t.calls).not.toContain('undo');
+  });
+  it('a control that already sends it makes no undo entry: the line says so and offers no Undo', () => {
+    const t = setup(ok({ changed: false }), null, { nothingChanges: true });
+    t.flow.toggle('r');
+    t.flow.click('encoders', 2);
+    expect(t.flow.result).toMatchObject({ error: false, undoable: false, text: 'Enc3 · EG1 already sends CC 74 ch 2' });
+    t.flow.undo(); // must not undo the user's previous edit
+    expect(t.calls).not.toContain('undo');
+  });
+  it('an edit is undoable', () => {
+    const t = setup(ok());
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    expect(t.flow.result).toMatchObject({ undoable: true, text: 'Enc3 · EG1 now sends CC 74 ch 2' });
+  });
+});
+
+describe('map by touch', () => {
+  const touch: TouchTarget = {
+    control: { id: controlId('s2', 'encoders', 2, 0), setupId: 's2', setupName: 'SE05', area: 'encoders', group: 2, index: 0, name: 'Enc1 · EG3' },
+    switch: { setupId: 's2', encoderGroup: 2 }, at: 1,
+  };
+  it('makes the plan before disarming and applies the edit with the group switch in the same call', () => {
+    const t = setup(ok(), touch);
+    t.flow.toggle('r');
+    t.flow.touch();
+    expect(t.calls[1]).toBe('set encoders 0 2 {"setupId":"s2","encoderGroup":2,"control":{"area":"encoders","index":0}}');
+    expect(t.calls.indexOf('disarm')).toBeGreaterThan(1);
+  });
+  it('does nothing while no message has picked a control', () => {
+    const t = setup(ok());
+    t.flow.toggle('r'); t.flow.touch();
+    expect(t.calls).toEqual(['arm r']);
+  });
+});
+
+describe('the result line', () => {
+  it('Undo forgets the mapping and undoes the entry', () => {
+    const t = setup(ok());
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    t.flow.undo();
+    expect(t.calls.slice(-2)).toEqual(['mapped r null', 'undo']);
+    expect(t.flow.result).toBeNull();
+    expect(t.flow.nextKey).toBeNull();
+  });
+  it('goes when the configuration changes by anything else, and after a while', () => {
+    vi.useFakeTimers();
+    const t = setup(ok());
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    t.flow.changed(t.state.configuration);
+    expect(t.flow.result).not.toBeNull();
+    t.flow.changed({ edited: true });
+    expect(t.flow.result).toBeNull();
+    t.flow.toggle('r2'); t.flow.click('encoders', 2);
+    vi.advanceTimersByTime(1001);
+    expect(t.flow.result).toBeNull();
+    vi.useRealTimers();
+  });
+});

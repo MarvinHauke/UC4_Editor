@@ -14,6 +14,7 @@
   import DumpsList from './DumpsList.svelte';
   import type { Match } from '../live/index.ts';
   import MidiMonitor from './MidiMonitor.svelte';
+  import { useMap } from '../app/mapFlow.svelte.ts';
 
   interface Props {
     device: Device; live: Live; profile: Pick<DeviceProfile, 'deviceName'>; store: Store | null; confirm: Confirm;
@@ -29,7 +30,10 @@
   // Opened by the user (strip or the status bar line): focus moves into the column. A dump never does this.
   export function focusPanel(): void { queueMicrotask(() => { panel?.focus(); }); }
   function toggle(): void { const next = !open; onopen(next); if (next) focusPanel(); }
+  const map = useMap().flow;
   function key(e: KeyboardEvent): void {
+    // An armed Map is cancelled first: Esc does not also close the column.
+    if (e.key === 'Escape' && map.armed) { e.preventDefault(); e.stopPropagation(); map.cancel(); return; }
     if (e.key === 'Escape' && open) { e.preventDefault(); e.stopPropagation(); onopen(false); strip?.focus(); }
   }
 </script>

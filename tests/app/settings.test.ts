@@ -22,7 +22,12 @@ describe('parseSettings', () => {
     expect(parseSettings('{"theme":"purple","slideMs":"fast","open":1}')).toEqual(DEFAULT_SETTINGS);
   });
   it('keeps the valid fields', () => {
-    expect(parseSettings('{"theme":"dark","slideMs":240,"open":true}')).toEqual({ theme: 'dark', slideMs: 240, open: true, keys: 'standard' });
+    expect(parseSettings('{"theme":"dark","slideMs":240,"open":true}')).toEqual({ theme: 'dark', slideMs: 240, open: true, keys: 'standard', spotRelative: false });
+  });
+  it('reads the Connections switch: off unless it is exactly true', () => {
+    expect(DEFAULT_SETTINGS.spotRelative).toBe(false);
+    expect(parseSettings('{"spotRelative":true}').spotRelative).toBe(true);
+    expect(parseSettings('{"spotRelative":"yes"}').spotRelative).toBe(false);
   });
   it('migrates the old on/off checkbox: off becomes 0, on keeps the default', () => {
     expect(parseSettings('{"animate":false}').slideMs).toBe(0);

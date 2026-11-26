@@ -73,6 +73,13 @@
       {/each}
       <button type="button" class="all-keys" data-help="All keys: the list of every key in the editor · or press ?" onclick={onallkeys}>All keys…</button>
     </fieldset>
+    <fieldset data-help="Connections: how the editor treats what your MIDI devices send">
+      <legend>Connections</legend>
+      <label data-help="Map: spot relative encoders · when on, Map sets CCr1 or CCr2 on an encoder if only 1/127 or only 63/65 were seen (at least 3 messages); the result line says so. Off: the encoder's own type stays.">
+        <input type="checkbox" checked={settings.spotRelative} onchange={(e) => { settings.setSpotRelative(e.currentTarget.checked); }} />
+        Map: spot relative encoders (CCr1/CCr2)
+      </label>
+    </fieldset>
     <div class="slide" data-help="Slide speed: how long a group change slides, 0–400 ms (0 = none) · drag the slider">
       <label for="slide-speed">Slide speed <output>{slideMs === 0 ? 'off' : `${slideMs} ms`}</output></label>
       <input id="slide-speed" type="range" min={SLIDE.min} max={SLIDE.max} step={SLIDE.step} value={slideMs}
@@ -97,7 +104,7 @@
   fieldset { margin: 0 0 var(--space-2); padding: 0; border: 0; display: flex; flex-direction: column; }
   legend { padding: 0; font-weight: 600; margin-bottom: var(--space-1); }
   label { display: flex; gap: var(--space-2); align-items: center; min-height: var(--target); cursor: pointer; }
-  input[type='radio'] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  input[type='radio'], input[type='checkbox'] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
   .all-keys { align-self: flex-start; min-height: var(--target); margin-top: var(--space-1); padding: 3px var(--space-3); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .all-keys:hover { background: var(--accent-soft); }
   .all-keys:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }

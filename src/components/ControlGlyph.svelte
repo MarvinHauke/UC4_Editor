@@ -28,6 +28,8 @@
     live?: ControlState;
     /** The last UC4 message was matched to this control: it is lit like a guide's cue. */
     touched?: boolean;
+    /** While Map is armed: can this control take the row's message; `reason` is the help line when not. Undefined when Map is not armed. */
+    mapState?: { ok: boolean; reason: string | null };
     /** `shift`: Shift was held (click or Enter): on encoders and green buttons that picks the group, as on the UC4. */
     onselect: (shift: boolean) => void;
     /** For encoders and green buttons: the group a Shift-click shows ("encoder group 3 · Send 3"). */
@@ -38,7 +40,7 @@
     onfocused: () => void;
   }
   const copy = useCopyHold(); // needs COPY_CONTEXT, which App sets // needs COPY_CONTEXT (AreaView's parent sets it)
-  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, warningCount = 0, live, touched = false, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
+  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, warningCount = 0, live, touched = false, mapState, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
 
   const shape = $derived(GEOMETRY[area][index]!);
   const name = $derived(`${AREA_NAMES[area].singular} ${controlNumber(index)}`);
@@ -53,7 +55,7 @@
   const kindClass = $derived(area === 'encoders' || area === 'pushButtons' ? 'enc' : 'fb');
   // Schema (decision 39): what it is · the one way · UC4. On encoders and green buttons the one way is Shift + click.
   const liveText = $derived(stateText(live));
-  const help = $derived(
+  const help = $derived(mapState ? (mapState.ok ? `${name}: click to map the row's message here` : (mapState.reason ?? `${name} can't take this message`)) :
     `${name}: ${type} ${number}${liveText ? ` · live ${liveText}` : ''}${problemCount > 0 ? ` · ${problemCount} problem${problemCount === 1 ? '' : 's'}` : ''}${warningCount > 0 ? ` · ${warningCount} warning${warningCount === 1 ? '' : 's'}` : ''} · ${shiftTarget ? `Shift + click: ${shiftTarget}` : 'click to edit'}${shiftTarget ? ' · UC4: Shift + press' : ''}`,
   );
   function key(e: KeyboardEvent): void {
@@ -88,6 +90,9 @@
   class="control {kindClass}"
   class:selected
   class:lit={lit || touched}
+  class:map-ok={mapState?.ok === true}
+  class:map-dim={mapState?.ok === false}
+  aria-disabled={mapState?.ok === false ? true : undefined}
   class:paste-dim={pasteTarget}
   use:flashOn={{ flash: copy.flash, target: `control:${area}:${index}`, svg: true }}
   data-control="{area}:{index}"
@@ -173,6 +178,8 @@
   .paste { cursor: pointer; color: var(--accent); }
   .paste circle { fill: var(--surface-2); stroke: var(--accent); stroke-width: 1.5; }
   .paste:hover circle { fill: var(--accent-soft); }
+  .control.map-ok .hit { stroke: var(--accent); stroke-width: 3; }
+  .control.map-dim { opacity: 0.35; cursor: not-allowed; }
   .control.lit .hit { stroke: var(--accent); stroke-width: 4; }
   .control.selected .hit { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 4; }
   .control.selected .hitbox { stroke: var(--accent); stroke-width: 3; }
