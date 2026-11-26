@@ -36,10 +36,15 @@ describe('ringPath and relativeAngle', () => {
     expect(ringPath(0, 0, 10, 0.4)).toContain(' 0 0 1 ');
     expect(ringPath(0, 0, 10, 1)).toContain(' 0 1 1 ');
   });
-  it('turns 12° per net tick and wraps both ways', () => {
-    expect(relativeAngle(0)).toBe(0);
-    expect(relativeAngle(5)).toBe(60);
-    expect(relativeAngle(-1)).toBe(348);
+  it('starts bottom left (7:30) and sweeps clockwise to bottom right', () => {
+    expect(ringPath(0, 10, 10, 0.5)).toBe('M-7.07 17.07 A10 10 0 0 1 0.00 0.00');
+    expect(ringPath(0, 0, 10, 1)).toMatch(/^M-7\.07 7\.07 A10 10 0 1 1 7\.07 7\.07$/);
+  });
+  it('turns 13.5° per net tick on the 270° sweep and wraps both ways', () => {
+    expect(relativeAngle(0)).toBe(-135);
+    expect(relativeAngle(5)).toBe(-67.5);
+    expect(relativeAngle(-1)).toBe(121.5);
+    expect(relativeAngle(20)).toBe(-135);
   });
 });
 

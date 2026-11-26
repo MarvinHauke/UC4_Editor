@@ -34,7 +34,7 @@ export function selectMatch(commands: SelectCommands, match: Match, currentSetup
 export function ringPath(cx: number, cy: number, r: number, fraction: number): string {
   const f = Math.min(1, Math.max(0, fraction));
   if (f === 0) return '';
-  const start = -225, sweep = 270 * f; // degrees, 0 = up, clockwise
+  const start = -135, sweep = 270 * f; // degrees, 0 = up, clockwise
   const point = (deg: number) => {
     const a = (deg * Math.PI) / 180;
     return `${(cx + r * Math.sin(a)).toFixed(2)} ${(cy - r * Math.cos(a)).toFixed(2)}`;
@@ -42,9 +42,9 @@ export function ringPath(cx: number, cy: number, r: number, fraction: number): s
   return `M${point(start)} A${r} ${r} 0 ${sweep > 180 ? 1 : 0} 1 ${point(start + sweep)}`;
 }
 
-/** Where a relative encoder's marker sits on its ring: the net ticks turn it 12° each, so the turn is visible. */
+/** Where a relative encoder's marker sits on the 270° sweep (-135° = 7:30, +135° = 4:30, 0 = up): each net tick turns it 13.5° (20 ticks per sweep), wrapping exactly within it. */
 export function relativeAngle(total: number): number {
-  return ((total * 12) % 360 + 360) % 360;
+  return ((total * 13.5) % 270 + 270) % 270 - 135;
 }
 
 /** A control's live state in words for its help line; null while it is unknown. */

@@ -67,14 +67,17 @@
   // Centre of the text block; faders put it under the track, the others inside the shape.
   const cx = $derived(shape.shape === 'disc' ? shape.cx : shape.x + shape.width / 2);
   const cy = $derived(shape.shape === 'disc' ? shape.cy : shape.shape === 'pill' ? shape.y + shape.height / 2 : shape.y + shape.height);
-  // The UC4's own values (plan 0008 step 2): a fader's mark on its track, an encoder's ring, a button's press. Unknown draws nothing.
+  // The UC4's own values (plan 0008 step 2): a fader's cap on its track, an encoder's ring, a button's press. Unknown draws nothing.
   const fraction = $derived(live?.kind === 'absolute' ? live.fraction : null);
-  const faderMark = $derived.by((): { x: number; y: number; width: number; height: number } | null => {
-    if (shape.shape !== 'fader' || fraction === null) return null;
-    if (shape.horizontal) { const x1 = shape.x + 10, x2 = shape.x + shape.width - 10; return { x: x1 + fraction * (x2 - x1) - 2, y: shape.y + 4, width: 4, height: shape.height - 8 }; }
-    const top = shape.y + 6, bottom = shape.y + shape.height - 6;
-    return { x: cx - 16, y: bottom - fraction * (bottom - top) - 2, width: 32, height: 4 };
+  // The cap itself moves (decision 23): centre of the cap along the track, 0 at the bottom (fader 9: left), 127 at the top (right); unknown stays in the middle.
+  const capCentre = $derived.by((): number => {
+    if (shape.shape !== 'fader') return 0;
+    const f = fraction ?? 0.5;
+    if (shape.horizontal) return shape.x + 24 + f * (shape.width - 48);
+    const top = shape.y + 24, bottom = shape.y + shape.height - 24;
+    return bottom - f * (bottom - top);
   });
+  const capLive = $derived(shape.shape === 'fader' && fraction !== null);
   const ring = $derived(shape.shape === 'disc' && (area === 'encoders') && live?.kind === 'absolute' && fraction !== null ? ringPath(shape.cx, shape.cy, shape.r + 7, fraction) : '');
   const tick = $derived.by((): { x: number; y: number } | null => {
     if (shape.shape !== 'disc' || area !== 'encoders' || live?.kind !== 'relative') return null;
@@ -114,12 +117,12 @@
     <rect class="hit hitbox" x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx="8" />
     {#if shape.horizontal}
       <line class="track" x1={shape.x + 10} y1={shape.y + shape.height / 2 - 6} x2={shape.x + shape.width - 10} y2={shape.y + shape.height / 2 - 6} />
-      <rect class="handle" x={cx - 14} y={shape.y + 2} width="28" height="44" rx="3" />
-      <text class="idx" x={cx} y={shape.y + 29}>{controlNumber(index)}</text>
+      <rect class="handle" class:live-cap={capLive} x={capCentre - 14} y={shape.y + 2} width="28" height="44" rx="3" />
+      <text class="idx" x={capCentre} y={shape.y + 29}>{controlNumber(index)}</text>
     {:else}
       <line class="track" x1={cx} y1={shape.y + 6} x2={cx} y2={shape.y + shape.height - 6} />
-      <rect class="handle" x={cx - 13} y={shape.y + 76} width="26" height="36" rx="3" />
-      <text class="idx" x={cx} y={shape.y + 98}>{controlNumber(index)}</text>
+      <rect class="handle" class:live-cap={capLive} x={cx - 13} y={capCentre - 18} width="26" height="36" rx="3" />
+      <text class="idx" x={cx} y={capCentre + 4}>{controlNumber(index)}</text>
     {/if}
   {/if}
 
@@ -138,7 +141,6 @@
     <circle class="problem" cx={mark.x} cy={mark.y} r="6" />
     <text class="problem-text" x={mark.x} y={mark.y + 4}>!</text>
   {/if}
-  {#if faderMark}<rect class="live-mark" x={faderMark.x} y={faderMark.y} width={faderMark.width} height={faderMark.height} rx="2" />{/if}
   {#if ring}<path class="live-ring" d={ring} />{/if}
   {#if tick}<circle class="live-tick" cx={tick.x} cy={tick.y} r="4" />{/if}
   {#if pressed && (shape.shape === 'disc' || shape.shape === 'pill')}
@@ -192,7 +194,7 @@
   .type { font-family: var(--mono); }
   .num { font-family: var(--mono); font-weight: 400; }
   .problem { fill: var(--danger); pointer-events: none; }
-  .live-mark { fill: var(--accent); pointer-events: none; }
+  .handle.live-cap { stroke: var(--accent); }
   .live-ring { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; pointer-events: none; }
   .live-tick { fill: var(--accent); pointer-events: none; }
   .live-on { fill: var(--led); opacity: 0.4; pointer-events: none; }
