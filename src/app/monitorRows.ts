@@ -3,7 +3,8 @@
 import type { LiveRow, MessageKind } from '../live/index.ts';
 import type { InputInfo, InputSelection } from '../midi/inputs.ts';
 
-export const INPUT_KEY = 'uc4-editor-monitor-input';
+import { INPUT_KEY } from './storageKeys.ts';
+export { INPUT_KEY };
 
 /** Short words per kind; the device's own words (`CCAb`, `notE`) appear with the match in step 2. */
 const KIND_LABEL: Record<MessageKind, string> = {

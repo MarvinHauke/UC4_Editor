@@ -1,7 +1,8 @@
 // The first-run tour's rules (plan 0012): when the welcome card shows, how "seen" is kept, how steps page, where the card sits.
 // Plain functions, no Svelte; the overlay and the store call them.
 
-export const TOUR_SEEN_KEY = 'uc4-editor-tour-seen';
+import { TOUR_SEEN_KEY } from './storageKeys.ts';
+export { TOUR_SEEN_KEY };
 
 export interface TourStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 

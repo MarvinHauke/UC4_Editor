@@ -2,7 +2,8 @@
 // Pure rules and the stored switch; the wiring (selection, focus) is in App.
 import type { ControlRef, Match } from '../live/index.ts';
 
-export const FOLLOW_KEY = 'uc4-editor-follow';
+import { FOLLOW_KEY } from './storageKeys.ts';
+export { FOLLOW_KEY };
 
 export interface FollowStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 const browserStorage = (): FollowStorage | null => { try { return localStorage; } catch { return null; } };

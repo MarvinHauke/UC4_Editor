@@ -1,6 +1,7 @@
 // Per-viewer conveniences (plan 0006 decision 14): theme, slide speed, whether the panel is open.
 // Kept in localStorage, wrapped in try/catch: it can be blocked, full or empty, and nothing here is library data.
 import { getContext } from 'svelte';
+import { SETTINGS_KEY } from './storageKeys.ts';
 
 export type Theme = 'system' | 'light' | 'dark';
 /** `slideMs` is null until the user sets a speed: then the default applies, and `prefers-reduced-motion` turns the slide off. */
@@ -15,7 +16,7 @@ export const clampSlide = (n: number): number =>
 /** The slide's length in ms: the user's speed, else the default, else none when the system asks for less motion. */
 export const slideDuration = (slideMs: number | null, reducedMotion: boolean): number =>
   slideMs ?? (reducedMotion ? 0 : SLIDE.default);
-export const SETTINGS_KEY = 'uc4-editor-settings';
+export { SETTINGS_KEY };
 
 /** Reads stored text; anything unexpected falls back to the default for that field. Never throws. */
 export function parseSettings(text: string | null): SettingsData {

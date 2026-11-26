@@ -1,7 +1,8 @@
 // The setup list's width: the user drags a handle (or uses the keys on it) so long setup names show in full.
 // Remembered in localStorage like the other settings: it can be blocked, full or empty, so every access is guarded.
 export const LIST_WIDTH = { min: 160, max: 420, default: 192, step: 16, bigStep: 48 } as const;
-export const LIST_WIDTH_KEY = 'uc4-editor-list-width';
+import { LIST_WIDTH_KEY } from './storageKeys.ts';
+export { LIST_WIDTH_KEY };
 
 export const clampWidth = (n: number): number =>
   Number.isFinite(n) ? Math.min(LIST_WIDTH.max, Math.max(LIST_WIDTH.min, Math.round(n))) : LIST_WIDTH.default;

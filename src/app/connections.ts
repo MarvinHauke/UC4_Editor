@@ -4,8 +4,9 @@ import type { ClearPlan, DumpNeed, KeptDumpInfo } from '../storage/index.ts';
 import { NEED_TEXT } from '../storage/index.ts';
 import type { ConfirmSpec } from './confirmSpec.ts';
 import { formatExported, slotName } from './format.ts';
+import { CONNECTIONS_KEY } from './storageKeys.ts';
 
-export const CONNECTIONS_KEY = 'uc4-editor-connections-open';
+export { CONNECTIONS_KEY };
 /** From this window width the open column pushes the layout; below it slides over the properties column (1024 px keeps its fit). */
 export const WIDE_PX = 1320;
 export const NEWEST_SHOWN = 5;

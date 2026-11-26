@@ -23,4 +23,21 @@ export default tseslint.config(
     files: ['**/*.svelte', '**/*.svelte.ts'],
     languageOptions: { parserOptions: { parser: tseslint.parser } },
   },
+  {
+    files: ['src/**/*.ts', 'src/**/*.svelte'],
+    ignores: ['src/app/storageKeys.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value=/^uc4-editor-/]',
+          message: 'Browser-storage keys live in src/app/storageKeys.ts.',
+        },
+        {
+          selector: 'TemplateElement[value.raw=/^uc4-editor-/]',
+          message: 'Browser-storage keys live in src/app/storageKeys.ts.',
+        },
+      ],
+    },
+  },
 );

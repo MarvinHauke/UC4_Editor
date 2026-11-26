@@ -1,6 +1,7 @@
 // Which Connections sections are folded to their heading line (plan 0008 decision 24). Remembered per viewer in localStorage;
 // every access is guarded. A section never touched is folded, unless it says otherwise (the monitor starts open).
-export const FOLD_KEY = 'uc4-editor-connections-folds';
+import { FOLD_KEY } from './storageKeys.ts';
+export { FOLD_KEY };
 
 export interface FoldStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 const browserStorage = (): FoldStorage | null => { try { return localStorage; } catch { return null; } };

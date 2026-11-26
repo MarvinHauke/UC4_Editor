@@ -1,6 +1,7 @@
-// The live session's saved state (plan 0008 decision 15): split pairs and "don't ask again" survive a reload and end with
+// The live session's saved state (plan 0008 decision 15): "don't ask again" survives a reload and end with
 // the tab, so they live in sessionStorage. Every access is guarded: the storage can be blocked or empty.
-export const SESSION_STATE_KEY = 'uc4-editor-live-session';
+import { SESSION_STATE_KEY } from './storageKeys.ts';
+export { SESSION_STATE_KEY };
 
 export interface SessionStorageLike { getItem(key: string): string | null; setItem(key: string, value: string): void }
 const browserStorage = (): SessionStorageLike | null => { try { return typeof sessionStorage === 'undefined' ? null : sessionStorage; } catch { return null; } };
