@@ -68,7 +68,8 @@
 </section>
 
 <style>
-  .monitor { margin-top: auto; padding-top: var(--space-3); }
+  /* The action column's width: two 24 px icon buttons and their gap, shared by the header and every row. */
+  .monitor { --act-w: 52px; margin-top: auto; padding-top: var(--space-3); }
   h3 { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); margin: 0 0 var(--space-1); font-size: var(--text-md); }
   .note { flex: 1; text-align: right; font-size: var(--text-sm); font-weight: 400; color: var(--text-muted); }
   .fold { min-height: 24px; padding: 0 var(--space-2); font: inherit; font-size: var(--text-sm); font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
@@ -83,7 +84,7 @@
   /* The status keeps its height, so nothing jumps when its text changes length (UX checklist 3). */
   .status { min-height: 2.6em; }
   .status.problem { color: var(--text); }
-  .head { display: grid; grid-template-columns: var(--space-4) 1fr 2.2ch 6.5ch var(--target); column-gap: var(--space-2); align-items: center; padding: 0 var(--space-2) var(--space-1) calc(var(--space-2) + 3px); color: var(--text-muted); font-size: var(--text-sm); }
+  .head { display: grid; grid-template-columns: var(--space-4) 1fr 2.2ch 6.5ch var(--act-w); column-gap: var(--space-2); align-items: center; padding: 0 var(--space-2) var(--space-1) calc(var(--space-2) + 3px); color: var(--text-muted); font-size: var(--text-sm); }
   .head .c, .head .v { text-align: right; }
   .list, .oneline { overflow-y: auto; scrollbar-width: thin; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
   .list { height: 224px; }

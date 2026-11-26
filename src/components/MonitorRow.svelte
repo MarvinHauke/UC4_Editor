@@ -15,7 +15,7 @@
   const t = $derived(rowText(row));
   const label = $derived(row.isUc4 ? matchLabel(row) : null);
   const pair = $derived(row.pair && row.pair.state !== 'waiting' ? row.pair : null);
-  const hasSub = $derived(!compact && (row.isUc4 || showSource || pair !== null));
+  const hasSub = $derived(!compact && (row.isUc4 || showSource));
 </script>
 
 {#snippet cells()}
@@ -35,7 +35,21 @@
   {#if compact}
     <span class="solo" title={label ? `${label.name}${label.more > 0 ? ` and ${label.more} more` : ''}` : undefined}>{label ? `${label.name}${label.more > 0 ? ` +${label.more}` : ''}` : ''}</span>
   {:else}
-    <span class="act"></span>
+    <!-- The action column: small icon buttons, one per action (Split or Join now, Map with step 7); two slots wide so rows never reflow. -->
+    <span class="act">
+      {#if pair}
+        {#if pair.state === 'joined'}
+          <button type="button" class="icon" aria-label="Split into its two messages" title="Split"
+            data-help={pair.kind === 'ccah' ? 'Split: shows the two CCs of this pair as separate rows, until the tab closes' : 'Split: shows the note on and the note off as separate rows, until the tab closes'} onclick={onsplit}>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 14V8M8 8L3 2M8 8l5-6" /></svg>
+          </button>
+        {:else}
+          <button type="button" class="icon" aria-label="Join into one row" title="Join" data-help="Join: shows the pair as one row again" onclick={onjoin}>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v6M8 8l-5 6M8 8l5 6" /></svg>
+          </button>
+        {/if}
+      {/if}
+    </span>
   {/if}
   {#if hasSub}
     <div class="sub">
@@ -53,13 +67,6 @@
         {/if}
       {:else if showSource}
         <span class="where">{source}</span>
-      {/if}
-      {#if pair}
-        {#if pair.state === 'joined'}
-          <button type="button" class="pairbtn" data-help={pair.kind === 'ccah' ? 'Split: shows the two CCs of this pair as separate rows, until the tab closes' : 'Split: shows the note on and the note off as separate rows, until the tab closes'} onclick={onsplit}>Split</button>
-        {:else}
-          <button type="button" class="pairbtn" data-help="Join: shows the pair as one row again" onclick={onjoin}>Join</button>
-        {/if}
       {/if}
     </div>
     {#if open && row.matches.length > 1}
@@ -82,7 +89,7 @@
 
 <style>
   /* The row: the message (a button when it has a match to show) and the reserved Map column; below, the match line and its list. */
-  .row { display: grid; grid-template-columns: 1fr var(--target); align-items: center; padding: 0 var(--space-2); border-left: 3px solid transparent; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: var(--text-sm); }
+  .row { display: grid; grid-template-columns: 1fr var(--act-w, 52px); align-items: center; padding: 0 var(--space-2); border-left: 3px solid transparent; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: var(--text-sm); }
   .row.moved { background: var(--accent-soft); border-left-color: var(--accent); }
   .row.compact { grid-template-columns: auto 1fr; column-gap: var(--space-2); border-bottom: 0; }
   .pick { display: grid; grid-template-columns: var(--space-4) 1fr 2.2ch 6.5ch; column-gap: var(--space-2); align-items: center; min-height: 28px; margin: 0; padding: 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
@@ -101,10 +108,13 @@
   .pin { margin-left: var(--space-1); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .where { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .more, .pinbtn, .pairbtn { min-height: 24px; min-width: 24px; padding: 0 var(--space-2); font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
-  .pairbtn { margin-left: auto; }
-  .more:hover, .pinbtn:hover, .pairbtn:hover { background: var(--accent-soft); }
-  .more:focus-visible, .pinbtn:focus-visible, .pairbtn:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+  .act { display: flex; justify-content: flex-end; gap: var(--space-1); }
+  .icon { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .icon:hover { background: var(--accent-soft); }
+  .icon:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+  .more, .pinbtn { min-height: 24px; min-width: 24px; padding: 0 var(--space-2); font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .more:hover, .pinbtn:hover { background: var(--accent-soft); }
+  .more:focus-visible, .pinbtn:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .alts { grid-column: 1 / -1; margin: 0 0 var(--space-1); padding: 0 0 0 calc(var(--space-4) + var(--space-2)); list-style: none; font-family: var(--font); }
   .alts li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: 28px; }
   .altname { flex: 1; min-width: 0; font-family: var(--mono); overflow-wrap: anywhere; }

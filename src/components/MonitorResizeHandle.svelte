@@ -46,9 +46,12 @@
 ></div>
 
 <style>
-  .handle { position: relative; height: var(--space-1); margin-bottom: 2px; cursor: row-resize; background: var(--border); border-radius: 2px; touch-action: none; }
+  .handle { position: relative; height: var(--space-2); margin-bottom: 2px; cursor: row-resize; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); touch-action: none; }
+  /* The grip: three short dots, so the bar reads as something to drag. */
+  .handle::before { content: ''; position: absolute; left: 50%; top: 50%; width: 18px; height: 2px; transform: translate(-50%, -50%); background: radial-gradient(circle, var(--text-muted) 1px, transparent 1.5px) 0 0 / 6px 2px repeat-x; }
   /* The visible bar is thin; the click target is 24 px high. */
   .handle::after { content: ''; position: absolute; inset: -10px 0; }
-  .handle:hover, .handle.dragging { background: var(--accent); }
-  .handle:focus-visible { outline: none; background: var(--accent); box-shadow: var(--focus-ring); }
+  .handle:hover { background: var(--accent-soft); }
+  .handle.dragging { background: var(--accent-soft); border-color: var(--accent); }
+  .handle:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
 </style>
