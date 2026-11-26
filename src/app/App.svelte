@@ -20,6 +20,8 @@
   import { createMidiInputs } from '../midi/inputs.ts';
   import { createLive, LIVE_CONTEXT } from './liveStore.svelte.ts';
   import { selectMatch } from './liveView.ts';
+  import { createFollow, FOLLOW_CONTEXT } from './followState.svelte.ts';
+  import { followTarget, isEditingField, shouldFollow } from './follow.ts';
   import { createSwitchNote, SWITCH_CONTEXT, type SwitchUi } from './switchNote.svelte.ts';
   import { createMapFlow, MAP_CONTEXT, type MapUi } from './mapFlow.svelte.ts';
   import type { Match } from '../live/index.ts';
@@ -140,8 +142,23 @@
     store.undo();
   }
   // The offer and its Back note: shown in the Connections column, or in the status bar while the column is closed.
+  // Follow (decision 25): the last UC4 message's best match is selected as the message arrives. It is a selection, not an undo step.
+  const follow = createFollow();
+  setContext(FOLLOW_CONTEXT, follow);
+  $effect(() => {
+    const touched = live.lastTouched; // a new object per message, so the same control touched twice still follows
+    if (!touched || !follow.on) return;
+    untrack(() => {
+      // Any field the user may be typing in pauses Follow, except the monitor's own input picker.
+      const active = document.activeElement;
+      const fieldFocused = isEditingField(active) && active?.closest('.monitor') === null;
+      if (!store || !shouldFollow({ on: follow.on, armed: live.armed !== null, fieldFocused })) return;
+      const target = followTarget(store.state.selection, touched.control);
+      if (target) showMatch(target);
+    });
+  });
   const switchUi: SwitchUi = {
-    get offer() { return live.offer; },
+    get offer() { return follow.on ? null : live.offer; },
     get note() { return switchNote.note; },
     accept: acceptOffer,
     decline: (silence) => { live.declineOffer(silence); },

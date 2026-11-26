@@ -22,3 +22,15 @@ describe('folded sections', () => {
     expect(parseOpen('[1,"a"]')).toEqual(['a']);
   });
 });
+
+describe('a section that starts open', () => {
+  it('uses its fallback until the user folds or opens it', () => {
+    const s = memory();
+    expect(loadOpen('monitor', s, true)).toBe(true);
+    saveOpen('monitor', false, s);
+    expect(loadOpen('monitor', s, true)).toBe(false);
+    saveOpen('monitor', true, s);
+    expect(loadOpen('monitor', s, false)).toBe(true);
+    expect(loadOpen('monitor', blocked, true)).toBe(true);
+  });
+});

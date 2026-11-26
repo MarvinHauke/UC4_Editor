@@ -125,7 +125,7 @@
     problemCount={count(area, index)}
     warningCount={warned(area, index)}
     live={live.controlStates.get(idOf(area, index))}
-    touched={live.lastTouched?.control.id === idOf(area, index)}
+    touchedAt={live.lastTouched?.control.id === idOf(area, index) ? live.lastTouched.at : null}
     mapState={map.flow.armed === null ? undefined : (map.targets.get(idOf(area, index)) ?? { ok: false, reason: 'This control is not in the open setup.' })}
     shiftTarget={shiftTarget(area, index)}
     tabStop={activeKey === `${area}:${index}`}

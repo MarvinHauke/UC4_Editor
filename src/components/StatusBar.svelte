@@ -39,7 +39,7 @@
           <button type="button" aria-label="Next problem" onclick={() => { onstep(1); }}>›</button>
         </span>
       {/if}
-      {#if wcount > 0}
+      {#if wcount > 0 && !switchUi?.offer}
         <span class="warnings" data-help="Warnings in this setup: two controls that can play together send the same message; nothing is blocked · ‹ › step through them">
           <button type="button" aria-label="Previous warning" onclick={() => { onstepwarning?.(-1); }}>‹</button>
           <span><span aria-hidden="true">▲</span>&nbsp;{warningAt >= 0 ? `${warningAt + 1} of ${wcount}` : wcount} warning{wcount === 1 ? '' : 's'}</span>

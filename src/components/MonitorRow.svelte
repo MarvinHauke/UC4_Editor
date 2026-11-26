@@ -1,31 +1,29 @@
 <script lang="ts">
-  // One monitor row (plan 0008 decisions 3, 8, 12, 18, 24). One line: U mark · message · channel · value · the best match in
+  // One monitor row (plan 0008 decisions 3, 8, 12, 24, 25). One line: U mark · message · channel · value · the best match in
   // muted text ("FAd7 · FG1 +1", or "→ Enc1 · EG1" once mapped) · the Map arrow (shown on the hovered, focused or open row).
   // Click on the row, or Enter on its message button, opens the details: the other matches with Pin, Split or Join, the input.
   // Click on the match text itself shows that control in the editor, so the two clicks never clash.
-  // `compact` is the one-line monitor: the same row, the message button shows the match's control.
   import type { LiveRow, Match } from '../live/index.ts';
   import { matchLabel, whereWord } from '../app/liveView.ts';
   import { matchText, rowLabel, rowText } from '../app/monitorRows.ts';
 
   interface Props {
-    row: LiveRow; source: string; compact?: boolean; open?: boolean;
+    row: LiveRow; source: string; open?: boolean;
     ontoggle?: () => void; onselect: (match: Match) => void; onpin: (controlId: string | null) => void;
     onsplit: () => void; onjoin: () => void;
     /** Map (steps 7, 8): this row is the armed one; the next row to map; the Map button. */
     armed?: boolean; next?: boolean; onmap?: () => void;
   }
-  let { row, source, compact = false, open = false, ontoggle, onselect, onpin, onsplit, onjoin, armed = false, next = false, onmap }: Props = $props();
+  let { row, source, open = false, ontoggle, onselect, onpin, onsplit, onjoin, armed = false, next = false, onmap }: Props = $props();
   const t = $derived(rowText(row));
   const label = $derived(row.isUc4 ? matchLabel(row) : null);
   const text = $derived(matchText(row));
   const full = $derived(row.mappedTo ? `Mapped: sent by ${row.mappedTo.name}` : label ? `${label.name}${label.more > 0 ? ` and ${label.more} more` : ''}${label.where ? ` · ${label.where}` : ''}` : '');
   const pair = $derived(row.pair && row.pair.state !== 'waiting' ? row.pair : null);
-  const hasDetails = $derived(!compact);
 
   // A click anywhere on the row opens it; the buttons inside (match, Map) do their own thing.
   function rowClick(e: MouseEvent): void {
-    if (compact || (e.target as Element).closest('button, a, select, .details')) return;
+    if ((e.target as Element).closest('button, a, select, .details')) return;
     ontoggle?.();
   }
 </script>
@@ -48,19 +46,11 @@
 
 <!-- The row's own click is a mouse shortcut for the message button, which is the keyboard's way in. -->
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<div class="row" class:moved={row.lastMoved} class:armed class:next class:compact class:open role="listitem" aria-label={rowLabel(row, source)}
+<div class="row" class:moved={row.lastMoved} class:armed class:next class:open role="listitem" aria-label={rowLabel(row, source)}
   data-help={`${rowLabel(row, source)}${row.lastMoved ? ' · moved last' : ''}`} onclick={rowClick}>
-  {#if compact}
-    {#if row.best}
-      <button type="button" class="pick" data-help={`Show ${row.best.control.name} in the editor`} onclick={() => { onselect(row.best!); }}>{@render cells()}</button>
-    {:else}
-      <div class="pick">{@render cells()}</div>
-    {/if}
-  {:else}
-    <button type="button" class="pick" aria-expanded={open} data-help={open ? 'Close the details of this row' : 'Details: the other matches, Pin, Split or Join, and the input'}
-      onclick={() => { ontoggle?.(); }}>{@render cells()}</button>
-  {/if}
-  {#if row.best && !row.mappedTo && !compact}
+  <button type="button" class="pick" aria-expanded={open} data-help={open ? 'Close the details of this row' : 'Details: the other matches, Pin, Split or Join, and the input'}
+    onclick={() => { ontoggle?.(); }}>{@render cells()}</button>
+  {#if row.best && !row.mappedTo}
     <button type="button" class="match" title={full} data-help={`Show ${row.best.control.name} in the editor`} onclick={() => { onselect(row.best!); }}>
       <span class="mtext">{row.best.control.name}</span>{#if row.more > 0}<span class="more">+{row.more}</span>{/if}{#if row.pinned}<span class="pin" title="Pinned" aria-hidden="true">◆</span><span class="sr">pinned</span>{/if}
     </button>
@@ -69,7 +59,7 @@
   {/if}
   {@render mapBtn()}
 
-  {#if hasDetails && open}
+  {#if open}
     <div class="details">
       <p class="src"><span class="where">From</span>{' '}{source}{#if row.isUc4}{' '}<span class="where">(the UC4)</span>{/if}</p>
       {#if row.matches.length > 0}
@@ -114,12 +104,8 @@
   .row.moved.open { background: var(--accent-soft); }
   .row.armed { outline: 2px solid var(--accent); outline-offset: -2px; }
   .row.next:not(.armed) { outline: 1px dashed var(--accent); outline-offset: -2px; }
-  .row.compact { grid-template-columns: auto minmax(0, 1fr) auto; border-bottom: 0; }
-  .row:not(.compact) { cursor: pointer; }
+  .row { cursor: pointer; }
   .pick { display: grid; grid-template-columns: var(--space-4) 8ch 4ch 6ch; column-gap: var(--space-1); align-items: center; min-height: 28px; margin: 0; padding: 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; cursor: pointer; }
-  .compact .pick { grid-template-columns: var(--space-4) auto auto auto; column-gap: var(--space-2); }
-  .compact .map { position: static; opacity: 1; }
-  div.pick { cursor: default; }
   button.pick:hover { background: var(--accent-soft); }
   button.pick:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   .mark { display: grid; place-items: center; height: var(--space-4); font-size: var(--text-sm); font-weight: 600; line-height: 1; color: var(--on-accent); background: var(--accent); border-radius: 3px; }

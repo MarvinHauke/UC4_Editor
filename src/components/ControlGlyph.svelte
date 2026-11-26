@@ -27,8 +27,8 @@
     warningCount?: number;
     /** What the UC4 last sent from this control (plan 0008): absent while unknown, never a guessed position. */
     live?: ControlState;
-    /** The last UC4 message was matched to this control: it is lit like a guide's cue. */
-    touched?: boolean;
+    /** When the last UC4 message was matched to this control (its `at`), else null: a glow of about a second, again on every message. */
+    touchedAt?: number | null;
     /** While Map is armed: can this control take the row's message; `reason` is the help line when not. Undefined when Map is not armed. */
     mapState?: { ok: boolean; reason: string | null };
     /** `shift`: Shift was held (click or Enter): on encoders and green buttons that picks the group, as on the UC4. */
@@ -41,7 +41,7 @@
     onfocused: () => void;
   }
   const copy = useCopyHold(); // needs COPY_CONTEXT, which App sets // needs COPY_CONTEXT (AreaView's parent sets it)
-  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, warningCount = 0, live, touched = false, mapState, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
+  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, warningCount = 0, live, touchedAt = null, mapState, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
 
   const shape = $derived(GEOMETRY[area][index]!);
   const name = $derived(`${AREA_NAMES[area].singular} ${controlNumber(index)}`);
@@ -77,7 +77,6 @@
     const top = shape.y + 24, bottom = shape.y + shape.height - 24;
     return bottom - f * (bottom - top);
   });
-  const capLive = $derived(shape.shape === 'fader' && fraction !== null);
   const ring = $derived(shape.shape === 'disc' && (area === 'encoders') && live?.kind === 'absolute' && fraction !== null ? ringPath(shape.cx, shape.cy, shape.r + 7, fraction) : '');
   const tick = $derived.by((): { x: number; y: number } | null => {
     if (shape.shape !== 'disc' || area !== 'encoders' || live?.kind !== 'relative') return null;
@@ -93,7 +92,7 @@
 <g
   class="control {kindClass}"
   class:selected
-  class:lit={lit || touched}
+  class:lit
   class:map-ok={mapState?.ok === true}
   class:map-dim={mapState?.ok === false}
   aria-disabled={mapState?.ok === false ? true : undefined}
@@ -117,11 +116,11 @@
     <rect class="hit hitbox" x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx="8" />
     {#if shape.horizontal}
       <line class="track" x1={shape.x + 10} y1={shape.y + shape.height / 2 - 6} x2={shape.x + shape.width - 10} y2={shape.y + shape.height / 2 - 6} />
-      <rect class="handle" class:live-cap={capLive} x={capCentre - 14} y={shape.y + 2} width="28" height="44" rx="3" />
+      <rect class="handle" x={capCentre - 14} y={shape.y + 2} width="28" height="44" rx="3" />
       <text class="idx" x={capCentre} y={shape.y + 29}>{controlNumber(index)}</text>
     {:else}
       <line class="track" x1={cx} y1={shape.y + 6} x2={cx} y2={shape.y + shape.height - 6} />
-      <rect class="handle" class:live-cap={capLive} x={cx - 13} y={capCentre - 18} width="26" height="36" rx="3" />
+      <rect class="handle" x={cx - 13} y={capCentre - 18} width="26" height="36" rx="3" />
       <text class="idx" x={cx} y={capCentre + 4}>{controlNumber(index)}</text>
     {/if}
   {/if}
@@ -151,6 +150,12 @@
     {#key live.at}
       {#if shape.shape === 'disc'}<circle class="live-on pulse" cx={shape.cx} cy={shape.cy} r={shape.r - 5} />
       {:else}<rect class="live-on pulse" x={shape.x + 3} y={shape.y + 3} width={shape.width - 6} height={shape.height - 6} rx="4" />{/if}
+    {/key}
+  {/if}
+  {#if touchedAt !== null}
+    {#key touchedAt}
+      {#if shape.shape === 'disc'}<circle class="glow" cx={shape.cx} cy={shape.cy} r={shape.r} />
+      {:else}<rect class="glow" x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.shape === 'pill' ? 6 : 8} />{/if}
     {/key}
   {/if}
   {#if warningCount > 0}
@@ -194,10 +199,15 @@
   .type { font-family: var(--mono); }
   .num { font-family: var(--mono); font-weight: 400; }
   .problem { fill: var(--danger); pointer-events: none; }
-  .handle.live-cap { stroke: var(--accent); }
-  .live-ring { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; pointer-events: none; }
-  .live-tick { fill: var(--accent); pointer-events: none; }
+  .live-ring { fill: none; stroke: var(--encoder); stroke-width: 4; stroke-linecap: round; pointer-events: none; }
+  .live-tick { fill: var(--encoder); pointer-events: none; }
   .live-on { fill: var(--led); opacity: 0.4; pointer-events: none; }
+  /* Last touched (decision 25): an outline in the control's own kind colour (the accent is selection's) that glows and fades in about a second, started again by each message. Reduced motion: a short still outline that clears. */
+  .glow { fill: none; stroke: var(--encoder); stroke-width: 3; pointer-events: none; animation: touched-glow 1s ease-out forwards; filter: drop-shadow(0 0 4px var(--encoder)); }
+  .fb .glow { stroke: var(--fader); filter: drop-shadow(0 0 4px var(--fader)); }
+  @keyframes touched-glow { from { opacity: 1; } to { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .glow { filter: none; animation: touched-still 1s steps(1, end) forwards; } }
+  @keyframes touched-still { from { opacity: 1; } to { opacity: 0; } }
   .pulse { animation: pulse-fade 700ms ease-out forwards; }
   @keyframes pulse-fade { from { opacity: 0.7; } to { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .pulse { animation: none; opacity: 0.4; } }

@@ -14,6 +14,8 @@
   import DumpNotice from './DumpNotice.svelte';
   import DumpsList from './DumpsList.svelte';
   import type { Match } from '../live/index.ts';
+  import SwitchOffer from './SwitchOffer.svelte';
+  import FollowSwitch from './FollowSwitch.svelte';
   import MidiMonitor from './MidiMonitor.svelte';
   import { useMap } from '../app/mapFlow.svelte.ts';
 
@@ -64,7 +66,11 @@
         </FoldSection>
       {/if}
       <button type="button" class="how" data-help="How to send a dump · UC4: shows the steps on the device view; the editor only listens" onclick={() => { onsenddump(); }}>How to send a dump from the {profile.deviceName}</button>
-      <MidiMonitor {live} {onselectmatch} />
+      <FoldSection id="monitor" title="MIDI monitor" defaultOpen fill>
+        {#snippet extra()}<FollowSwitch />{/snippet}
+        {#snippet below()}<SwitchOffer />{/snippet}
+        <MidiMonitor {live} {onselectmatch} />
+      </FoldSection>
     </div>
   {/if}
 </aside>
@@ -91,7 +97,6 @@
   @media (prefers-reduced-motion: reduce) { .badge { animation: none; } }
   .panel { display: flex; flex-direction: column; position: absolute; top: 0; left: 0; width: 320px; height: 100%; overflow-y: auto; box-sizing: border-box; padding: var(--space-3); background: var(--surface); border-right: 1px solid var(--border); scrollbar-width: thin; }
   .panel > :global(*) { flex: none; }
-  .panel > :global(.monitor) { flex: 1 1 auto; }
   .panel:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   /* 1320 = WIDE_PX in connections.ts */
   @media (min-width: 1320px) { .panel { position: static; width: auto; } .conn.open .strip { left: auto; right: 6px; } }
