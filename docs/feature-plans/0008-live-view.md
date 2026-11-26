@@ -367,7 +367,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    line. Stories 8–12.
 4. **Switch offer** — uc4-protocol, then uc4-ui · blocked by: 2 · 3 in a row → offer; switch as one undo step; "no"
    holds; "don't ask again" until the tab closes. Stories 22–24.
-5. **Warnings in the validator** — uc4-model, then uc4-ui · blocked by: none · the collision check beside `validate`
+5. **Warnings in the validator** — uc4-model (done `8da5b93`, reviewed: `warnings(config)`, `MessageKind` in the model), then uc4-ui · blocked by: none · the collision check beside `validate`
    (same group, or across the two halves; factory SE01–SE16 give 8 each, SE17/18 2 each), warnings in the problem list after the
    problems, a marker on the control. Stories 39–40.
 6. **Waivers, Send and export** — uc4-model, then uc4-ui · blocked by: 5 · Send dialog lists warnings, "Send
