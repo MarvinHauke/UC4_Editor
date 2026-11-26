@@ -350,6 +350,10 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
      "Review…" (opens the dialog).
    - **Follow is on by default** (user, 2026-11-26, after trying step 9); turning it off is remembered. Follow and
      Clear have the same button size.
+   - **Row details** (architect, 2026-11-26, from the user's screenshot, built in step 10): on an open row, Map is a
+     "Map →" button on the "From …" line (a closed row keeps the hover arrow); on an open pair the Split switch takes
+     the match's place on line 1; actions sit in fixed columns; the next-to-map row has a dashed left border; the
+     focus ring shows on keyboard focus only. For the user to judge.
    - **Offer placement kept, one info in the status bar** (user, 2026-11-26, after round 5): the switch offer stays
      under the monitor heading; with Connections folded it takes the warnings' place in the status bar while it
      shows, and the warning count comes back after Switch or No, so the bar holds one info at a time.
@@ -455,7 +459,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    field has focus, no undo step, remembered), replacing the offer while on; One line removed; the monitor folds;
    with Connections folded, the offer takes the warning count's place in the status bar while it shows.
    Checks: browser list with `/?midi=fake`, screenshots light and dark.
-10. **Row polish and split in place** (decision 25, Q5, Q9) — live half done 2026-11-26: uc4-protocol (`4768de4`, `pair.role` on split halves, halves adjacent at the pair's place, stable keys) — uc4-protocol (live module: split rows keep their
+10. **Row polish and split in place** (decision 25, Q5, Q9) — live half done 2026-11-26: uc4-protocol (`4768de4`, `pair.role` on split halves, halves adjacent at the pair's place, stable keys); UI half `8d416f5` (uc4-ui, reviewed; browser-checked by the architect, one fix open: alt names wrap) — uc4-protocol (live module: split rows keep their
    place), then uc4-ui · blocked by: 9 · whole row one target, full-width band behind the arrow, match text its
    own target; split rows as indented sub-lines under the pair, updating in place; Split/Join a small switch on
    the open row's first line; the match text is cut ("F…") at 320 px today, make it fit (uc4-ui, step 9). Checks:
