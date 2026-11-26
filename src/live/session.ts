@@ -1,14 +1,13 @@
 // The live session (plan 0008, decision 13): the one place where incoming messages become what the live view shows.
 // Pure: no Web MIDI, DOM or Svelte. It holds the monitor rows (step 1) and, with a context, the matches, pins and
 // control states of the UC4's rows (step 2). Later steps grow the same session, not new modules:
-//   step 3  rows of a `CCAh` pair / a `notE` press and release are joined (`splitPairs` option, session storage by the UI);
-//           `format` of the value (0–16383, on/off, +1/−1) is added to the row
 //   step 4  `offer` (3 in a row matching only another group or setup), `dismissOffer(target)`, `silenceOffers`
 //   step 7/8 `mapPlan(rowKey, target)` → a planned edit or a refusal reason; Map by touch reads the next UC4 event.
-// The rows never leave memory (decision 11).
+// Step 3 added pairs (a `CCAh` pair or a note's on and off as one row, `split`/`join`) and `valueText`; the rows never
+// leave memory (decision 11), only the splits are session state the UI saves (`getState`).
 import { rowKey, type ChannelEvent, type MessageKind } from './messages.ts';
 import {
-  buildIndex, matchesFor, nextState, signatureOf,
+  buildIndex, matchesFor, nextState, relativeDelta, signatureOf,
   type ControlRef, type ControlState, type LiveContext, type Match, type MatchIndex,
 } from './matching.ts';
 
@@ -34,6 +33,15 @@ export interface MonitorRow {
   lastMoved: boolean;
 }
 
+/** Where a row stands in a pair (decision 12): a `CCAh` control's CC n and n+32, or a note's on and off. */
+export interface PairInfo {
+  /** The pair's key for `split`/`join` and the saved state; the same for the joined row and for both halves when split. */
+  key: string;
+  kind: 'ccah' | 'note';
+  /** `joined`: this row stands for both messages; `split`: one of the single messages; `waiting`: a `CCAh` half whose other half has not been seen yet. */
+  state: 'joined' | 'split' | 'waiting';
+}
+
 /** A row with what the open configuration says about it. Only the UC4's rows are matched; other devices' rows have no matches. */
 export interface LiveRow extends MonitorRow {
   /** The controls that send this message, best first (the pinned one first, then tier, then place in the configuration). Empty without a context. */
@@ -44,6 +52,16 @@ export interface LiveRow extends MonitorRow {
   more: number;
   /** True when `best` is the user's pin. */
   pinned: boolean;
+  /** Set for a `CCAh` match and for every note row; null otherwise. A joined `CCAh` row has `kind: 'cc'`, the coarse CC as `number` and the 14-bit value 0–16383 as `value`. */
+  pair: PairInfo | null;
+  /** What the monitor prints as the value: `64`, `8192`, `on 127` / `off 0`, `+1` / `−1` for a `CCr1`/`CCr2` match, `—` for a program change (its number is the key). */
+  valueText: string;
+}
+
+/** What the UI saves in the session storage and hands back after a reload (JSON-safe). */
+export interface LiveSessionState {
+  /** Keys of the pairs the user split. */
+  splits: string[];
 }
 
 export interface LiveSession {
@@ -69,12 +87,22 @@ export interface LiveSession {
   /** The control the last UC4 message was matched to (best or pinned) and when; null before the first. For the "lit" mark in the device view. */
   readonly lastTouched: { control: ControlRef; at: number } | null;
 
-  /** Called after every change (a message, Clear, a context, a pin), not at subscription. Returns the unsubscribe function. */
+  /** Splits a pair into its single messages (`row.pair.key`); `join` puts it back. Unknown keys are ignored. Session state: see `getState`. */
+  split(pairKey: string): void;
+  join(pairKey: string): void;
+  /** The saved state (a new object). Save it after every change (`subscribe`) in the session storage: it survives a reload and ends with the tab. */
+  getState(): LiveSessionState;
+  /** Takes back what `getState` gave; anything malformed is ignored, never thrown. Call it before the first message. */
+  restoreState(state: unknown): void;
+
+  /** Called after every change (a message, Clear, a context, a pin, a split), not at subscription. Returns the unsubscribe function. */
   subscribe(listener: () => void): () => void;
 }
 
 /** A cap on distinct keys (poly aftertouch alone has 262 144); the oldest-created rows go first. Far above any real use. */
 export const MAX_ROWS = 2000;
+
+interface NotePart { value: number; at: number; count: number; seq: number }
 
 const inRange = (n: number | null, max: number) => n === null || (Number.isInteger(n) && n >= 0 && n <= max);
 
@@ -93,29 +121,131 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
   let view: LiveRow[] | null = null;
   const listeners = new Set<() => void>();
 
+  const rowsView = () => (view ??= derive());
+
   const notify = () => { view = null; for (const l of [...listeners]) l(); };
 
+  const splits = new Set<string>();
+  /** The last on and the last off of every note row, for the split view. */
+  const noteParts = new Map<string, { on: NotePart | null; off: NotePart | null; last: 'on' | 'off' }>();
+  let seq = 0;
+
+  const partnerOf = (number: number, via: 'msb' | 'lsb') => (via === 'msb' ? number + 32 : number - 32);
+  const ccahKey = (inputId: string, channel: number, msb: number) => `${inputId}|ccah:${channel}:${msb}`;
+
   /** Best first: the pin, then tier order. */
-  function rank(row: MonitorRow): Match[] {
-    if (!row.isUc4 || !context) return [];
-    const found = matchesFor(index, context, row);
-    const pin = pins.get(row.key);
+  function applyPin(key: string, found: Match[]): Match[] {
+    const pin = pins.get(key);
     const at = pin === undefined ? -1 : found.findIndex((m) => m.control.id === pin);
     if (at > 0) found.unshift(...found.splice(at, 1));
     return found;
   }
+  const rank = (row: MonitorRow): Match[] => (!row.isUc4 || !context ? [] : applyPin(row.key, matchesFor(index, context, row)));
 
-  /** A LiveRow per base row object: a row that did not change keeps its object, so a keyed list re-renders only what moved. Reset when matching inputs change. */
+  function valueText(row: MonitorRow, best: Match | null): string {
+    if (row.kind === 'note') return `${row.on ? 'on' : 'off'} ${row.value}`;
+    if (row.kind === 'program') return '—';
+    const type = best && row.kind === 'cc' ? index.controls.get(best.control.id)?.data.type : undefined;
+    if (type === 'CCr1' || type === 'CCr2') {
+      const d = relativeDelta(type, row.value);
+      return d > 0 ? `+${d}` : d < 0 ? `−${-d}` : '0';
+    }
+    return String(row.value);
+  }
+
+  function build(row: MonitorRow, matches: Match[], pair: PairInfo | null): LiveRow {
+    return {
+      ...row, matches, best: matches[0] ?? null, more: Math.max(0, matches.length - 1),
+      pinned: matches.length > 0 && pins.get(row.key) === matches[0]!.control.id,
+      pair, valueText: valueText(row, matches[0] ?? null),
+    };
+  }
+
+  /** A LiveRow per base row object: a row that did not change keeps its object, so a keyed list re-renders only what moved. Reset when matching inputs or splits change. */
   let cache = new WeakMap<MonitorRow, LiveRow>();
+  let joinedCache = new WeakMap<MonitorRow, WeakMap<MonitorRow, LiveRow>>();
+  let notesCache = new WeakMap<MonitorRow, LiveRow[]>();
+  const resetCache = () => { cache = new WeakMap(); joinedCache = new WeakMap(); notesCache = new WeakMap(); };
+
+  function single(row: MonitorRow): LiveRow {
+    const hit = cache.get(row);
+    if (hit) return hit;
+    const matches = rank(row);
+    const best = matches[0];
+    let pair: PairInfo | null = null;
+    if (row.kind === 'note') pair = { key: row.key, kind: 'note', state: 'joined' };
+    else if (best && (best.via === 'msb' || best.via === 'lsb') && row.number !== null) {
+      const key = ccahKey(row.inputId, row.channel, best.via === 'msb' ? row.number : row.number - 32);
+      pair = { key, kind: 'ccah', state: splits.has(key) ? 'split' : 'waiting' };
+    }
+    const live = build(row, matches, pair);
+    cache.set(row, live);
+    return live;
+  }
+
+  /** The note row as its on and off message, newest first. */
+  function noteHalves(row: MonitorRow): LiveRow[] {
+    const hit = notesCache.get(row);
+    if (hit) return hit;
+    const made = noteHalvesUncached(row);
+    notesCache.set(row, made);
+    return made;
+  }
+  function noteHalvesUncached(row: MonitorRow): LiveRow[] {
+    const p = noteParts.get(row.key);
+    if (!p) return [single(row)];
+    const half = (kind: 'on' | 'off', part: NotePart): LiveRow => {
+      const key = `${row.key}#${kind}`;
+      const own: MonitorRow = { ...row, key, value: part.value, on: kind === 'on', at: part.at, count: part.count, lastMoved: row.lastMoved && p.last === kind };
+      return build(own, rank({ ...own }), { key: row.key, kind: 'note', state: 'split' });
+    };
+    const out: { seq: number; row: LiveRow }[] = [];
+    if (p.on) out.push({ seq: p.on.seq, row: half('on', p.on) });
+    if (p.off) out.push({ seq: p.off.seq, row: half('off', p.off) });
+    return out.sort((x, y) => y.seq - x.seq).map((x) => x.row);
+  }
+
+  /** Rows keep their place; a joined row takes the place of the half that was listed first (the newer-created key). */
   function derive(): LiveRow[] {
-    return base.map((row) => {
-      const hit = cache.get(row);
-      if (hit) return hit;
-      const matches = rank(row);
-      const live: LiveRow = { ...row, matches, best: matches[0] ?? null, more: Math.max(0, matches.length - 1), pinned: matches.length > 0 && pins.get(row.key) === matches[0]!.control.id };
-      cache.set(row, live);
-      return live;
-    });
+    const out: LiveRow[] = [];
+    const byKey = new Map(base.map((r) => [r.key, r]));
+    const consumed = new Set<string>();
+    for (const row of base) {
+      if (consumed.has(row.key)) continue;
+      if (row.kind === 'note' && splits.has(row.key)) { out.push(...noteHalves(row)); continue; }
+      const mine = single(row);
+      const pair = mine.pair;
+      if (pair?.kind === 'ccah' && pair.state === 'waiting' && mine.best && row.number !== null) {
+        const via = mine.best.via as 'msb' | 'lsb';
+        const other = byKey.get(`${row.inputId}|cc:${row.channel}:${partnerOf(row.number, via)}`);
+        const theirs = other && !consumed.has(other.key) ? single(other) : null;
+        const complement = via === 'msb' ? 'lsb' : 'msb';
+        if (other && theirs?.best?.control.id === mine.best.control.id && theirs.best.via === complement) {
+          consumed.add(other.key);
+          const [msb, lsb] = via === 'msb' ? [row, other] : [other, row];
+          out.push(joined(msb, lsb, pair.key));
+          continue;
+        }
+      }
+      out.push(mine);
+    }
+    return out;
+  }
+
+  function joined(msb: MonitorRow, lsb: MonitorRow, key: string): LiveRow {
+    let inner = joinedCache.get(msb);
+    const hit = inner?.get(lsb);
+    if (hit) return hit;
+    const msbLive = single(msb), lsbLive = single(lsb);
+    const both = msbLive.matches.filter((m) => m.via === 'msb' && lsbLive.matches.some((l) => l.control.id === m.control.id && l.via === 'lsb'));
+    const row: MonitorRow = {
+      ...msb, key, value: msb.value * 128 + lsb.value, on: null, at: Math.max(msb.at, lsb.at),
+      count: Math.max(msb.count, lsb.count), lastMoved: msb.lastMoved || lsb.lastMoved,
+    };
+    const live = build(row, applyPin(key, both), { key, kind: 'ccah', state: 'joined' });
+    if (!inner) joinedCache.set(msb, (inner = new WeakMap()));
+    inner.set(lsb, live);
+    return live;
   }
 
   function touch(event: ChannelEvent, best: Match) {
@@ -131,7 +261,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
   }
 
   return {
-    get rows() { return (view ??= derive()); },
+    get rows() { return rowsView(); },
     get lastMovedKey() { return lastMovedKey; },
     get controlStates() { return states; },
     get lastTouched() { return lastTouched; },
@@ -158,6 +288,13 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       }
       base = next;
       lastMovedKey = key;
+      if (m.kind === 'note') {
+        const parts2 = noteParts.get(key) ?? { on: null, off: null, last: 'on' as 'on' | 'off' };
+        const which = on ? 'on' : 'off';
+        parts2[which] = { value: m.value, at, count: (parts2[which]?.count ?? 0) + 1, seq: ++seq };
+        parts2.last = which;
+        noteParts.set(key, parts2);
+      }
       if (isUc4 && context) {
         const best = rank(row)[0];
         if (best) touch(event, best);
@@ -168,6 +305,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       if (base.length === 0 && lastMovedKey === null) return;
       base = [];
       lastMovedKey = null;
+      noteParts.clear();
       notify();
     },
     setContext(next) {
@@ -184,25 +322,57 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
         }
       }
       states = kept;
-      cache = new WeakMap();
+      resetCache();
       if (lastTouched && !index.controls.has(lastTouched.control.id)) lastTouched = null;
       // A pin whose control no longer sends the row's message is dropped.
-      for (const [rowKeyOf, id] of [...pins]) {
-        const row = base.find((r) => r.key === rowKeyOf);
-        if (!row || !matchesFor(index, next, row).some((m) => m.control.id === id)) pins.delete(rowKeyOf);
+      const rows = derive();
+      for (const [key, id] of [...pins]) {
+        const shown = rows.find((r) => r.key === key);
+        const source = base.find((r) => r.key === key);
+        const found: readonly Match[] = shown ? shown.matches : source ? matchesFor(index, next, source) : [];
+        if (!found.some((m) => m.control.id === id)) pins.delete(key);
       }
+      resetCache();
       notify();
     },
-    pin(rowKeyOf, controlId) {
+    pin(key, controlId) {
+      const row = rowsView().find((r) => r.key === key);
+      if (!row) return;
+      // A joined or split row stands for source rows: the pin goes to all keys the matching reads (`touch` reads the base key).
+      const keys = [key];
+      if (row.pair?.kind === 'ccah') {
+        const msb = Number(row.pair.key.slice(row.pair.key.lastIndexOf(':') + 1));
+        keys.push(row.pair.key, `${row.inputId}|cc:${row.channel}:${msb}`, `${row.inputId}|cc:${row.channel}:${msb + 32}`);
+      }
+      if (key.includes('#')) keys.push(key.slice(0, key.indexOf('#')));
       if (controlId === null) {
-        if (pins.delete(rowKeyOf)) { cache = new WeakMap(); notify(); }
+        let changed = false;
+        for (const k of keys) changed = pins.delete(k) || changed;
+        if (changed) { resetCache(); notify(); }
         return;
       }
-      const row = base.find((r) => r.key === rowKeyOf);
-      if (!row || !row.isUc4 || !context) return;
-      if (!matchesFor(index, context, row).some((m) => m.control.id === controlId)) return;
-      pins.set(rowKeyOf, controlId);
-      cache = new WeakMap();
+      if (!row.isUc4 || !context || !row.matches.some((m) => m.control.id === controlId)) return;
+      for (const k of keys) pins.set(k, controlId);
+      resetCache();
+      notify();
+    },
+    split(pairKey) {
+      if (splits.has(pairKey) || !rowsView().some((r) => r.pair?.key === pairKey)) return;
+      splits.add(pairKey);
+      resetCache();
+      notify();
+    },
+    join(pairKey) {
+      if (!splits.delete(pairKey)) return;
+      resetCache();
+      notify();
+    },
+    getState() { return { splits: [...splits] }; },
+    restoreState(state) {
+      const list = (state as { splits?: unknown } | null)?.splits;
+      splits.clear();
+      if (Array.isArray(list)) for (const k of list) if (typeof k === 'string') splits.add(k);
+      resetCache();
       notify();
     },
     subscribe(listener) {

@@ -115,8 +115,12 @@ describe('matches', () => {
     const c = twoSetups((se) => { const e = se.encoderGroups[0]!.encoders[0]!; e.type = 'CCAh'; e.number = 8; });
     const s = live(c);
     send(s, cc(1, 8, 1));
-    send(s, cc(1, 40, 1));
-    expect(s.rows.map((r) => [r.best?.control.name, r.best?.via])).toEqual([['Enc1 · EG1', 'lsb'], ['Enc1 · EG1', 'msb']]);
+    expect(s.rows.map((r) => [r.best?.control.name, r.best?.via])).toEqual([['Enc1 · EG1', 'msb']]);
+    send(s, cc(1, 40, 1)); // the other half arrives: one joined row (tests/live/pairs.test.ts)
+    expect(s.rows.map((r) => [r.best?.control.name, r.best?.via, r.pair?.state])).toEqual([['Enc1 · EG1', 'msb', 'joined']]);
+    const lsbFirst = live(c);
+    send(lsbFirst, cc(1, 40, 1));
+    expect(lsbFirst.rows.map((r) => [r.best?.control.name, r.best?.via, r.pair?.state])).toEqual([['Enc1 · EG1', 'lsb', 'waiting']]);
   });
 });
 
