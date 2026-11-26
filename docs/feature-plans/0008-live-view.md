@@ -272,7 +272,7 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
 18. **The one-line monitor** (user, R2-Q8) shows the last message with its match and keeps Map.
 
 19. **Grilling round 3** (user, 2026-11-26): the active setup and groups are the editor's open setup and its two
-   group selections, and "switch" changes them as one undoable step (R3-Q1); MIDI clock, active sensing and other
+   group selections, and "switch" changes them as one undoable step (R3-Q1; built as a "Back" in the strip after Switch, because selections are not part of the library's undo history — architect, 2026-11-26); MIDI clock, active sensing and other
    real-time messages are not listed, a quiet note says "MIDI clock ignored", SysEx stays with the dump flow
    (R3-Q2); check mode and the trainer come later, version 1 is monitor, matching, live values, warnings, Map and
    the switch offer (R3-Q3); the ARS rig's points are grilled with the DAW-feedback step (R3-Q5); the input
