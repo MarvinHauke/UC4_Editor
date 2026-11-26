@@ -61,7 +61,7 @@ export function warnings(config: Uc4Config): Warning[] {
     });
     (setup.faderButtonGroups ?? []).forEach((g, gi) => {
       g?.faders?.forEach((c, i) => { add(`setups[${si}].faderButtonGroups[${gi}].faders[${i}]`, `FAd${i + 1} · FG${gi + 1}`, 'fad', gi, c); });
-      g?.buttons?.forEach((c, i) => { add(`setups[${si}].faderButtonGroups[${gi}].buttons[${i}]`, `Btn${i + 1} · FG${gi + 1}`, 'fad', gi, c, true); });
+      g?.buttons?.forEach((c, i) => { add(`setups[${si}].faderButtonGroups[${gi}].buttons[${i}]`, `btn${i + 1} · FG${gi + 1}`, 'fad', gi, c, true); });
     });
 
     const byKey = new Map<string, Entry[]>();

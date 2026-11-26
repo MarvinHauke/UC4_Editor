@@ -802,3 +802,74 @@ test('paste a clip: refusals; copy refuses bad sources', async () => {
   assert.match(lib.copy({ kind: 'control', ...enc(a, 9) }).message!, /no such control/);
   assert.equal(lib.getState().canUndo, false);
 });
+
+// --- selection steps (plan 0008 decision 19) ---
+test('select asStep is one undo step holding the previous selection; undo and redo restore it', async () => {
+  const { lib } = await open();
+  const before = lib.getState().selection;
+  const config = lib.getState().configuration;
+  lib.select({ setupId: 'factory-se05', encoderGroup: 3, faderButtonGroup: 2 }, { asStep: true });
+  const after = lib.getState().selection;
+  assert.equal(after.setupId, 'factory-se05');
+  assert.equal(lib.getState().canUndo, true);
+  lib.undo();
+  assert.deepEqual(lib.getState().selection, before);
+  assert.equal(lib.getState().configuration, config);
+  assert.equal(lib.getState().canRedo, true);
+  lib.redo();
+  assert.deepEqual(lib.getState().selection, after);
+});
+
+test('select asStep with no change, or a refusal, is no step; plain select stays out of the history', async () => {
+  const { lib } = await open();
+  lib.select({ encoderGroup: 0 }, { asStep: true });
+  assert.equal(lib.getState().canUndo, false);
+  assert.ok(lib.select({ setupId: 'nope' }, { asStep: true }).message);
+  assert.equal(lib.getState().canUndo, false);
+  lib.select({ encoderGroup: 4 });
+  assert.equal(lib.getState().canUndo, false);
+});
+
+test('a selection step clears redo, and sits in order with edits', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  lib.setProperty(enc(id), 'channel', 2);
+  lib.select({ encoderGroup: 5 }, { asStep: true });
+  lib.setProperty(enc(id, 0, 5), 'channel', 4);
+  lib.undo();
+  assert.equal(lib.getState().selection.encoderGroup, 5, 'the edit step does not hold a selection');
+  lib.undo();
+  assert.equal(lib.getState().selection.encoderGroup, 0);
+  assert.equal(lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!.channel, 2);
+  lib.select({ faderButtonGroup: 1 }, { asStep: true });
+  assert.equal(lib.getState().canRedo, false);
+});
+
+test('setProperty with a selection: one undo step reverts the edit and the selection, redo brings both', async () => {
+  const { lib } = await open();
+  const target = 'factory-se05';
+  const before = lib.getState().selection;
+  lib.setProperty(enc(target, 2, 6), 'channel', 9, { selection: { setupId: target, encoderGroup: 6 } });
+  const s = lib.getState();
+  assert.deepEqual([s.selection.setupId, s.selection.encoderGroup], [target, 6]);
+  assert.equal(s.configuration.setups.find((x) => x.id === target)!.encoderGroups[6]!.encoders[2]!.channel, 9);
+  lib.undo();
+  assert.deepEqual(lib.getState().selection, before);
+  assert.notEqual(lib.getState().configuration.setups.find((x) => x.id === target)!.encoderGroups[6]!.encoders[2]!.channel, 9);
+  lib.redo();
+  assert.equal(lib.getState().selection.encoderGroup, 6);
+  assert.equal(lib.getState().configuration.setups.find((x) => x.id === target)!.encoderGroups[6]!.encoders[2]!.channel, 9);
+});
+
+test('setProperty with a refused selection changes nothing; an edit that changes nothing still takes the selection as a step', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const r = lib.setProperty(enc(id), 'channel', 9, { selection: { setupId: 'nope' } });
+  assert.ok(r.message);
+  assert.equal(lib.getState().canUndo, false);
+  const same = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!.channel;
+  lib.setProperty(enc(id), 'channel', same, { selection: { encoderGroup: 2 } });
+  assert.equal(lib.getState().selection.encoderGroup, 2);
+  lib.undo();
+  assert.equal(lib.getState().selection.encoderGroup, 0);
+});

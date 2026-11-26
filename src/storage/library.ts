@@ -161,12 +161,22 @@ export type ImportResult = CommandResult & (
   | { status: 'imported'; kind: 'whole' | 'setup'; slot?: number; problemCount: number }
 );
 
+export type SelectionChange = Partial<Omit<Selection, 'control'>> & { control?: Selection['control'] };
+
 export interface Library {
   getState(): LibraryState;
   /** Calls `listener` at once with the current state and after every change. Returns the unsubscribe. */
   subscribe(listener: (state: LibraryState) => void): () => void;
-  select(change: Partial<Omit<Selection, 'control'>> & { control?: Selection['control'] }): CommandResult;
-  setProperty(address: ControlAddress, property: ControlProperty, value: string | number): CommandResult;
+  /**
+   * With `{ asStep: true }` the change is one undo step that holds only the previous selection (setup, groups, control);
+   * undo and redo restore it. A change that leaves the selection as it is is no step. Plain calls stay out of the history.
+   */
+  select(change: SelectionChange, options?: { asStep?: boolean }): CommandResult;
+  /**
+   * `options.selection` changes the selection in the same undo step as the edit (Map by touch: open the setup, switch the
+   * groups, apply the edit; one undo reverts both). A refused selection refuses the whole command.
+   */
+  setProperty(address: ControlAddress, property: ControlProperty, value: string | number, options?: { selection?: SelectionChange }): CommandResult;
   /** `input` is what was typed; it is cleaned and padded to 4 characters (`normalizeGroupName`). */
   setGroupName(setupId: string, encoderGroup: number, input: string): CommandResult;
   /** The free-text label of an encoder group or a fader/button group (editor-only); `''` removes it. */
@@ -387,7 +397,8 @@ interface Internal extends Library { saveNow(): void }
 
 /** Setup id → the kept dump it came from and which of the dump's slots it came from (a Sndc of SE16 can sit in slot 3). */
 type Links = Record<string, { dump: string; slot: number }>;
-interface Snapshot { configuration: Uc4Config; marks: Marks; links: Links }
+/** `selection` is set on an entry that also holds a selection change: undo and redo put it back. */
+interface Snapshot { configuration: Uc4Config; marks: Marks; links: Links; selection?: Selection }
 interface Side { marks: Marks; marksText: string | null; links: Links; linksText: string | null; sends: Sends; sendsText: string | null; dumps: StoredDump[] }
 
 /** Saved links as text, read back: only setups and dumps that still exist. */
@@ -544,14 +555,15 @@ function createLibrary(
   };
 
   // --- committing a changed configuration ---
-  const commit = (configuration: Uc4Config, message?: string, nextMarks?: Marks, nextLinks?: Links): CommandResult => {
-    undoStack = [...undoStack, { configuration: state.configuration, marks, links }].slice(-HISTORY_LIMIT);
+  const commit = (configuration: Uc4Config, message?: string, nextMarks?: Marks, nextLinks?: Links, nextSelection?: Selection): CommandResult => {
+    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ...(nextSelection ? { selection: state.selection } : {}) }].slice(-HISTORY_LIMIT);
     redoStack = [];
     if (nextMarks) marks = nextMarks;
     if (nextLinks) links = nextLinks;
     const next = { ...configuration, updatedAt: now().toISOString() };
     publish({
       ...state, configuration: next, ...derived(next), ...dumpFields(), canUndo: true, canRedo: false,
+      ...(nextSelection ? { selection: nextSelection } : {}),
       ...(message ? { message } : { message: undefined }),
     });
     saveNow();
@@ -561,6 +573,39 @@ function createLibrary(
   const withSetup = (id: string, change: (s: Setup) => Setup): Uc4Config => {
     const i = setupIndex(id);
     return { ...state.configuration, setups: state.configuration.setups.map((s, k) => (k === i ? change(s) : s)) };
+  };
+  /** The selection `change` leads to, or the reason it is refused. */
+  const resolveSelection = (change: SelectionChange): Selection | string => {
+    const next = { ...state.selection };
+    if (change.setupId !== undefined) {
+      if (setupIndex(change.setupId) < 0) return `There is no setup "${change.setupId}".`;
+      next.setupId = change.setupId;
+    }
+    if (change.encoderGroup !== undefined) {
+      if (!isGroup(change.encoderGroup)) return `There is no encoder group ${String(change.encoderGroup)} (0–7).`;
+      next.encoderGroup = change.encoderGroup;
+    }
+    if (change.faderButtonGroup !== undefined) {
+      if (!isGroup(change.faderButtonGroup)) return `There is no fader/button group ${String(change.faderButtonGroup)} (0–7).`;
+      next.faderButtonGroup = change.faderButtonGroup;
+    }
+    if (change.control !== undefined) {
+      const c = change.control;
+      if (c !== null && !(c.area in AREA_COUNT && Number.isInteger(c.index) && c.index >= 0 && c.index < AREA_COUNT[c.area])) {
+        return 'There is no such control.';
+      }
+      next.control = c;
+    }
+    return next;
+  };
+
+  /** A selection change as its own undo step (a no-change is none). */
+  const selectStep = (next: Selection): CommandResult => {
+    if (JSON.stringify(next) === JSON.stringify(state.selection)) return result();
+    undoStack = [...undoStack, { configuration: state.configuration, marks, links, selection: state.selection }].slice(-HISTORY_LIMIT);
+    redoStack = [];
+    publish({ ...state, selection: next, canUndo: true, canRedo: false, message: undefined });
+    return result();
   };
   const clamp = (selection: Selection): Selection =>
     state.configuration.setups.some((s) => s.id === selection.setupId)
@@ -788,34 +833,19 @@ function createLibrary(
       return () => { listeners.delete(listener); };
     },
 
-    select(change) {
-      const next = { ...state.selection };
-      if (change.setupId !== undefined) {
-        if (setupIndex(change.setupId) < 0) return refuse(`There is no setup "${change.setupId}".`);
-        next.setupId = change.setupId;
-      }
-      if (change.encoderGroup !== undefined) {
-        if (!isGroup(change.encoderGroup)) return refuse(`There is no encoder group ${String(change.encoderGroup)} (0–7).`);
-        next.encoderGroup = change.encoderGroup;
-      }
-      if (change.faderButtonGroup !== undefined) {
-        if (!isGroup(change.faderButtonGroup)) return refuse(`There is no fader/button group ${String(change.faderButtonGroup)} (0–7).`);
-        next.faderButtonGroup = change.faderButtonGroup;
-      }
-      if (change.control !== undefined) {
-        const c = change.control;
-        if (c !== null && !(c.area in AREA_COUNT && Number.isInteger(c.index) && c.index >= 0 && c.index < AREA_COUNT[c.area])) {
-          return refuse('There is no such control.');
-        }
-        next.control = c;
-      }
+    select(change, options) {
+      const next = resolveSelection(change);
+      if (typeof next === 'string') return refuse(next);
+      if (options?.asStep) return selectStep(next);
       publish({ ...state, selection: next, message: undefined });
       return result();
     },
 
-    setProperty(address, property, value) {
+    setProperty(address, property, value, options) {
       const { setupId, area, group, index } = address;
       if (setupIndex(setupId) < 0) return refuse(`There is no setup "${setupId}".`);
+      const nextSelection = options?.selection ? resolveSelection(options.selection) : undefined;
+      if (typeof nextSelection === 'string') return refuse(nextSelection);
       if (!(area in AREA_COUNT) || !isGroup(group) || !Number.isInteger(index) || index < 0 || index >= AREA_COUNT[area]) {
         return refuse('There is no such control.');
       }
@@ -851,8 +881,10 @@ function createLibrary(
       const base = `${groupKey(area)}[${group}].${area}[${index}].`;
       const touched = [...new Set([property, ...Object.keys({ ...old, ...control }).filter((k) =>
         JSON.stringify((old as unknown as Record<string, unknown>)[k]) !== JSON.stringify((control as unknown as Record<string, unknown>)[k]))])].map((k) => base + k);
-      if (JSON.stringify(control) === JSON.stringify(old) && !hasMarkPaths(marks, setupId, touched)) return result();
-      return commit(writeControl(state.configuration, address, control), message, dropMarkPaths(marks, setupId, touched));
+      if (JSON.stringify(control) === JSON.stringify(old) && !hasMarkPaths(marks, setupId, touched)) {
+        return nextSelection ? selectStep(nextSelection) : result();
+      }
+      return commit(writeControl(state.configuration, address, control), message, dropMarkPaths(marks, setupId, touched), undefined, nextSelection);
     },
 
     setGroupName(setupId, encoderGroup, input) {
@@ -1246,14 +1278,14 @@ function createLibrary(
       const previous = undoStack.at(-1);
       if (!previous) return refuse('Nothing to undo.');
       undoStack = undoStack.slice(0, -1);
-      redoStack = [...redoStack, { configuration: state.configuration, marks, links }];
+      redoStack = [...redoStack, { configuration: state.configuration, marks, links, ...(previous.selection ? { selection: state.selection } : {}) }];
       return restore(previous);
     },
     redo() {
       const next = redoStack.at(-1);
       if (!next) return refuse('Nothing to redo.');
       redoStack = redoStack.slice(0, -1);
-      undoStack = [...undoStack, { configuration: state.configuration, marks, links }];
+      undoStack = [...undoStack, { configuration: state.configuration, marks, links, ...(next.selection ? { selection: state.selection } : {}) }];
       return restore(next);
     },
 
@@ -1261,16 +1293,17 @@ function createLibrary(
     saveNow,
   };
 
-  function restore({ configuration, marks: restored, links: restoredLinks }: Snapshot): CommandResult {
+  function restore({ configuration, marks: restored, links: restoredLinks, selection }: Snapshot): CommandResult {
+    const unchanged = configuration === state.configuration && restored === marks;
     marks = restored;
     // A link to a dump deleted since does not come back.
     links = Object.fromEntries(Object.entries(restoredLinks).filter(([, l]) => kept.some((k) => k.id === l.dump)));
     publish({
       ...state, configuration, ...derived(configuration), ...dumpFields(),
-      selection: clamp(state.selection),
+      selection: clamp(selection ?? state.selection),
       canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, message: undefined,
     });
-    saveNow();
+    if (!unchanged) saveNow();
     return result();
   }
 

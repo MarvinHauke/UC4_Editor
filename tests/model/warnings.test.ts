@@ -38,8 +38,8 @@ test('factory SE01–SE16 give exactly the 8 EG4 ↔ FG1 warnings (CC 32–39)',
 test('factory SE17 and SE18 give exactly two warnings each (EG5 push buttons ↔ FG7 buttons, notes 122/123 ch 14)', () => {
   for (const slot of [17, 18]) {
     assert.deepEqual(warnings(cfgOf(factorySetup(slot))).map((x) => x.message), [
-      'Pbt3 · EG5 and Btn2 · FG7 both send note 122 ch 14',
-      'Pbt4 · EG5 and Btn1 · FG7 both send note 123 ch 14',
+      'Pbt3 · EG5 and btn2 · FG7 both send note 122 ch 14',
+      'Pbt4 · EG5 and btn1 · FG7 both send note 123 ch 14',
     ], `slot ${slot}`);
   }
 });
