@@ -20,6 +20,8 @@
     pasteTarget?: boolean;
     onpaste?: () => void;
     problemCount: number;
+    /** Warnings that name this control (plan 0008): an amber triangle beside the problem mark; nothing is blocked. */
+    warningCount?: number;
     /** `shift`: Shift was held (click or Enter): on encoders and green buttons that picks the group, as on the UC4. */
     onselect: (shift: boolean) => void;
     /** For encoders and green buttons: the group a Shift-click shows ("encoder group 3 · Send 3"). */
@@ -30,7 +32,7 @@
     onfocused: () => void;
   }
   const copy = useCopyHold(); // needs COPY_CONTEXT, which App sets // needs COPY_CONTEXT (AreaView's parent sets it)
-  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
+  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, warningCount = 0, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
 
   const shape = $derived(GEOMETRY[area][index]!);
   const name = $derived(`${AREA_NAMES[area].singular} ${controlNumber(index)}`);
@@ -45,7 +47,7 @@
   const kindClass = $derived(area === 'encoders' || area === 'pushButtons' ? 'enc' : 'fb');
   // Schema (decision 39): what it is · the one way · UC4. On encoders and green buttons the one way is Shift + click.
   const help = $derived(
-    `${name}: ${type} ${number}${problemCount > 0 ? ` · ${problemCount} problem${problemCount === 1 ? '' : 's'}` : ''} · ${shiftTarget ? `Shift + click: ${shiftTarget}` : 'click to edit'}${shiftTarget ? ' · UC4: Shift + press' : ''}`,
+    `${name}: ${type} ${number}${problemCount > 0 ? ` · ${problemCount} problem${problemCount === 1 ? '' : 's'}` : ''}${warningCount > 0 ? ` · ${warningCount} warning${warningCount === 1 ? '' : 's'}` : ''} · ${shiftTarget ? `Shift + click: ${shiftTarget}` : 'click to edit'}${shiftTarget ? ' · UC4: Shift + press' : ''}`,
   );
   function key(e: KeyboardEvent): void {
     const move = matchKey(e, ['controlMove']);
@@ -70,7 +72,7 @@
   role="button"
   tabindex={tabStop ? 0 : -1}
   aria-pressed={selected}
-  aria-label="{name}, {type} {number}{problemCount > 0 ? `, ${problemCount} problems` : ''}"
+  aria-label="{name}, {type} {number}{problemCount > 0 ? `, ${problemCount} problems` : ''}{warningCount > 0 ? `, ${warningCount} warnings` : ''}"
   data-help={help}
   onclick={(e) => { onselect(e.shiftKey); }}
   onkeydown={key}
@@ -108,6 +110,11 @@
     <circle class="problem" cx={mark.x} cy={mark.y} r="6" />
     <text class="problem-text" x={mark.x} y={mark.y + 4}>!</text>
   {/if}
+  {#if warningCount > 0}
+    <!-- Beside the problem mark (14 units to its left when there is one), so both can show. -->
+    {@const wx = mark.x - (problemCount > 0 ? 16 : 0)}
+    <path class="warn" d="M{wx} {mark.y - 7} L{wx + 8} {mark.y + 6} L{wx - 8} {mark.y + 6} Z" />
+  {/if}
   <!-- Drawn last: the badge stays on top of the problem mark and takes the click. -->
   {#if pasteTarget}
     <g class="paste" role="button" tabindex="-1" aria-label="Paste here: {name}" data-help="Paste the copied {kindWord} onto {name}, one undo step · click the icon"
@@ -142,5 +149,6 @@
   .type { font-family: var(--mono); }
   .num { font-family: var(--mono); font-weight: 400; }
   .problem { fill: var(--danger); pointer-events: none; }
+  .warn { fill: var(--warn); stroke: var(--surface-2); stroke-width: 1; stroke-linejoin: round; pointer-events: none; }
   .problem-text { fill: var(--on-danger); font-size: 14px; }
 </style>

@@ -243,7 +243,7 @@
   <TourOverlay {tour} onget={getSetups} profile={faderfoxUc4} />
   <WelcomeCard {welcome} profile={faderfoxUc4} />
   {#if store}<DumpGuide {dumpGuide} {device} {sender} profile={faderfoxUc4} />{/if}
-  <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)}
+  <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)} warnings={store?.warnings ?? []} warningAt={store?.warningAt ?? -1} onstepwarning={(d) => store?.stepWarning(d)}
     waiting={notices.queue.length} onopenconnections={openConnections} />
 </div>
 

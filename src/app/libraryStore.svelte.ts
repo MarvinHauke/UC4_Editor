@@ -1,9 +1,11 @@
 // The library as Svelte state: components read `state` and call commands. No editing logic here.
+import type { Warning } from '../model/index.ts';
 import type { Library, LibraryState, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
 import type { FlowLibrary } from './importFlow.ts';
 import type { SyxLibrary } from './syxFlow.ts';
 import { problemText } from './controlProblems.ts';
 import { problemKey, relocate } from './problemCursor.ts';
+import { parseControlPath, relocateWarning, setupWarnings, warningKey } from './warningMarks.ts';
 
 export function createStore(library: Library, openMessage?: string) {
   let state = $state.raw<LibraryState>(library.getState());
@@ -16,9 +18,23 @@ export function createStore(library: Library, openMessage?: string) {
     const p = state.problems[at];
     problemId = p ? problemKey(p) : null;
   };
+  // Warnings of the open setup (plan 0008 step 5): not problems, so they have their own stepper and never block.
+  let warningAt = $state(-1);
+  let warningId: string | null = null;
+  let warningCache: { configuration: unknown; setupId: string; list: Warning[] } | null = null;
+  const warningsOpen = (s: LibraryState): Warning[] => {
+    if (warningCache?.configuration !== s.configuration || warningCache.setupId !== s.selection.setupId) {
+      warningCache = { configuration: s.configuration, setupId: s.selection.setupId, list: setupWarnings(s.configuration, s.selection.setupId) };
+    }
+    return warningCache.list;
+  };
+  const rememberWarning = (at: number, list: Warning[]): void => { warningAt = at; const w = list[at]; warningId = w ? warningKey(w) : null; };
+  let openWarnings = $state.raw<Warning[]>(warningsOpen(state));
   library.subscribe((s) => {
     state = s;
     remember(relocate(s.problems, problemAt, problemId));
+    openWarnings = warningsOpen(s);
+    rememberWarning(relocateWarning(openWarnings, warningAt, warningId), openWarnings);
   });
   const done = <T>(r: T): T => { startMessage = undefined; return r; };
   /** The commands the import and export flow needs. */
@@ -55,6 +71,28 @@ export function createStore(library: Library, openMessage?: string) {
       remember(problemAt < 0 ? (delta === 1 ? 0 : problems.length - 1) : (problemAt + delta + problems.length) % problems.length);
       done(library.selectProblem(problemAt));
       startMessage = `Problem ${problemAt + 1} of ${problems.length}: ${problemText(problems[problemAt]!)}`;
+    },
+    /** The open setup's warnings, in the model's order (`visibleWarnings` is where waivers will filter, step 6). */
+    get warnings() { return openWarnings; },
+    /** Which warning the stepper is on (0-based), or -1 before the first step. */
+    get warningAt() { return warningAt; },
+    /** Steps to the next or previous warning of the open setup (wrapping) and selects its first control, switching groups as needed. */
+    stepWarning(delta: 1 | -1): void {
+      const list = openWarnings;
+      if (list.length === 0) return;
+      const at = warningAt < 0 ? (delta === 1 ? 0 : list.length - 1) : (warningAt + delta + list.length) % list.length;
+      rememberWarning(at, list);
+      const w = list[at]!;
+      // Both controls come into view: each one's group is shown (the two sit in different halves, or in one group), the first is selected.
+      const places = w.controls.map(parseControlPath);
+      for (const ref of [...places].reverse()) {
+        if (!ref) continue;
+        const upper = ref.area === 'encoders' || ref.area === 'pushButtons';
+        library.select(upper ? { encoderGroup: ref.group } : { faderButtonGroup: ref.group });
+      }
+      const first = places[0];
+      if (first) library.select({ control: { area: first.area, index: first.index } });
+      startMessage = `Warning ${at + 1} of ${list.length}: ${w.message}`;
     },
     get state() { return state; },
     /** What `openLibrary` said on start; gone after the first command. */

@@ -19,6 +19,8 @@
   --led-edge: #15803d;
   /* The fader/button group shown by an LED above green button n: a colour of its own, not the LED green. */
   --group: #d97706;
+  /* A warning (plan 0008 decision 7): orange, apart from the problem red and from the group LED's amber (--group); the shape (a triangle) is the second cue. */
+  --warn: #c2410c;
   --led-off: #cfcfc9;
   --display-bg: #161616;
   --display-fg: #ef4444;
@@ -61,6 +63,7 @@
     --led: #4ade80;
     --led-edge: #4ade80;
     --group: #fbbf24;
+    --warn: #fb923c;
     --led-off: #34343a;
   }
 }
@@ -83,6 +86,7 @@
     --led: #4ade80;
     --led-edge: #4ade80;
     --group: #fbbf24;
+    --warn: #fb923c;
     --led-off: #34343a;
 }
 :root[data-theme='light'] { color-scheme: light; }

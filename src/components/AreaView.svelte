@@ -15,6 +15,7 @@
   import { useGuide } from '../app/guide.svelte.ts';
   import { FRAMES, GROUP_LED, groupPitch, CROSSFADER, GROUP_LED_X, VIEWS } from '../app/profile/uc4Geometry.ts';
   import { controlPath, problemsOf } from '../app/controlProblems.ts';
+  import { warningsOf } from '../app/warningMarks.ts';
   import { controlAt, groupOf, selectedSetup } from '../app/selectors.ts';
   import { printedGroupName } from '../app/printedNames.ts';
   import { PRINTED_GROUP_NAMES } from '../app/profile/uc4PrintedNames.ts';
@@ -52,6 +53,8 @@
   const selected = $derived(view.state.selection.control);
   const count = (area: ControlArea, index: number): number =>
     problemsOf(view.state.problems, controlPath(view.setupIndex, area, groupOf(view.state, area), index)).length;
+  const warned = (area: ControlArea, index: number): number =>
+    warningsOf(store.warnings, controlPath(view.setupIndex, area, groupOf(view.state, area), index)).length;
   // The slide's length is a setting (0–400 ms); with less motion asked for by the system it is off unless the user set a speed.
   const settings = useSettings();
   const active = useActiveArea();
@@ -111,6 +114,7 @@
     number={control.number}
     selected={selected?.area === area && selected.index === index}
     problemCount={count(area, index)}
+    warningCount={warned(area, index)}
     shiftTarget={shiftTarget(area, index)}
     tabStop={activeKey === `${area}:${index}`}
     onarrow={(d) => { onarrow({ area, index }, d); }}
