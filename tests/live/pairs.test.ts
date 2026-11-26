@@ -98,7 +98,7 @@ describe('a CCAh pair', () => {
   it('ignores a split for a pair that is not listed', () => {
     const s = live(ccah());
     s.split('uc4|ccah:1:8');
-    expect(s.getState()).toEqual({ splits: [] });
+    expect(s.getState()).toEqual({ splits: [], silenceOffers: false });
   });
 
   it('feeds the control state from the pair: a CCAh encoder shows its 14-bit position', () => {
@@ -231,7 +231,7 @@ describe('session state', () => {
     send(a, cc(1, 40, 1));
     a.split('uc4|ccah:1:8');
     const saved = JSON.parse(JSON.stringify(a.getState()));
-    expect(saved).toEqual({ splits: ['uc4|ccah:1:8'] });
+    expect(saved).toEqual({ splits: ['uc4|ccah:1:8'], silenceOffers: false });
 
     const b = createLiveSession();
     b.restoreState(saved);
@@ -259,6 +259,6 @@ describe('session state', () => {
   it('takes garbage without throwing', () => {
     const s = createLiveSession();
     for (const bad of [null, undefined, 5, 'x', {}, { splits: 'x' }, { splits: [1, null, 'ok'] }]) expect(() => s.restoreState(bad)).not.toThrow();
-    expect(s.getState()).toEqual({ splits: ['ok'] });
+    expect(s.getState()).toEqual({ splits: ['ok'], silenceOffers: false });
   });
 });

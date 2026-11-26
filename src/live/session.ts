@@ -1,9 +1,8 @@
 // The live session (plan 0008, decision 13): the one place where incoming messages become what the live view shows.
 // Pure: no Web MIDI, DOM or Svelte. It holds the monitor rows (step 1) and, with a context, the matches, pins and
 // control states of the UC4's rows (step 2). Later steps grow the same session, not new modules:
-//   step 4  `offer` (3 in a row matching only another group or setup), `dismissOffer(target)`, `silenceOffers`
 //   step 7/8 `mapPlan(rowKey, target)` → a planned edit or a refusal reason; Map by touch reads the next UC4 event.
-// Step 3 added pairs (a `CCAh` pair or a note's on and off as one row, `split`/`join`) and `valueText`; the rows never
+// Step 4 added the switch offer (`offer`, `acceptOffer`, `dismissOffer`, `silenceOffers`). Step 3 added pairs (a `CCAh` pair or a note's on and off as one row, `split`/`join`) and `valueText`; the rows never
 // leave memory (decision 11), only the splits are session state the UI saves (`getState`).
 import { rowKey, type ChannelEvent, type MessageKind } from './messages.ts';
 import {
@@ -62,6 +61,20 @@ export interface LiveRow extends MonitorRow {
 export interface LiveSessionState {
   /** Keys of the pairs the user split. */
   splits: string[];
+  /** "Don't ask again" on the switch offer. */
+  silenceOffers: boolean;
+}
+
+/**
+ * "The UC4 seems to be on encoder group 3 — switch?" (decision 6): the open setup and groups the evidence points to.
+ * The session only reports it; the UI changes the selections as one undo step when the user accepts.
+ */
+export interface SwitchOffer {
+  target: { setupId: string; setupName: string; slot?: number; encoderGroup: number; faderButtonGroup: number };
+  /** What would change against the open setup and groups. */
+  changes: ('setup' | 'encoderGroup' | 'faderButtonGroup')[];
+  /** The question, in the device's words, groups numbered 1–8. */
+  text: string;
 }
 
 export interface LiveSession {
@@ -86,6 +99,19 @@ export interface LiveSession {
   readonly controlStates: ReadonlyMap<string, ControlState>;
   /** The control the last UC4 message was matched to (best or pinned) and when; null before the first. For the "lit" mark in the device view. */
   readonly lastTouched: { control: ControlRef; at: number } | null;
+
+  /**
+   * Set after 3 UC4 messages in a row that match something but nothing in the open setup's two selected groups, all pointing at
+   * one target. A message of the open groups, any `setContext` call (also an edit of the configuration), a dismissal or silence takes it away; messages that match nothing
+   * and other devices' messages are neutral. A new object only when the target changes.
+   */
+  readonly offer: SwitchOffer | null;
+  /** The user took the offer: gives it once (the UI switches the selections) and clears it. Null when there is none. */
+  acceptOffer(): SwitchOffer | null;
+  /** "No": no offer for this target until the open setup changes. */
+  dismissOffer(): void;
+  /** "Don't ask again": no offers at all while on (saved with `getState`). */
+  silenceOffers(on: boolean): void;
 
   /** Splits a pair into its single messages (`row.pair.key`); `join` puts it back. Unknown keys are ignored. Session state: see `getState`. */
   split(pairKey: string): void;
@@ -126,6 +152,11 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
   const notify = () => { view = null; for (const l of [...listeners]) l(); };
 
   const splits = new Set<string>();
+  let silenced = false;
+  let offer: SwitchOffer | null = null;
+  const dismissed = new Set<string>();
+  /** The last messages that matched only elsewhere (at most 3), oldest first. */
+  let streak: { setupId: string; setupName: string; slot?: number; half: 'enc' | 'fad'; group: number }[] = [];
   /** The last on and the last off of every note row, for the split view. */
   const noteParts = new Map<string, { on: NotePart | null; off: NotePart | null; last: 'on' | 'off' }>();
   let seq = 0;
@@ -248,6 +279,58 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
     return live;
   }
 
+  const offerKey = (t: SwitchOffer['target']) => `${t.setupId}|${t.encoderGroup}|${t.faderButtonGroup}`;
+
+  function evaluateOffer() {
+    if (!context || silenced || streak.length < 3) { offer = null; return; }
+    const first = streak[0]!;
+    if (streak.some((e) => e.setupId !== first.setupId)) { offer = null; return; }
+    const groupOf = (half: 'enc' | 'fad'): number | null | undefined => {
+      const groups = new Set(streak.filter((e) => e.half === half).map((e) => e.group));
+      return groups.size === 0 ? null : groups.size === 1 ? [...groups][0] : undefined;
+    };
+    const enc = groupOf('enc'), fad = groupOf('fad');
+    if (enc === undefined || fad === undefined) { offer = null; return; }
+    const target: SwitchOffer['target'] = {
+      setupId: first.setupId, setupName: first.setupName, ...(first.slot === undefined ? {} : { slot: first.slot }),
+      encoderGroup: enc ?? context.encoderGroup, faderButtonGroup: fad ?? context.faderButtonGroup,
+    };
+    if (dismissed.has(offerKey(target))) { offer = null; return; }
+    if (offer && offerKey(offer.target) === offerKey(target)) return;
+    const changes: SwitchOffer['changes'] = [];
+    if (target.setupId !== context.setupId) changes.push('setup');
+    if (target.encoderGroup !== context.encoderGroup) changes.push('encoderGroup');
+    if (target.faderButtonGroup !== context.faderButtonGroup) changes.push('faderButtonGroup');
+    const groups = [
+      ...(changes.includes('encoderGroup') ? [`encoder group ${target.encoderGroup + 1}`] : []),
+      ...(changes.includes('faderButtonGroup') ? [`fader/button group ${target.faderButtonGroup + 1}`] : []),
+    ].join(' and ');
+    const setup = changes.includes('setup') ? `setup ${target.slot === undefined ? target.setupName : `SE${String(target.slot).padStart(2, '0')}`}` : '';
+    offer = { target, changes, text: `The UC4 seems to be on ${[setup, groups].filter(Boolean).join(', ')} — switch?` };
+  }
+
+  /**
+   * Evidence for the offer (decision 6): a UC4 message that matches something counts, one in the open groups starts over, one that
+   * could be in several other places (or setups) is neutral. One touch can give 3 messages (a nudge, a note on and off): that is
+   * meant, an unambiguous message says where the UC4 is.
+   */
+  function collect(row: MonitorRow) {
+    if (!context) return;
+    const found = matchesFor(index, context, row);
+    if (found.length === 0) return;
+    if (found.some((m) => m.tier === 1)) { streak = []; offer = null; return; }
+    // Never guess (decision 6): the message counts only when all its matches point at one target (setup, half, group), or the user pinned one.
+    const half = (area: string) => (area === 'encoders' || area === 'pushButtons' ? 'enc' : 'fad');
+    const pinned = pins.get(row.key);
+    const chosen = pinned === undefined ? undefined : found.find((m) => m.control.id === pinned);
+    const targets = new Set(found.map((m) => `${m.control.setupId}|${half(m.control.area)}|${m.control.group}`));
+    if (!chosen && targets.size > 1) return;
+    const best = chosen ?? found[0]!;
+    const { area, group, setupId, setupName, slot } = best.control;
+    streak = [...streak, { setupId, setupName, ...(slot === undefined ? {} : { slot }), half: half(area) as 'enc' | 'fad', group }].slice(-3);
+    evaluateOffer();
+  }
+
   function touch(event: ChannelEvent, best: Match) {
     const known = index.controls.get(best.control.id);
     if (!known) return;
@@ -298,6 +381,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       if (isUc4 && context) {
         const best = rank(row)[0];
         if (best) touch(event, best);
+        collect(row);
       }
       notify();
     },
@@ -309,8 +393,10 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       notify();
     },
     setContext(next) {
-      if (next?.setupId !== context?.setupId) pins.clear();
+      if (next?.setupId !== context?.setupId) { pins.clear(); dismissed.clear(); }
       context = next;
+      streak = [];
+      offer = null;
       index = buildIndex(next?.configuration ?? null);
       // A control that is gone or now sends something else says nothing about the device any more.
       let kept = states;
@@ -367,9 +453,31 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       resetCache();
       notify();
     },
-    getState() { return { splits: [...splits] }; },
+    get offer() { return offer; },
+    acceptOffer() {
+      const taken = offer;
+      if (!taken) return null;
+      offer = null; streak = [];
+      notify();
+      return taken;
+    },
+    dismissOffer() {
+      if (!offer) return;
+      dismissed.add(offerKey(offer.target));
+      offer = null;
+      notify();
+    },
+    silenceOffers(on) {
+      if (silenced === on) return;
+      silenced = on;
+      if (on) offer = null;
+      notify();
+    },
+    getState() { return { splits: [...splits], silenceOffers: silenced }; },
     restoreState(state) {
       const list = (state as { splits?: unknown } | null)?.splits;
+      silenced = (state as { silenceOffers?: unknown } | null)?.silenceOffers === true;
+      if (silenced) offer = null;
       splits.clear();
       if (Array.isArray(list)) for (const k of list) if (typeof k === 'string') splits.add(k);
       resetCache();
