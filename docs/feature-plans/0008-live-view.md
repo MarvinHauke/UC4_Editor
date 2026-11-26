@@ -314,6 +314,13 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
      heading line each, so the monitor can grow; a section with something to say (an error, a waiting dump) opens by
      itself. "MIDI clock ignored" moves into the status line ("Listening to 6 inputs · clock ignored"). One line
      stays as it is.
+   - **Selecting moved** (architect, 2026-11-26, from the review; changes step 2's "a click on a UC4 row selects
+     its control"): a click on the row, or Enter on its message, opens the details; a click on the match text
+     selects the control, and the open row has **Show** per match. In one-line mode the message still selects.
+   - **The Connections column is 320 px** (was 280), so a match like "FAd5 · FG1 +1" fits; the Map arrow lies over
+     the row's right edge on the hovered row instead of taking a column.
+   - **Folding**: Connection opens by itself only when MIDI is blocked, unsupported or a port must be chosen; Kept
+     dumps does not open by itself, since a waiting dump shows under Received, which never folds.
 
 ## Open questions
 

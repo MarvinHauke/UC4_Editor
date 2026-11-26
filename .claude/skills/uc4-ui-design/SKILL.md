@@ -47,7 +47,7 @@ Nothing opens, moves or takes focus by itself while the user edits.
 - Short menu entries ("Configuration", "Dump") with the format as a hint; ornate labels were rejected.
 - Icons where the words live in the tooltip (download icon beside `×` on kept dumps); text buttons where the user
   is asked to act (Review / Export .syx / Dismiss on a new dump).
-- Room between text and icon buttons (the Connections column went from 240 to 280 px for it).
+- Room between text and icon buttons (the Connections column went from 240 to 280 px for it, and to 320 px for the one-line monitor rows, 2026-11-26).
 - The user changes their mind on placement after seeing it: show it, then ask.
 
 ## Reviewing a UI change
