@@ -129,6 +129,9 @@ export interface Warning {
   /** The two controls, as the paths `validate` uses (`setups[2].encoderGroups[0].encoders[3]`). */
   controls: [string, string];
   key: MessageKey;
+  /** Every message either control sends (the whole set, not only the shared one). Storage keeps it with an ignored warning,
+   *  which lapses when it changes. Compare it, don't read it. */
+  signature: string;
   /** E.g. "Enc3 · EG1 and FAd5 · FG2 both send CC 10 ch 1". */
   message: string;
 }

@@ -52,3 +52,27 @@ test('a connection that opens late is closed again, and a connection that is ask
   db2.onversionchange?.();
   assert.equal(closed, 2);
 });
+
+test('the ignored warnings keep the old key "waived-warnings", so warnings waived before the rename stay ignored', async () => {
+  const keys: { get: unknown[]; put: unknown[] } = { get: [], put: [] };
+  const db = {
+    close: () => {}, onversionchange: null,
+    transaction: () => {
+      const tx: Fake & { oncomplete?: () => void } = {};
+      return {
+        objectStore: () => ({
+          get: (key: unknown) => { keys.get.push(key); const r: Fake = { result: 'OLD' }; queueMicrotask(() => r.onsuccess?.()); return r; },
+          put: (_v: unknown, key: unknown) => { keys.put.push(key); queueMicrotask(() => (tx as { oncomplete?: () => void }).oncomplete?.()); },
+        }),
+        set oncomplete(f: () => void) { (tx as { oncomplete?: () => void }).oncomplete = f; },
+        get oncomplete() { return (tx as { oncomplete?: () => void }).oncomplete as () => void; },
+      };
+    },
+  };
+  const { factory } = factoryWith((r) => { r.result = db; r.onsuccess?.(); });
+  const storage = indexedDbStorage(factory, { openTimeoutMs: 1000 });
+  assert.equal(await storage.readIgnored(), 'OLD');
+  await storage.writeIgnored('[]');
+  assert.deepEqual(keys.get, ['waived-warnings']);
+  assert.deepEqual(keys.put, ['waived-warnings']);
+});

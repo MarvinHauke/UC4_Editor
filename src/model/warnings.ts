@@ -98,6 +98,7 @@ export function warnings(config: Uc4Config): Warning[] {
         ...(setup.slot === undefined ? {} : { slot: setup.slot }),
         controls: [a.path, b.path],
         key,
+        signature: `${a.keys.map(keyId).join(',')}|${b.keys.map(keyId).join(',')}`,
         message: `${a.name} and ${b.name} both send ${describeKey(key)}`,
       });
     }

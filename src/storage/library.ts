@@ -16,8 +16,8 @@ import type { Warning, Encoder, EncoderGroup, Fader, FaderButtonGroup, GreenButt
 import { IMPORT_READS, describeSlots, looksLikeDump, readDump, slotName } from './dumpImport.ts';
 import { markPath, pastedMarks, PASTED, dropMarkPaths, dropMarks, hasMarkPaths, hasMarks, markProblems, marksFromProblems, parseMarks } from './marks.ts';
 import type { Marks } from './marks.ts';
-import { addWaivers, listWarnings, parseWaivers, pruneWaivers, removeWaiver, stringifyWaivers, warningId } from './waivers.ts';
-import type { ListedWarning, Waivers } from './waivers.ts';
+import { addIgnored, listWarnings, parseIgnored, pruneIgnored, removeIgnored, stringifyIgnored, warningId } from './ignored.ts';
+import type { ListedWarning, Ignored } from './ignored.ts';
 import { StorageBusyError, type LibraryStorage, type StoredDump } from './storage.ts';
 import { changesBetween, freshBackup, receivedAtOf } from './sendPlan.ts';
 import { chooseBackup, newerStates, type LastSend, type RestorePlan, type SentInfo } from './restorePlan.ts';
@@ -123,9 +123,9 @@ export interface LibraryState {
   /** Anything differs from the factory configuration: not exactly the 18 factory slots in order, content or names changed, or unreadable marks. `resetAll` is a no-op when false. */
   differsFromFactory: boolean;
   /**
-   * Every warning of ALL setups with its state (plan 0008 decision 25): `open` (counts), `waived` (the user accepted it)
+   * Every warning of ALL setups with its state (plan 0008 decision 25): `open` (counts), `ignored` (the user accepted it)
    * or `factory` (both controls still equal the factory setup's; derived, never stored). A fresh library has none open.
-   * Waived and factory warnings stay in this list so the UI can still mark the controls and "Show waived".
+   * Ignored and factory warnings stay in this list so the UI can still mark the controls and "Show ignored".
    */
   warnings: ListedWarning[];
   /** Kept dumps, newest first. */
@@ -198,13 +198,13 @@ export interface Library {
   setGroupLabel(setupId: string, kind: 'encoder' | 'faderButton', group: number, label: string): CommandResult;
   setSetupName(setupId: string, name: string): CommandResult;
   /**
-   * Waives these warnings ("Send anyway", "Waive"): one undo step. Warnings that are not current, already waived or
-   * `factory` are skipped; with nothing left it is no step. Kept in the browser, never in an export. A waiver lapses
-   * (is dropped) as soon as either control no longer sends that message, so a new double is not hidden.
+   * Ignores these warnings ("Send anyway", "Ignore"): one undo step. Warnings that are not current, already ignored or
+   * `factory` are skipped; with nothing left it is no step. Kept in the browser, never in an export. An ignored entry lapses
+   * (is dropped) as soon as either control's message set changes (even a part the two don't share), so a new double is not hidden.
    */
-  waive(warnings: readonly Warning[]): CommandResult;
-  /** Reopens a waived warning: one undo step. A `factory` warning cannot be unwaived (change a control instead): refused with a message. */
-  unwaive(warning: Warning): CommandResult;
+  ignore(warnings: readonly Warning[]): CommandResult;
+  /** Reopens an ignored warning (Show again): one undo step. A `factory` warning can't be shown again (change a control instead): refused with a message. */
+  showAgain(warning: Warning): CommandResult;
   undo(): CommandResult;
   redo(): CommandResult;
   /** Selects what problem number `index` of `state.problems` points at (setup, group, control). */
@@ -395,10 +395,10 @@ export async function openLibrary(storage: LibraryStorage, options: OpenOptions 
   try { linksText = await storage.readLinks(); links = parseLinks(linksText, config, dumps); } catch { /* no links */ }
   let sendsText: string | null = null;
   try { sendsText = await storage.readSends(); } catch { /* no last sends */ }
-  let waiversText: string | null = null;
-  let waivers: Waivers = [];
-  try { waiversText = await storage.readWaivers(); waivers = pruneWaivers(parseWaivers(waiversText, config), collisions(config)); } catch { /* no waivers: the warnings are open again */ }
-  const library = createLibrary(storage, config, now, baseline, blocked, { waivers, waiversText, marks, marksText, links, linksText, sends: parseSends(sendsText), sendsText, dumps });
+  let ignoredText: string | null = null;
+  let ignored: Ignored = [];
+  try { ignoredText = await storage.readIgnored(); ignored = pruneIgnored(parseIgnored(ignoredText, config), collisions(config)); } catch { /* no ignored: the warnings are open again */ }
+  const library = createLibrary(storage, config, now, baseline, blocked, { ignored, ignoredText, marks, marksText, links, linksText, sends: parseSends(sendsText), sendsText, dumps });
   if (needsSave) library.saveNow();
   return { library, ...(message ? { message } : {}) };
 }
@@ -424,8 +424,8 @@ interface Internal extends Library { saveNow(): void }
 /** Setup id → the kept dump it came from and which of the dump's slots it came from (a Sndc of SE16 can sit in slot 3). */
 type Links = Record<string, { dump: string; slot: number }>;
 /** `selection` is set on an entry that also holds a selection change: undo and redo put it back. */
-interface Snapshot { configuration: Uc4Config; marks: Marks; links: Links; waivers: Waivers; selection?: Selection }
-interface Side { waivers: Waivers; waiversText: string | null; marks: Marks; marksText: string | null; links: Links; linksText: string | null; sends: Sends; sendsText: string | null; dumps: StoredDump[] }
+interface Snapshot { configuration: Uc4Config; marks: Marks; links: Links; ignored: Ignored; selection?: Selection }
+interface Side { ignored: Ignored; ignoredText: string | null; marks: Marks; marksText: string | null; links: Links; linksText: string | null; sends: Sends; sendsText: string | null; dumps: StoredDump[] }
 
 /** Saved links as text, read back: only setups and dumps that still exist. */
 function parseLinks(text: string | null, config: Uc4Config, dumps: StoredDump[]): Links {
@@ -507,15 +507,15 @@ function createLibrary(
   /** Unreadable dump values per setup id (plan 0005 decision 9). */
   let marks = side.marks;
   let writtenMarks = side.marksText ?? '{}';
-  /** Waived warnings per setup, path pair and message; part of the undo snapshots, saved beside the library. */
-  let waivers = side.waivers;
-  let writtenWaivers = side.waiversText ?? '[]';
+  /** Ignored warnings per setup, path pair and message; part of the undo snapshots, saved beside the library. */
+  let ignored = side.ignored;
+  let writtenIgnored = side.ignoredText ?? '[]';
   const derived = (c: Uc4Config, current?: Warning[]): Pick<LibraryState, 'problems' | 'setups' | 'exportState' | 'differsFromFactory' | 'warnings'> => {
     const problems = [...validate(c), ...markProblems(c, marks)];
     const sums = summaries(c, problems);
     const differsFromFactory = c.setups.length !== 18 || sums.some((x, i) => x.slot !== i + 1 || x.differsFromFactory)
       || c.setups.some((x) => hasMarks(marks, x.id));
-    return { problems, setups: sums, exportState: exportState(c, baseline), differsFromFactory, warnings: listWarnings(c, waivers, current) };
+    return { problems, setups: sums, exportState: exportState(c, baseline), differsFromFactory, warnings: listWarnings(c, ignored, current) };
   };
   let state: LibraryState = {
     configuration: initial,
@@ -564,7 +564,7 @@ function createLibrary(
     const marksText = JSON.stringify(marks);
     const linksText = JSON.stringify(links);
     const sendsText = stringifySends(sends);
-    const waiversText = stringifyWaivers(waivers);
+    const ignoredText = stringifyIgnored(ignored);
     pending++;
     publish({ ...state, saveStatus: 'saving' });
     chain = chain.then(async () => {
@@ -572,7 +572,7 @@ function createLibrary(
         await storage.write(text);
         if (marksText !== writtenMarks) { await storage.writeMarks(marksText); writtenMarks = marksText; }
         if (linksText !== writtenLinks) { await storage.writeLinks(linksText); writtenLinks = linksText; }
-        if (waiversText !== writtenWaivers) { await storage.writeWaivers(waiversText); writtenWaivers = waiversText; }
+        if (ignoredText !== writtenIgnored) { await storage.writeIgnored(ignoredText); writtenIgnored = ignoredText; }
         if (sendsText !== writtenSends) { await storage.writeSends(sendsText); writtenSends = sendsText; }
         lastFailure = undefined;
       } catch (e) { lastFailure = errorText(e); }
@@ -587,13 +587,13 @@ function createLibrary(
 
   // --- committing a changed configuration ---
   const commit = (configuration: Uc4Config, message?: string, nextMarks?: Marks, nextLinks?: Links, nextSelection?: Selection): CommandResult => {
-    undoStack = [...undoStack, { configuration: state.configuration, marks, links, waivers, ...(nextSelection ? { selection: state.selection } : {}) }].slice(-HISTORY_LIMIT);
+    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored, ...(nextSelection ? { selection: state.selection } : {}) }].slice(-HISTORY_LIMIT);
     redoStack = [];
     if (nextMarks) marks = nextMarks;
     if (nextLinks) links = nextLinks;
     const next = { ...configuration, updatedAt: now().toISOString() };
     const current = collisions(next);
-    waivers = pruneWaivers(waivers, current); // a waiver of a message a control no longer sends lapses
+    ignored = pruneIgnored(ignored, current); // an ignored entry lapses when either control's message set changes
     publish({
       ...state, configuration: next, ...derived(next, current), ...dumpFields(), canUndo: true, canRedo: false,
       ...(nextSelection ? { selection: nextSelection } : {}),
@@ -632,11 +632,11 @@ function createLibrary(
     return next;
   };
 
-  /** A change of the waivers alone as one undo step. */
-  const waiverStep = (next: Waivers, message: string): CommandResult => {
-    undoStack = [...undoStack, { configuration: state.configuration, marks, links, waivers }].slice(-HISTORY_LIMIT);
+  /** A change of the ignored entries alone as one undo step. */
+  const ignoreStep = (next: Ignored, message: string): CommandResult => {
+    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored }].slice(-HISTORY_LIMIT);
     redoStack = [];
-    waivers = next;
+    ignored = next;
     publish({ ...state, ...derived(state.configuration), canUndo: true, canRedo: false, message });
     saveNow();
     return result(message);
@@ -645,7 +645,7 @@ function createLibrary(
   /** A selection change as its own undo step (a no-change is none). */
   const selectStep = (next: Selection): CommandResult => {
     if (JSON.stringify(next) === JSON.stringify(state.selection)) return result();
-    undoStack = [...undoStack, { configuration: state.configuration, marks, links, waivers, selection: state.selection }].slice(-HISTORY_LIMIT);
+    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored, selection: state.selection }].slice(-HISTORY_LIMIT);
     redoStack = [];
     publish({ ...state, selection: next, canUndo: true, canRedo: false, message: undefined });
     return result();
@@ -1341,33 +1341,33 @@ function createLibrary(
       return resetGroup(setupId, group, 'faderButtonGroups');
     },
 
-    waive(list) {
+    ignore(list) {
       const current = new Set(state.warnings.filter((w) => w.state === 'open').map(warningId));
-      const next = addWaivers(waivers, list.filter((w) => current.has(warningId(w))));
-      if (next === waivers) return result();
-      return waiverStep(next, next.length - waivers.length === 1 ? 'Warning waived.' : `${next.length - waivers.length} warnings waived.`);
+      const next = addIgnored(ignored, list.filter((w) => current.has(warningId(w))));
+      if (next === ignored) return result();
+      return ignoreStep(next, next.length - ignored.length === 1 ? 'Warning ignored.' : `${next.length - ignored.length} warnings ignored.`);
     },
-    unwaive(warning) {
+    showAgain(warning) {
       const id = warningId(warning);
       const listed = state.warnings.find((w) => warningId(w) === id);
-      if (listed?.state === 'factory') return refuse('This is the factory layout: it counts as waived until one of the two controls changes.');
-      const next = removeWaiver(waivers, warning);
-      if (next === waivers) return result();
-      return waiverStep(next, 'Warning is open again.');
+      if (listed?.state === 'factory') return refuse('This is the factory layout: it counts as ignored until one of the two controls changes.');
+      const next = removeIgnored(ignored, warning);
+      if (next === ignored) return result();
+      return ignoreStep(next, 'Warning is open again.');
     },
 
     undo() {
       const previous = undoStack.at(-1);
       if (!previous) return refuse('Nothing to undo.');
       undoStack = undoStack.slice(0, -1);
-      redoStack = [...redoStack, { configuration: state.configuration, marks, links, waivers, ...(previous.selection ? { selection: state.selection } : {}) }];
+      redoStack = [...redoStack, { configuration: state.configuration, marks, links, ignored, ...(previous.selection ? { selection: state.selection } : {}) }];
       return restore(previous);
     },
     redo() {
       const next = redoStack.at(-1);
       if (!next) return refuse('Nothing to redo.');
       redoStack = redoStack.slice(0, -1);
-      undoStack = [...undoStack, { configuration: state.configuration, marks, links, waivers, ...(next.selection ? { selection: state.selection } : {}) }];
+      undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored, ...(next.selection ? { selection: state.selection } : {}) }];
       return restore(next);
     },
 
@@ -1375,10 +1375,10 @@ function createLibrary(
     saveNow,
   };
 
-  function restore({ configuration, marks: restored, links: restoredLinks, waivers: restoredWaivers, selection }: Snapshot): CommandResult {
-    const unchanged = configuration === state.configuration && restored === marks && restoredWaivers === waivers;
+  function restore({ configuration, marks: restored, links: restoredLinks, ignored: restoredIgnored, selection }: Snapshot): CommandResult {
+    const unchanged = configuration === state.configuration && restored === marks && restoredIgnored === ignored;
     marks = restored;
-    waivers = restoredWaivers;
+    ignored = restoredIgnored;
     // A link to a dump deleted since does not come back.
     links = Object.fromEntries(Object.entries(restoredLinks).filter(([, l]) => kept.some((k) => k.id === l.dump)));
     publish({

@@ -256,3 +256,20 @@ test('programsOf: button = upper only if 0–127; encoder/fader = lower…upper 
   assert.deepEqual(programsOf({ lower: 1, upper: 3.5 }, false), []);
   assert.deepEqual(programsOf({ lower: 1.5, upper: 3 }, true), [3]);
 });
+
+test('signature: the same pair gives the same one; widening either PrGC range changes it, though the lowest shared program stays', () => {
+  const make = (encUpper: number, fadLower: number) => {
+    const s = base();
+    const e = s.encoderGroups[0]!.encoders[0]!, f = s.faderButtonGroups[0]!.faders[0]!;
+    for (const c of [e, f]) { c.type = 'PrGC'; c.channel = 1; }
+    e.lower = 10; e.upper = encUpper; f.lower = fadLower; f.upper = 12;
+    return w(s).filter((x) => x.key.kind === 'program');
+  };
+  const [a] = make(12, 10), [again] = make(12, 10), [wider] = make(14, 10), [widerFader] = make(12, 8);
+  assert.equal(a!.key.number, 10);
+  assert.equal(again!.signature, a!.signature);
+  assert.notEqual(wider!.signature, a!.signature);
+  assert.notEqual(widerFader!.signature, a!.signature);
+  assert.equal(wider!.key.number, 10);
+  assert.equal(widerFader!.key.number, 10);
+});

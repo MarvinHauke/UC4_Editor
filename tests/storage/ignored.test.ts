@@ -1,4 +1,4 @@
-// Waivers in the library (plan 0008 step 6, decisions 7 and 25): kept in the browser, never in files.
+// Ignored in the library (plan 0008 step 6, decisions 7 and 25): kept in the browser, never in files.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { openLibrary, memoryStorage } from '../../src/storage/index.ts';
@@ -69,70 +69,70 @@ test('labelling a factory control keeps its factory collision "factory"', async 
   assert.equal(w.state, 'factory');
 });
 
-test('waive: the warning is waived, one undo step; unwaive reopens it, one undo step', async () => {
+test('ignore: the warning is ignored, one undo step; showAgain reopens it, one undo step', async () => {
   const { lib } = await open();
   collide(lib);
   const [w] = open_(lib);
   assert.ok(w);
-  const r = lib.waive([w]);
+  const r = lib.ignore([w]);
   assert.equal(open_(lib).length, 0);
-  assert.equal(r.state.warnings.find((x) => x.message === w.message)!.state, 'waived');
+  assert.equal(r.state.warnings.find((x) => x.message === w.message)!.state, 'ignored');
   lib.undo();
   assert.equal(open_(lib).length, 1);
   lib.redo();
   assert.equal(open_(lib).length, 0);
-  lib.unwaive(lib.getState().warnings.find((x) => x.state === 'waived')!);
+  lib.showAgain(lib.getState().warnings.find((x) => x.state === 'ignored')!);
   assert.equal(open_(lib).length, 1);
   lib.undo();
   assert.equal(open_(lib).length, 0);
 });
 
-test('waive of several warnings is one undo step', async () => {
+test('ignore of several warnings is one undo step', async () => {
   const { lib } = await open();
   lib.setProperty(enc(SE01, 0, 3), 'number', 33);
   lib.setProperty(enc(SE01, 1, 3), 'number', 34);
   const before = open_(lib);
   assert.ok(before.length >= 2);
-  lib.waive(before);
+  lib.ignore(before);
   assert.equal(open_(lib).length, 0);
   lib.undo();
   assert.equal(open_(lib).length, before.length);
 });
 
-test('waiving a factory warning is no step; waiving a waived one again is no step', async () => {
+test('ignoring a factory warning is no step; ignoring an ignored one again is no step', async () => {
   const { lib } = await open();
-  lib.waive([lib.getState().warnings[0]!]);
+  lib.ignore([lib.getState().warnings[0]!]);
   assert.equal(lib.getState().canUndo, false);
   collide(lib);
   const w = open_(lib);
-  lib.waive(w);
-  lib.undo(); // undoes the waive only
+  lib.ignore(w);
+  lib.undo(); // undoes the ignore only
   assert.equal(open_(lib).length, 1);
   lib.redo();
-  lib.waive(w); // already waived
+  lib.ignore(w); // already ignored
   lib.undo();
-  assert.equal(open_(lib).length, 1); // that undo was the first waive, not a second one
+  assert.equal(open_(lib).length, 1); // that undo was the first ignore, not a second one
 });
 
-test('unwaive of a factory warning is refused with a message', async () => {
+test('showAgain of a factory warning is refused with a message', async () => {
   const { lib } = await open();
-  const r = lib.unwaive(lib.getState().warnings[0]!);
+  const r = lib.showAgain(lib.getState().warnings[0]!);
   assert.ok(r.message);
   assert.equal(lib.getState().warnings[0]!.state, 'factory');
   assert.equal(lib.getState().canUndo, false);
 });
 
-test('a waiver survives a reload', async () => {
+test('an ignored entry survives a reload', async () => {
   const { lib, storage } = await open();
   collide(lib);
-  lib.waive(open_(lib));
+  lib.ignore(open_(lib));
   await lib.whenSaved();
   const again = (await openLibrary(storage, { now: clock })).library;
   assert.equal(open_(again).length, 0);
-  assert.equal(again.getState().warnings.filter((w) => w.state === 'waived').length, 1);
+  assert.equal(again.getState().warnings.filter((w) => w.state === 'ignored').length, 1);
 });
 
-test('a waiver lapses when the number, the channel or the type changes', async () => {
+test('an ignored entry lapses when the number, the channel or the type changes', async () => {
   for (const change of [
     (lib: Library) => lib.setProperty(enc(SE01, 0, 0), 'number', 90),
     (lib: Library) => lib.setProperty(enc(SE01, 0, 0), 'channel', 9),
@@ -140,62 +140,95 @@ test('a waiver lapses when the number, the channel or the type changes', async (
   ]) {
     const { lib } = await open();
     collide(lib);
-    lib.waive(open_(lib));
+    lib.ignore(open_(lib));
     change(lib);
-    assert.equal(lib.getState().warnings.filter((w) => w.state === 'waived').length, 0);
+    assert.equal(lib.getState().warnings.filter((w) => w.state === 'ignored').length, 0);
   }
 });
 
-test('a lapsed waiver is gone: the same collision made again is open', async () => {
+test('a lapsed ignored entry is gone: the same collision made again is open', async () => {
   const { lib } = await open();
   collide(lib);
-  lib.waive(open_(lib));
+  lib.ignore(open_(lib));
   lib.setProperty(enc(SE01, 0, 0), 'number', 90);
   collide(lib);
   assert.equal(open_(lib).length, 1);
 });
 
-test('undo of the edit that lapsed a waiver brings the waiver back', async () => {
+test('undo of the edit that lapsed an ignored entry brings the ignored entry back', async () => {
   const { lib } = await open();
   collide(lib);
-  lib.waive(open_(lib));
+  lib.ignore(open_(lib));
   lib.setProperty(enc(SE01, 0, 0), 'number', 90);
   lib.undo();
-  assert.equal(lib.getState().warnings.filter((w) => w.state === 'waived').length, 1);
+  assert.equal(lib.getState().warnings.filter((w) => w.state === 'ignored').length, 1);
 });
 
-test('waivers are in no export: not in the .json, not in a .syx text', async () => {
+test('ignored entries are in no export: not in the .json, not in a .syx text', async () => {
   const { lib, storage } = await open();
   collide(lib);
   const text = (): string => lib.exportWhole().file!.text;
   const before = text();
-  lib.waive(open_(lib));
+  lib.ignore(open_(lib));
   assert.equal(text(), before);
-  assert.ok(!/waiv/i.test(text()));
+  assert.ok(!/waiv|ignor/i.test(text()));
   await lib.whenSaved();
-  assert.ok(!/waiv/i.test(storage.text()!));
-  assert.ok(storage.waiversText()!.length > 2);
+  assert.ok(!/waiv|ignor/i.test(storage.text()!));
+  assert.ok(storage.ignoredText()!.length > 2);
 });
 
-test('stored waivers for setups that are gone, or damaged text, are ignored', async () => {
+test('stored ignored entries for setups that are gone, or damaged text, are ignored', async () => {
   const storage = memoryStorage();
-  await storage.writeWaivers('{ not json');
+  await storage.writeIgnored('{ not json');
   assert.equal(open_((await open(storage)).lib).length, 0);
-  await storage.writeWaivers(JSON.stringify([{ setupId: 'nope', controls: ['a', 'b'], key: { kind: 'cc', channel: 1, number: 1 } }, 7, null]));
+  await storage.writeIgnored(JSON.stringify([{ setupId: 'nope', controls: ['a', 'b'], key: { kind: 'cc', channel: 1, number: 1 } }, 7, null]));
   const { lib } = await open(storage);
-  assert.equal(lib.getState().warnings.filter((w) => w.state === 'waived').length, 0);
+  assert.equal(lib.getState().warnings.filter((w) => w.state === 'ignored').length, 0);
 });
 
-test('a failing waiver read leaves the library working', async () => {
+test('a failing ignored entry read leaves the library working', async () => {
   const storage = memoryStorage();
-  storage.readWaivers = async () => { throw new Error('boom'); };
+  storage.readIgnored = async () => { throw new Error('boom'); };
   const { lib } = await open(storage);
   assert.equal(open_(lib).length, 0);
 });
 
-test('a waiver keeps matching when its setup moves to another index', async () => {
+test('an ignored entry keeps matching when its setup moves to another index', async () => {
   const { warningId } = await import('../../src/storage/index.ts');
   const w = { setupId: 'a', controls: ['setups[0].encoderGroups[0].encoders[1]', 'setups[0].faderButtonGroups[0].faders[0]'] as [string, string], key: { kind: 'cc' as const, channel: 1, number: 5 } };
   const moved = { ...w, controls: ['setups[7].encoderGroups[0].encoders[1]', 'setups[7].faderButtonGroups[0].faders[0]'] as [string, string] };
   assert.equal(warningId(w), warningId(moved));
+});
+
+test('an ignored warning lapses when either control\'s message set changes, even if the lowest shared program stays', async () => {
+  const prgc = (lib: Library, a: ControlAddress, lower: number, upper: number): void => {
+    lib.setProperty(a, 'type', 'PrGC'); lib.setProperty(a, 'channel', 1);
+    lib.setProperty(a, 'lower', lower); lib.setProperty(a, 'upper', upper);
+  };
+  const setup = async () => {
+    const { lib } = await open();
+    prgc(lib, enc(SE01, 0, 0), 10, 12);
+    prgc(lib, fad(SE01, 0, 0), 10, 12);
+    lib.ignore(open_(lib));
+    assert.equal(lib.getState().warnings.filter((w) => w.state === 'ignored' && w.key.kind === 'program').length, 1);
+    return lib;
+  };
+  const ignoredPrograms = (lib: Library) => lib.getState().warnings.filter((w) => w.state === 'ignored' && w.key.kind === 'program').length;
+  { const lib = await setup(); prgc(lib, enc(SE01, 0, 0), 5, 12); assert.equal(ignoredPrograms(lib), 0, 'range grows below the shared part'); }
+  { const lib = await setup(); prgc(lib, fad(SE01, 0, 0), 10, 20); assert.equal(ignoredPrograms(lib), 0, 'the other range grows above'); }
+  { const lib = await setup(); prgc(lib, enc(SE01, 0, 0), 10, 12); assert.equal(ignoredPrograms(lib), 1, 'set to the same values: still ignored'); }
+});
+
+test('an ignored entry saved before the signature existed still matches, and takes the signature on the next change', async () => {
+  const { lib, storage } = await open();
+  collide(lib);
+  const w = open_(lib)[0]!;
+  await lib.whenSaved();
+  await storage.writeIgnored(JSON.stringify([{ setupId: w.setupId, controls: w.controls, key: w.key }]));
+  const again = (await openLibrary(storage, { now: clock })).library;
+  assert.equal(again.getState().warnings.filter((x) => x.state === 'ignored').length, 1);
+  assert.ok(!storage.ignoredText()!.includes('signature'));
+  again.setProperty(enc(SE01, 5, 5), 'number', 100); // any change saves the sidecar
+  await again.whenSaved();
+  assert.match(storage.ignoredText()!, /"signature":"/);
 });
