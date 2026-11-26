@@ -46,5 +46,6 @@
   .chev { flex: none; width: 1ch; color: var(--text-muted); }
   .title { font-weight: 600; }
   .sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-size: var(--text-sm); font-weight: 400; color: var(--text-muted); }
-  .body { padding: var(--space-1) var(--space-2) var(--space-2); }
+  /* No side inset: the body shares the column edge with the heading row, the buttons and the "How to send" button. */
+  .body { padding: var(--space-1) 0 var(--space-2); }
 </style>

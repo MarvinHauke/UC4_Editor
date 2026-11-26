@@ -10,7 +10,7 @@
   onclick={() => { follow.set(!follow.on); }}>Follow</button>
 
 <style>
-  .follow { flex: none; min-width: 64px; min-height: var(--target); padding: 3px var(--space-3); font: inherit; font-size: var(--text-md); font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .follow { flex: none; box-sizing: border-box; width: 72px; min-height: var(--target); padding: 3px var(--space-3); font: inherit; font-size: var(--text-md); font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .follow:hover { background: var(--accent-soft); }
   .follow.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
   .follow:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
