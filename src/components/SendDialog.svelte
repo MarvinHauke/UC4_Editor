@@ -40,7 +40,7 @@
   // drawn UC4 stays in sight with what the guide lights on it.
   const guide = useGuide();
   const warningsDialog = useWarningsDialog();
-  // Unwaived warnings of the setup that goes out (plan 0008 decision 7): listed here; "Send anyway" waives them and sends. A restore sends a backup, not this setup.
+  // Open warnings of the setup that goes out (plan 0008 decision 7): listed here; "Send anyway" ignores them and sends. A restore sends a backup, not this setup.
   const pending = $derived(target && target.kind === 'send' ? store.allWarnings.filter((w) => w.state === 'open' && w.slot === target.slot) : []);
   let dock = $state({ left: 0, top: 0, width: 288, height: 400 });
   function place(): void {
@@ -70,8 +70,8 @@
   function send(): void {
     if (!target || !plan?.ok || !device.connected) return;
     const p = plan, t = target, accepted = pending;
-    // "Send anyway": the warnings are waived (one undo step) only once the UC4's port took the send.
-    sender.send(t.slot, p, t.kind, accepted.length > 0 ? () => { store.waive(accepted); } : undefined);
+    // "Send anyway": the warnings are ignored (one undo step) only once the UC4's port took the send.
+    sender.send(t.slot, p, t.kind, accepted.length > 0 ? () => { store.ignore(accepted); } : undefined);
   }
   // A non-modal dialog has no Esc of its own.
   function key(e: KeyboardEvent): void {
@@ -106,8 +106,8 @@
         {#each pending.slice(0, 5) as w, i (i)}<li>{w.message}</li>{/each}
         {#if pending.length > 5}<li class="more">+ {pending.length - 5} more</li>{/if}
       </ul>
-      <p class="muted">A warning blocks nothing. “Send anyway” waives these, so they stop counting; Undo brings them back.
-        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to show or waive them one by one · this dialog stays">Review…</button></p>
+      <p class="muted">A warning blocks nothing. “Send anyway” ignores these, so they stop counting; Undo brings them back.
+        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to show or ignore them one by one · this dialog stays">Review…</button></p>
     {/if}
     {#if view.backup.text}<p title={view.backup.has ? undefined : sndaHelp} data-help={view.backup.has ? undefined : sndaHelp}>{view.backup.text}</p>{/if}
   {:else if view?.kind === 'refused'}

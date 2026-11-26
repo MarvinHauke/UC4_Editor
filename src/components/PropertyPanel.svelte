@@ -57,7 +57,7 @@
       <ul class="warned" aria-label="Warnings">
         {#each warned as w (w.message)}
           <li><button type="button" onclick={() => { warningsDialog.show({ control: path }); }}
-            data-help="Warning: {w.message} · allowed, but check it is intended · click to review, show or waive it"><span aria-hidden="true">▲</span> Also sent by {otherName(w, path)}</button></li>
+            data-help="Warning: {w.message} · allowed, but check it is intended · click to review, show or ignore it"><span aria-hidden="true">▲</span> Also sent by {otherName(w, path)}</button></li>
         {/each}
       </ul>
     {/if}

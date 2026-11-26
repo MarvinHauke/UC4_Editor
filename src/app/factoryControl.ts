@@ -27,7 +27,7 @@ export function factoryReset(configuration: Uc4Config, spot: ControlSpot, name: 
   return { control, text: `${name} back to factory: ${sends} ch${c.channel}` };
 }
 
-/** Whether the control is one of the two in any warning (waived or not: pass the full list). */
+/** Whether the control is one of the two in any warning (ignored or not: pass the full list). */
 export function isWarned(configuration: Uc4Config, warnings: readonly Warning[], spot: ControlSpot): boolean {
   const i = configuration.setups.findIndex((s) => s.id === spot.setupId);
   return i >= 0 && warningsOf(warnings, controlPath(i, spot.area, spot.group, spot.index)).length > 0;

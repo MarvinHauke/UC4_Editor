@@ -43,7 +43,7 @@
       {/if}
       {#if showWarningCount({ warnings: wcount, offer: !!switchUi?.offer, note: !!switchUi?.note, exportWarnings })}
         <button type="button" class="warnings" onclick={() => { onopenwarnings?.(); }}
-          data-help="Warnings in this setup: two controls that can play together send the same message; nothing is blocked · click to review, show or waive them"><span aria-hidden="true">▲</span>&nbsp;{wcount} warning{wcount === 1 ? '' : 's'}</button>
+          data-help="Warnings in this setup: two controls that can play together send the same message; nothing is blocked · click to review, show or ignore them"><span aria-hidden="true">▲</span>&nbsp;{wcount} warning{wcount === 1 ? '' : 's'}</button>
       {/if}
       <span data-help="Last exported: when you last exported all setups as a configuration">last exported: {formatExported(lib.exportState.lastWholeExportAt)}</span>
       <span class="saved" class:failed={lib.saveStatus === 'failed'} data-help="Library status: every change is saved in this browser">{label}</span>

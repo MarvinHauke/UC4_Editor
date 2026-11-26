@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseControlPath, warningsOf } from '../../src/app/warningMarks.ts';
 import type { Warning } from '../../src/model/index.ts';
 
-const w = (a: string, b: string, number = 10): Warning => ({ setupId: 's', controls: [a, b], key: { kind: 'cc', channel: 1, number }, message: 'm' });
+const w = (a: string, b: string, number = 10): Warning => ({ setupId: 's', controls: [a, b], key: { kind: 'cc', channel: 1, number }, message: 'm', signature: '' });
 
 describe('parseControlPath', () => {
   it('reads a control path', () => {

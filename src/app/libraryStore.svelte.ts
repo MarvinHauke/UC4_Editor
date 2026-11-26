@@ -52,15 +52,15 @@ export function createStore(library: Library, openMessage?: string) {
     say: (text: string, warnFor?: string) => { startMessage = text; exportNote = warnFor === undefined ? null : { count: openCountOf(state, warnFor), scope: warnFor }; },
     /** The export line's "n warnings" link: the open warnings of what was exported, when there are any. Goes with the line. */
     get exportNote() { return exportNote; },
-    /** The open setup's OPEN warnings (not waived, not the factory layout): counts, control marks, the property panel's line. */
+    /** The open setup's OPEN warnings (not ignored, not the factory layout): counts, control marks, the property panel's line. */
     get warnings() { return openWarnings; },
-    /** Every warning of every setup with its state, for the Warnings dialog and `isWarned` (waived and factory still count there). */
+    /** Every warning of every setup with its state, for the Warnings dialog and `isWarned` (ignored and factory still count there). */
     get allWarnings(): readonly ListedWarning[] { return state.warnings; },
     /** How many warnings of `scope` ('all' or a setup id) are open, for the export line. */
     openCount: (scope: string): number => openCountOf(state, scope),
-    /** Waive (one undo step; "Send anyway" and the dialog's Waive) and unwaive. */
-    waive: (list: readonly Warning[]) => done(library.waive(list)),
-    unwaive: (w: Warning) => done(library.unwaive(w)),
+    /** Ignore (one undo step; "Send anyway" and the dialog's Ignore) and show again. */
+    ignore: (list: readonly Warning[]) => done(library.ignore(list)),
+    showAgain: (w: Warning) => done(library.showAgain(w)),
     /** The dialog's Show: the warning's setup, groups and a control as ordinary selections (no undo step). */
     showWarning: (w: Warning, path?: string) => done(library.select(showSelection(w, path))),
     showProblem: (index: number) => done(library.selectProblem(index)),

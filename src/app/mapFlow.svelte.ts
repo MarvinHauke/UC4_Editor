@@ -200,7 +200,7 @@ export interface MapUi {
   readonly flow: MapFlow;
   /** Control id → can it take the armed row's message, and the help-line reason when not. Empty while not armed. */
   readonly targets: ReadonlyMap<string, { ok: boolean; reason: string | null }>;
-  /** Is this control in a warning (waived or not)? Only then a mapped row offers the ✕ (decision 26). */
+  /** Is this control in a warning (ignored or not)? Only then a mapped row offers the ✕ (decision 26). */
   canReset(ref: { setupId: string; area: ControlArea; group: number; index: number }): boolean;
 }
 export const MAP_CONTEXT = Symbol('uc4-map');

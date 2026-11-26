@@ -8,7 +8,7 @@ import { parseControlPath } from './warningMarks.ts';
 export type Scope = 'this' | 'all';
 export interface ProblemEntry { index: number; problem: Problem }
 
-export interface ListOptions { scope: Scope; showWaived: boolean; setupId: string; setupIndex: number; control: string | null }
+export interface ListOptions { scope: Scope; showIgnored: boolean; setupId: string; setupIndex: number; control: string | null }
 
 /** The setup a problem's path lies in, or -1. */
 const problemSetup = (path: string): number => { const m = /^setups\[(\d+)\]/.exec(path); return m ? Number(m[1]) : -1; };
@@ -19,11 +19,11 @@ export function listEntries(problems: readonly Problem[], warnings: readonly Lis
   return {
     problems: problems.map((problem, index) => ({ index, problem })).filter((e) => { const at = problemSetup(e.problem.path); return o.scope === 'all' || at === -1 || at === o.setupIndex; }),
     warnings: warnings.filter((w) =>
-      here(w.setupId) && (o.showWaived || w.state === 'open') && (o.control === null || w.controls.includes(o.control))),
+      here(w.setupId) && (o.showIgnored || w.state === 'open') && (o.control === null || w.controls.includes(o.control))),
   };
 }
 
-/** How many waived and factory warnings the filter hides (the toggle says so). */
+/** How many ignored and factory warnings the filter hides (the toggle says so). */
 export function hiddenCount(warnings: readonly ListedWarning[], o: Pick<ListOptions, 'scope' | 'setupId'>): number {
   return warnings.filter((w) => (o.scope === 'all' || w.setupId === o.setupId) && w.state !== 'open').length;
 }
