@@ -321,6 +321,7 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
      the row's right edge on the hovered row instead of taking a column.
    - **Folding**: Connection opens by itself only when MIDI is blocked, unsupported or a port must be chosen; Kept
      dumps does not open by itself, since a waiting dump shows under Received, which never folds.
+   Built `bc9f905` (uc4-ui, reviewed; browser-checked by the architect).
 
 ## Open questions
 
