@@ -379,11 +379,11 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 6. **Waivers, Send and export** — uc4-model, then uc4-ui · blocked by: 5 · Send dialog lists warnings, "Send
    anyway" waives; waivers in the library, lapse on a changed message, never in files; "Show waived"; export says
    "n warnings". Stories 41–45.
-7. **Map by click** — uc4-protocol (map plan, done `b2811df`, reviewed), then uc4-ui · blocked by: 1, 5 · Map per row, armed state, dimming
+7. **Map by click** — done 2026-11-26: uc4-protocol (`b2811df`), uc4-model (`setControl` `1e9fd47`), uc4-ui (`1be40dd`, glyphs `73cea31`, marks `cefddff`; browser-checked by the architect: dimming, result line, Upper focused, "already sends", Esc, header Undo clears the mark) · blocked by: 1, 5 · Map per row, armed state, dimming
    with the reason in the help line, one undo step with a result line, the type rule, Settings section Connections
    with the relative switch, Upper focused after a CC onto a button, the mapped row's target and the next row
    marked, "also sent by". Stories 25–32, 35–38.
-8. **Map by touch** — uc4-protocol (done `b2811df`, reviewed), then uc4-ui · blocked by: 2, 7 · a UC4 message picks the target while Map is
+8. **Map by touch** — done 2026-11-26 (`b2811df`, `1be40dd`; browser-checked: switch to EG3 and mapping in one undo step) · blocked by: 2, 7 · a UC4 message picks the target while Map is
    armed; the group switch in the same undo step. Stories 33–34.
 
 ## Out of scope
