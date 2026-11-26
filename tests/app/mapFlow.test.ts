@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createMapFlow, type MapLive, type MapStore } from '../../src/app/mapFlow.svelte.ts';
+import { factorySetup } from '../../src/model/index.ts';
 import { controlId, type MapPlan, type TouchTarget } from '../../src/live/index.ts';
 
 const edit = { setupId: 's1', area: 'encoders' as const, group: 0, index: 2, control: { type: 'CCAb' } as never };
@@ -177,5 +178,34 @@ describe('the result line', () => {
     vi.advanceTimersByTime(1001);
     expect(t.flow.result).toBeNull();
     vi.useRealTimers();
+  });
+});
+
+describe('reset to factory', () => {
+  const ref = { setupId: 's1', area: 'encoders' as const, group: 0, index: 2, name: 'Enc3 · EG1' };
+  const withSetups = (t: ReturnType<typeof setup>) => { t.state.configuration = { setups: [{ ...factorySetup(1), id: 's1' }] }; };
+
+  it('puts the factory control in as one edit, clears the mark and names what it sends', () => {
+    const t = setup(ok());
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    withSetups(t); t.calls.length = 0;
+    t.flow.resetToFactory('r', ref);
+    expect(t.calls).toEqual(['set encoders 0 2 {"setupId":"s1","encoderGroup":0,"control":{"area":"encoders","index":2}}', 'mapped r null']);
+    expect(t.flow.result?.text).toBe('Enc3 · EG1 back to factory: CCAb 10 ch1');
+  });
+  it('Undo from the line puts the control back and the row’s mark with it', () => {
+    const t = setup(ok());
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    withSetups(t); t.calls.length = 0;
+    t.flow.resetToFactory('r', ref);
+    t.flow.undo();
+    expect(t.calls.slice(-3)).toEqual(['mapped r null', 'undo', `mapped r ${controlId('s1', 'encoders', 0, 2)}`]);
+  });
+  it('a setup without a slot says so and changes nothing', () => {
+    const t = setup(ok());
+    t.state.configuration = { setups: [{ ...factorySetup(1), id: 's1', slot: undefined }] };
+    t.flow.resetToFactory('r', ref);
+    expect(t.calls).toEqual([]);
+    expect(t.flow.result?.error).toBe(true);
   });
 });

@@ -6,6 +6,7 @@ import { getContext } from 'svelte';
 import { controlId, type LiveSession, type MapPlan, type TouchTarget } from '../live/index.ts';
 import { readControl } from '../live/mapping.ts';
 import type { Uc4Config } from '../model/index.ts';
+import { factoryReset } from './factoryControl.ts';
 import type { AnyControl, ControlAddress, ControlArea, SelectionChange } from '../storage/index.ts';
 
 type PlanOk = Extract<MapPlan, { ok: true }>;
@@ -43,6 +44,8 @@ export interface MapResult {
   rowKey: string | null;
   /** The configuration after the edit: a later change ends the line, because Undo would undo something else. */
   configuration: unknown;
+  /** A reset took the row's mark away: Undo from this line puts it back. */
+  restoreMark?: { rowKey: string; controlId: string; mark: { ref: { setupId: string; area: ControlArea; group: number; index: number }; sent: string } };
 }
 
 export const RESULT_MS = 12000;
@@ -138,6 +141,7 @@ export function createMapFlow(options: {
       if (r.rowKey) { live.markMapped(r.rowKey, null); marks.delete(r.rowKey); }
       nextKey = null;
       options.store()?.undo();
+      if (r.restoreMark) { live.markMapped(r.restoreMark.rowKey, r.restoreMark.controlId); marks.set(r.restoreMark.rowKey, r.restoreMark.mark); }
     },
     /** The configuration now: any change other than the mapping itself ends the result line. */
     changed(configuration: unknown): void {
@@ -147,6 +151,30 @@ export function createMapFlow(options: {
         if (sentBy(readControl(configuration as Uc4Config, m.ref)) !== m.sent) { marks.delete(key); live.markMapped(key, null); }
       }
       if (result && !result.error && configuration !== result.configuration) { stop(); result = null; }
+    },
+    /**
+     * The ✕ on a mapped row's target (decision 26): the whole control back to its factory settings, ONE undo step with the selection;
+     * the row's mark goes and it shows its match again. Same result line as Map (Undo takes it back).
+     */
+    resetToFactory(rowKey: string, ref: { setupId: string; area: ControlArea; group: number; index: number; name: string }): void {
+      const store = options.store();
+      if (!store) return;
+      const plan = factoryReset(store.state.configuration as Uc4Config, ref, ref.name);
+      if (!plan) { show({ text: `${ref.name} has no factory settings to go back to`, alsoSentBy: [], notes: [], error: true, undoable: false, rowKey: null, configuration: null }); return; }
+      const toEncoder = ref.area === 'encoders' || ref.area === 'pushButtons';
+      const selection: SelectionChange = { setupId: ref.setupId, ...(toEncoder ? { encoderGroup: ref.group } : { faderButtonGroup: ref.group }), control: { area: ref.area, index: ref.index } };
+      const before = store.state.configuration;
+      const answer = store.setControl({ setupId: ref.setupId, area: ref.area, group: ref.group, index: ref.index }, plan.control, selection) as { message?: string } | undefined;
+      if (answer && typeof answer === 'object' && typeof answer.message === 'string' && answer.message !== '') {
+        show({ text: answer.message, alsoSentBy: [], notes: [], error: true, undoable: false, rowKey: null, configuration: null });
+        return;
+      }
+      const prior = marks.get(rowKey);
+      live.markMapped(rowKey, null); marks.delete(rowKey);
+      show({
+        text: plan.text, alsoSentBy: [], notes: [], error: false, undoable: store.state.configuration !== before, rowKey, configuration: store.state.configuration,
+        ...(prior ? { restoreMark: { rowKey, controlId: controlId(ref.setupId, ref.area, ref.group, ref.index), mark: prior } } : {}),
+      });
     },
     dismiss(): void { stop(); result = null; },
   };
@@ -158,6 +186,8 @@ export interface MapUi {
   readonly flow: MapFlow;
   /** Control id → can it take the armed row's message, and the help-line reason when not. Empty while not armed. */
   readonly targets: ReadonlyMap<string, { ok: boolean; reason: string | null }>;
+  /** Is this control in a warning (waived or not)? Only then a mapped row offers the ✕ (decision 26). */
+  canReset(ref: { setupId: string; area: ControlArea; group: number; index: number }): boolean;
 }
 export const MAP_CONTEXT = Symbol('uc4-map');
 export const useMap = (): MapUi => getContext<MapUi>(MAP_CONTEXT);

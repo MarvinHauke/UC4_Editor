@@ -13,8 +13,10 @@
     onsplit: () => void; onjoin: () => void;
     /** Map (steps 7, 8): this row is the armed one; the next row to map; the Map button. */
     armed?: boolean; next?: boolean; onmap?: () => void;
+    /** Decision 26: set only when this row's mapped target is in a warning; the ✕ puts that control back to factory. */
+    onreset?: () => void;
   }
-  let { row, source, open = false, ontoggle, onselect, onpin, onsplit, onjoin, armed = false, next = false, onmap }: Props = $props();
+  let { row, source, open = false, ontoggle, onselect, onpin, onsplit, onjoin, armed = false, next = false, onmap, onreset }: Props = $props();
   const t = $derived(rowText(row));
   const label = $derived(row.isUc4 ? matchLabel(row) : null);
   const text = $derived(matchText(row));
@@ -65,7 +67,13 @@
       <span class="mtext">{row.best.control.name}</span>{#if row.more > 0}<span class="more">+{row.more}</span>{/if}{#if row.pinned}<span class="pin" title="Pinned" aria-hidden="true">◆</span><span class="sr">pinned</span>{/if}
     </button>
   {:else}
-    <span class="match plain" class:mapped={row.mappedTo !== null} title={full || undefined}>{text || (row.isUc4 ? 'no match' : '')}</span>
+    <span class="mrow">
+      <span class="match plain" class:mapped={row.mappedTo !== null} title={full || undefined}>{text || (row.isUc4 ? 'no match' : '')}</span>
+      {#if open && row.mappedTo && onreset}
+        <button type="button" class="act reset" aria-label={`Reset ${row.mappedTo.name} to factory`}
+          data-help={`Reset ${row.mappedTo.name} to factory: the whole control goes back to its factory settings, one undo step · it collides with another control`} onclick={onreset}>✕</button>
+      {/if}
+    </span>
   {/if}
   {#if !open}{@render mapBtn()}{/if}
 
@@ -128,6 +136,8 @@
   .match.mapped { color: var(--text); }
   .mtext { white-space: nowrap; }
   .pin, .more { flex: none; }
+  .mrow { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+  .reset { flex: none; min-width: 24px; padding: 0 var(--space-1); font-family: var(--font); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .icon { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .icon:hover { background: var(--accent-soft); }

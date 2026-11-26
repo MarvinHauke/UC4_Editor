@@ -21,6 +21,7 @@
   import { createLive, LIVE_CONTEXT } from './liveStore.svelte.ts';
   import { selectMatch } from './liveView.ts';
   import { createFollow, FOLLOW_CONTEXT } from './followState.svelte.ts';
+  import { factoryReset, isWarned } from './factoryControl.ts';
   import { followTarget, isEditingField, shouldFollow } from './follow.ts';
   import { createSwitchNote, SWITCH_CONTEXT, type SwitchUi } from './switchNote.svelte.ts';
   import { createMapFlow, MAP_CONTEXT, type MapUi } from './mapFlow.svelte.ts';
@@ -172,7 +173,10 @@
     const key = live.armed;
     return key ? new Map(live.mapTargets(key).map((t) => [t.control.id, { ok: t.ok, reason: t.reason }])) : new Map<string, { ok: boolean; reason: string | null }>();
   });
-  const mapUi: MapUi = { flow: mapFlow, get targets() { return mapTargets; } };
+  const mapUi: MapUi = {
+    flow: mapFlow, get targets() { return mapTargets; },
+    canReset: (ref) => (store ? isWarned(store.state.configuration, store.warnings, ref) && factoryReset(store.state.configuration, ref, '') !== null : false),
+  };
   setContext(MAP_CONTEXT, mapUi);
   // Map by touch: the first UC4 message that matches a control while armed picks it.
   $effect(() => { if (live.armed !== null && live.touchTarget !== null) untrack(() => { mapFlow.touch(); }); });

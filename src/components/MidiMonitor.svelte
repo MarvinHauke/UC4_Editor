@@ -11,7 +11,8 @@
   let { live, onselectmatch }: { live: Live; onselectmatch: (match: Match) => void } = $props();
   /** The row whose other matches are listed ("+2"). */
   let openKey = $state<string | null>(null);
-  const map = useMap().flow;
+  const mapUi = useMap();
+  const map = mapUi.flow;
   const options = $derived(pickerOptions(live.inputs, live.selection));
   const listening = $derived(live.status.kind === 'listening');
   /** The connection section already says in full why MIDI is blocked; the monitor says it short (UX checklist 3: the list must not move). */
@@ -33,6 +34,7 @@
     {#each live.rows as row (row.key)}
       <MonitorRow {row} source={sourceName(row, live.inputs)} open={openKey === row.key}
         ontoggle={() => { openKey = openKey === row.key ? null : row.key; }}
+        onreset={row.mappedTo && mapUi.canReset(row.mappedTo) ? () => { map.resetToFactory(row.key, row.mappedTo!); } : undefined}
         armed={map.armed === row.key} next={map.nextKey === row.key} onmap={() => { map.toggle(row.key); }}
         onselect={onselectmatch} onpin={(id) => { live.pin(row.key, id); }}
         onsplit={() => { if (row.pair) live.split(row.pair.key); }} onjoin={() => { if (row.pair) live.join(row.pair.key); }} />
