@@ -180,6 +180,10 @@ The list at the bottom of Connections of the messages arriving from the chosen i
 (type, channel, number) whose value updates in place.
 _Avoid_: log, console
 
+**Follow**:
+A monitor switch: while on, each message from the UC4 selects the control it matches, switching group or setup.
+_Avoid_: track, sync, auto-select
+
 **Message key**:
 What makes two MIDI messages the same for the editor: the kind of message, the channel and the number (none for
 pitch bend and aftertouch; the program for program change).

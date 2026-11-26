@@ -323,6 +323,35 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
      dumps does not open by itself, since a waiting dump shows under Received, which never folds.
    Built `bc9f905` (uc4-ui, reviewed; browser-checked by the architect).
 
+25. **One highlight language, Follow, a warnings dialog** (user, grilling round 5, 2026-11-26, after trying steps 1–8
+   and decisions 23–24; replaces decision 18 and the one-line mode of decision 24):
+   - **One meaning per highlight** (Q1): **selected** is the only strong highlight (accent fill and outline).
+     **Last touched** is a short glow of about 1 s that fades, not an outline that stays. **Live** values carry no
+     colour of their own: a moved cap or ring looks like an unmoved one, only in its place. Why: one accent colour
+     meant four things (selected, last touched, value known, encoder kind), and the fader numbers stayed blue.
+   - **Encoders get their own muted colour** (Q2), so the accent means selection only. Tried, not settled: the
+     user may go back to one look for all controls.
+   - **Follow replaces One line** (Q3, Q4): a **Follow** switch in the monitor heading. While on, a UC4 message
+     whose best match is a control selects that control fully (device view and property panel), switching the
+     group or setup when it lies elsewhere; it replaces the switch offer while on. A selection, not an undo step;
+     it pauses while a property field has focus; remembered in the browser. "Matching" means any control that
+     sends the message, not only ones made with Map. The one-line mode goes; the monitor gets a fold arrow like
+     the sections above it.
+   - **Row polish** (Q5): the whole row is one target for opening it; the last-moved row's band spans the full
+     width, behind the Map arrow too; the match text is its own target (underline on hover, click selects).
+     Later: sort by type or channel, or by last touched.
+   - **A warnings dialog** (Q6–Q8; reshapes step 6): a click on the status bar's warning count, or on the warning
+     line in the property panel, opens one list of all problems and warnings, filtered to "this setup" or "all
+     setups"; each entry has **Show** (selects the control, closes the dialog), warnings also **Waive**, plus "Show
+     waived". The ‹ › stepper goes. The property panel keeps a short line naming the other control ("Also sent by
+     Enc3 · EG1"), and the device view keeps the mark on the control, so it stays visible which control is
+     affected. **Factory collisions start waived** (B), marked "factory layout", until one of the two controls
+     changes: a fresh library shows no warning. Send lists unwaived warnings with "Send anyway" (waives them) and
+     "Review…" (opens the dialog).
+   - **Split without jumps** (Q9): after Split the single messages stay where the pair was, as indented sub-lines
+     (on / off, MSB / LSB) updating in place; Split/Join is a small switch on the open row's first line. Tried, not
+     settled: Split may go again if it isn't needed.
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it
@@ -379,7 +408,7 @@ script against the setup's real messages. To grill:
 
 ### Grilled (2026-11-26)
 
-Grilled in four rounds with the user; answers in decisions 7–22. Open for the steps that come later: the ARS rig
+Grilled in four rounds with the user; answers in decisions 7–22. Round 5 (after trying it): decision 25. Open for the steps that come later: the ARS rig
 (brief above) and DAW feedback (decision 16), check mode and the trainer (decision 19).
 
 ## Steps
@@ -403,15 +432,27 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 5. **Warnings in the validator** — done 2026-11-26: uc4-model (`8da5b93`), uc4-ui (`5977db3`, orange `--warn`, stepper in the status bar; browser-checked by the architect) · blocked by: none · the collision check beside `validate`
    (same group, or across the two halves; factory SE01–SE16 give 8 each, SE17/18 2 each), warnings in the problem list after the
    problems, a marker on the control. Stories 39–40.
-6. **Waivers, Send and export** — uc4-model, then uc4-ui · blocked by: 5 · Send dialog lists warnings, "Send
-   anyway" waives; waivers in the library, lapse on a changed message, never in files; "Show waived"; export says
-   "n warnings". Stories 41–45.
+6. **Warnings dialog, waivers, Send and export** (reshaped by decision 25) — uc4-model, then uc4-ui · blocked by:
+   5, 10 · waivers in the library, lapse on a changed message, never in files; factory collisions start waived
+   ("factory layout"); one dialog for problems and warnings from the status-bar count and the property panel's
+   line, Show / Waive / "Show waived", this setup / all setups; the ‹ › stepper goes; Send lists unwaived warnings
+   with "Send anyway" and "Review…"; export says "n warnings". Stories 39–45.
 7. **Map by click** — done 2026-11-26: uc4-protocol (`b2811df`), uc4-model (`setControl` `1e9fd47`), uc4-ui (`1be40dd`, glyphs `73cea31`, marks `cefddff`; browser-checked by the architect: dimming, result line, Upper focused, "already sends", Esc, header Undo clears the mark) · blocked by: 1, 5 · Map per row, armed state, dimming
    with the reason in the help line, one undo step with a result line, the type rule, Settings section Connections
    with the relative switch, Upper focused after a CC onto a button, the mapped row's target and the next row
    marked, "also sent by". Stories 25–32, 35–38.
 8. **Map by touch** — done 2026-11-26 (`b2811df`, `1be40dd`; browser-checked: switch to EG3 and mapping in one undo step) · blocked by: 2, 7 · a UC4 message picks the target while Map is
    armed; the group switch in the same undo step. Stories 33–34.
+
+9. **One highlight language and Follow** (decision 25, Q1–Q4) — uc4-ui · blocked by: none · selected is the only
+   strong highlight; last touched a 1 s fading glow; live caps and rings without accent; encoders in their own
+   muted colour; Follow switch in the monitor heading (selects fully, switches group or setup, pauses while a
+   field has focus, no undo step, remembered), replacing the offer while on; One line removed; the monitor folds.
+   Checks: browser list with `/?midi=fake`, screenshots light and dark.
+10. **Row polish and split in place** (decision 25, Q5, Q9) — uc4-protocol (live module: split rows keep their
+   place), then uc4-ui · blocked by: 9 · whole row one target, full-width band behind the arrow, match text its
+   own target; split rows as indented sub-lines under the pair, updating in place; Split/Join a small switch on
+   the open row's first line. Checks: live-module tests, browser list.
 
 ## Out of scope
 
