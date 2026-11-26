@@ -216,6 +216,18 @@ describe('reset to factory', () => {
     expect(t.flow.result?.text).toBe('Enc3 · EG1 is already factory');
     expect(t.flow.result?.undoable).toBe(true);
   });
+  it('a trimmed row loses its mark and its restore mark, so Undo cannot mark a fresh row', () => {
+    const t = setup(ok());
+    t.flow.toggle('r'); t.flow.click('encoders', 2);
+    withSetups(t);
+    t.flow.resetToFactory('r', ref);
+    expect(t.flow.result?.restoreMark).toBeDefined();
+    t.flow.rowsChanged([{ key: 'other' }]); // 'r' was trimmed
+    expect(t.flow.result?.restoreMark).toBeUndefined();
+    t.calls.length = 0;
+    t.flow.undo();
+    expect(t.calls).toEqual(['mapped r null', 'undo']);
+  });
   it('a setup without a slot says so and changes nothing', () => {
     const t = setup(ok());
     t.state.configuration = { setups: [{ ...factorySetup(1), id: 's1', slot: undefined }] };

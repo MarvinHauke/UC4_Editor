@@ -144,6 +144,12 @@ export function createMapFlow(options: {
       options.store()?.undo();
       if (r.restoreMark) { live.markMapped(r.restoreMark.rowKey, r.restoreMark.controlId); marks.set(r.restoreMark.rowKey, r.restoreMark.mark); }
     },
+    /** The monitor's rows now: a mark whose row was trimmed away goes, so a later Undo cannot put it on a fresh row with the same key. */
+    rowsChanged(rows: readonly { key: string }[]): void {
+      const keys = new Set(rows.map((r) => r.key));
+      for (const key of [...marks.keys()]) if (!keys.has(key)) marks.delete(key);
+      if (result?.restoreMark && !keys.has(result.restoreMark.rowKey)) { const { restoreMark: _gone, ...rest } = result; result = rest; }
+    },
     /** The configuration now: any change other than the mapping itself ends the result line. */
     changed(configuration: unknown): void {
       // A row's "→ control" mark only stays while that control still sends what it was mapped to.

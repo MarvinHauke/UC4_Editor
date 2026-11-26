@@ -186,6 +186,7 @@
   $effect(() => { if (live.armed !== null && live.touchTarget !== null) untrack(() => { mapFlow.touch(); }); });
   // The result line goes when anything else changes the configuration (Undo would undo that instead).
   $effect(() => { const c = store?.state.configuration; if (c !== undefined) mapFlow.changed(c); });
+  $effect(() => { const rows = live.rows; untrack(() => { mapFlow.rowsChanged(rows); }); });
   $effect(() => {
     const state = store?.state;
     if (state) switchNote.changed({ setupId: state.selection.setupId, encoderGroup: state.selection.encoderGroup, faderButtonGroup: state.selection.faderButtonGroup }, state.configuration);
