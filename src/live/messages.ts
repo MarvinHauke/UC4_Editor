@@ -1,8 +1,10 @@
 // What the live view works on: one MIDI channel message with where and when it arrived (plan 0008, decision 13).
 // Pure types and the key rule; the MIDI input (`src/midi/inputs.ts`) produces them, the live session consumes them.
+import type { MessageKind } from '../model/types.ts';
 
-/** The kinds of channel message the monitor lists (decision 3). `note` covers note-on and note-off. */
-export type MessageKind = 'note' | 'cc' | 'program' | 'pitchBend' | 'aftertouch' | 'polyAftertouch';
+/** The kinds of channel message the monitor lists; `note` covers note-on and note-off. Defined in the model. */
+export type { MessageKind };
+
 
 /**
  * One channel message as the wire carries it. `channel` is 1–16 (the device's numbering), `number` is the note, the CC
