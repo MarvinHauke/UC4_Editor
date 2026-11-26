@@ -57,8 +57,8 @@ _Last updated: 2026-11-26 (0008 live view: steps 1–5, 7, 8 built; round 5 gril
   factory collisions start waived (B). Frontier: `[ready-for-agent]` **step 9** (highlights and Follow, uc4-ui),
   then step 10 (row polish, uc4-protocol then uc4-ui), then step 6 reshaped (warnings dialog and waivers,
   uc4-model then uc4-ui). With step 6: `warnings.ts` names green buttons `Btn3`, must be `btn3`. Later: sort the
-  monitor by type, channel or last touched (decision 25 Q5). Open for the user: the switch offer's placement
-  (matters only while Follow is off). Hardware list (listen only) for the user.
+  monitor by type, channel or last touched (decision 25 Q5). Offer placement settled (kept; shares the warnings'
+  place in the status bar when Connections is folded). Step 9 with uc4-ui since 2026-11-26. Hardware list (listen only) for the user.
 - **Public release:** the repo `MarvinHauke/UC4_Editor` is public, PR #1 merged 2026-11-26 and deployed to Pages;
   the old workshop repo is `UC4_Editor-workshop`. Open: Q47 (commit email), 0011 step 3's book icon, then 0011 built.
 

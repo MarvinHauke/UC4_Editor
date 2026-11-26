@@ -348,6 +348,9 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
      affected. **Factory collisions start waived** (B), marked "factory layout", until one of the two controls
      changes: a fresh library shows no warning. Send lists unwaived warnings with "Send anyway" (waives them) and
      "Review…" (opens the dialog).
+   - **Offer placement kept, one info in the status bar** (user, 2026-11-26, after round 5): the switch offer stays
+     under the monitor heading; with Connections folded it takes the warnings' place in the status bar while it
+     shows, and the warning count comes back after Switch or No, so the bar holds one info at a time.
    - **Split without jumps** (Q9): after Split the single messages stay where the pair was, as indented sub-lines
      (on / off, MSB / LSB) updating in place; Split/Join is a small switch on the open row's first line. Tried, not
      settled: Split may go again if it isn't needed.
@@ -447,7 +450,8 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 9. **One highlight language and Follow** (decision 25, Q1–Q4) — uc4-ui · blocked by: none · selected is the only
    strong highlight; last touched a 1 s fading glow; live caps and rings without accent; encoders in their own
    muted colour; Follow switch in the monitor heading (selects fully, switches group or setup, pauses while a
-   field has focus, no undo step, remembered), replacing the offer while on; One line removed; the monitor folds.
+   field has focus, no undo step, remembered), replacing the offer while on; One line removed; the monitor folds;
+   with Connections folded, the offer takes the warning count's place in the status bar while it shows.
    Checks: browser list with `/?midi=fake`, screenshots light and dark.
 10. **Row polish and split in place** (decision 25, Q5, Q9) — uc4-protocol (live module: split rows keep their
    place), then uc4-ui · blocked by: 9 · whole row one target, full-width band behind the arrow, match text its
