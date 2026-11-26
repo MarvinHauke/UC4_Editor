@@ -36,3 +36,7 @@ Everything runs in your browser. Your setups stay on your computer, in this brow
 - [Copy / Paste, Reset, Library](copy-paste.md)
 - [Keys](keys.md)
 - [How it works](how-it-works.md)
+
+---
+
+Made for the [Faderfox UC4](https://faderfox.de/uc4.html). Thanks to Mathias of Faderfox for the device.

@@ -3,6 +3,7 @@
   // Cmd-, or the drawn Setup button; it remembers whether it is open.
   import { tick, untrack } from 'svelte';
   import { NOTICE } from '../app/links';
+  import { MAKER_DEVICE_URL } from '../app/profile/uc4Tour.ts';
   import { SLIDE, slideDuration, type Keys, type Settings, type Theme } from '../app/settings.svelte.ts';
 
   let { settings, opener, onallkeys, ontour }: { settings: Settings; opener: () => HTMLElement | null; onallkeys: () => void; ontour: () => void } = $props();
@@ -78,7 +79,7 @@
         oninput={(e) => { settings.setSlideMs(Number(e.currentTarget.value)); }} />
     </div>
     <button type="button" class="tour" data-help="Tour: a short walk through the six areas of the editor, then how to get your setups from the UC4" onclick={ontour}>Tour</button>
-    <p class="about" data-help="About: this editor is not from Faderfox">{NOTICE}</p>
+    <p class="about" data-help="About: this editor is not from Faderfox · the link opens the UC4's page at Faderfox">{NOTICE} <a href={MAKER_DEVICE_URL} target="_blank" rel="noopener">Faderfox UC4 ↗</a></p>
   </div>
 {/if}
 

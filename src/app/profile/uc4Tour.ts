@@ -73,6 +73,8 @@ export const TOUR_STEPS: readonly TourStep[] = [...TOUR_AREAS, TOUR_LAST];
 
 /** The welcome card's words (plan 0012 decision 8): the device's name and maker are the profile's, not the card's. */
 export const MAKER = 'Faderfox';
+/** The device's page at its maker, linked from Settings → About. */
+export const MAKER_DEVICE_URL = 'https://faderfox.de/uc4.html';
 
 export function welcomeTexts(deviceName: string) {
   return {
