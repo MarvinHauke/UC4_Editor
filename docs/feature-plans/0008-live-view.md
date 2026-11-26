@@ -450,7 +450,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 5. **Warnings in the validator** — done 2026-11-26: uc4-model (`8da5b93`), uc4-ui (`5977db3`, orange `--warn`, stepper in the status bar; browser-checked by the architect) · blocked by: none · the collision check beside `validate`
    (same group, or across the two halves; factory SE01–SE16 give 8 each, SE17/18 2 each), warnings in the problem list after the
    problems, a marker on the control. Stories 39–40.
-6. **Warnings dialog, waivers, Send and export** (reshaped by decision 25) — model half done 2026-11-26: uc4-model (`fa3432c`, reviewed: `state.warnings` with 'open'/'waived'/'factory' for all setups, `waive`/`unwaive` as undo steps, waivers in a browser sidecar, dropped when they lapse); UI half in work — uc4-model, then uc4-ui · blocked by:
+6. **Warnings dialog, waivers, Send and export** (reshaped by decision 25) — model half done 2026-11-26: uc4-model (`fa3432c`, reviewed: `state.warnings` with 'open'/'waived'/'factory' for all setups, `waive`/`unwaive` as undo steps, waivers in a browser sidecar, dropped when they lapse); UI half done: uc4-ui (`49bd8f3`, `d4e898e`, names from paths and open-row alignment after; reviewed; browser-checked by the architect at 1024 px: waive, Show waived with "factory layout", waiver kept over a reload and lapsing on a change). Done 2026-11-26 — uc4-model, then uc4-ui · blocked by:
    5, 10 · waivers in the library, lapse on a changed message, never in files; factory collisions start waived
    ("factory layout"); one dialog for problems and warnings from the status-bar count and the property panel's
    line, Show / Waive / "Show waived", this setup / all setups; the ‹ › stepper goes; Send lists unwaived warnings
