@@ -236,6 +236,12 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    collision goes through and becomes a warning (decision 7; "also sent by Enc3 · EG1"). Rows from the UC4 can be
    mapped too (an encoder's CC on a push button that sets it back to a value); clicking a UC4 row selects its match.
    Why: a mapping is an ordinary edit with a different source; dimming shows beforehand where the message fits.
+   **Exceptions** (architect, 2026-11-26, from the step 7/8 review): a **program change row** onto a button also sets
+   Upper to the row's program (the button's program is its Upper); onto an encoder or fader the range Lower…Upper
+   stays (browsing programs is the point) and the result line names it ("Enc3 · EG1 now sends programs 0–127 ch 2").
+   **Map by touch on another setup** is allowed: the touch is the strongest evidence, so opening that setup, the
+   group switch and the edit are one undo step, and the result line names the setup ("SE02 · Enc1 · EG3 now sends
+   …"); pins clear as on any setup change.
 9. **"Map" now, "Learn" later** (user, 2026-11-26, Q1): Learn is a later quick mode that maps each new message to
    the next control slot, from any input, not only the UC4. The UC4's own learn (hold encoder 6) is the device's.
 10. **The switch offer can be silenced** (user, 2026-11-26, Q11): after 3 messages in a row that match only another
