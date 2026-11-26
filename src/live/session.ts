@@ -40,6 +40,12 @@ export interface PairInfo {
   kind: 'ccah' | 'note';
   /** `joined`: this row stands for both messages; `split`: one of the single messages; `waiting`: a `CCAh` half whose other half has not been seen yet. */
   state: 'joined' | 'split' | 'waiting';
+  /**
+   * Which single message a `split` row is, for drawing it as a sub-row: `msb`/`lsb` (a `CCAh` control's CC n and n+32) or `on`/`off`.
+   * The halves of a split pair are listed adjacent, in that order (MSB then LSB, on then off), at the place the pair had, and keep it
+   * across new values, Split and Join. Their `key`s are their own (`cc:…`, `note:…#on`) and differ from the joined row's `key`. `null` unless `state` is `split`.
+   */
+  role: 'msb' | 'lsb' | 'on' | 'off' | null;
 }
 
 /** A row with what the open configuration says about it. Only the UC4's rows are matched; other devices' rows have no matches. */
@@ -248,17 +254,18 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
     const matches = rank(row);
     const best = matches[0];
     let pair: PairInfo | null = null;
-    if (row.kind === 'note') pair = { key: row.key, kind: 'note', state: 'joined' };
+    if (row.kind === 'note') pair = { key: row.key, kind: 'note', state: 'joined', role: null };
     else if (best && (best.via === 'msb' || best.via === 'lsb') && row.number !== null) {
       const key = ccahKey(row.inputId, row.channel, best.via === 'msb' ? row.number : row.number - 32);
-      pair = { key, kind: 'ccah', state: splits.has(key) ? 'split' : 'waiting' };
+      const split = splits.has(key);
+      pair = { key, kind: 'ccah', state: split ? 'split' : 'waiting', role: split ? best.via as 'msb' | 'lsb' : null };
     }
     const live = build(row, matches, pair);
     cache.set(row, live);
     return live;
   }
 
-  /** The note row as its on and off message, newest first. */
+  /** The note row as its on and off message, on first. */
   function noteHalves(row: MonitorRow): LiveRow[] {
     const hit = notesCache.get(row);
     if (hit) return hit;
@@ -272,15 +279,15 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
     const half = (kind: 'on' | 'off', part: NotePart): LiveRow => {
       const key = `${row.key}#${kind}`;
       const own: MonitorRow = { ...row, key, value: part.value, on: kind === 'on', at: part.at, count: part.count, lastMoved: row.lastMoved && p.last === kind };
-      return build(own, rank({ ...own }), { key: row.key, kind: 'note', state: 'split' });
+      return build(own, rank({ ...own }), { key: row.key, kind: 'note', state: 'split', role: kind });
     };
-    const out: { seq: number; row: LiveRow }[] = [];
-    if (p.on) out.push({ seq: p.on.seq, row: half('on', p.on) });
-    if (p.off) out.push({ seq: p.off.seq, row: half('off', p.off) });
-    return out.sort((x, y) => y.seq - x.seq).map((x) => x.row);
+    const out: LiveRow[] = [];
+    if (p.on) out.push(half('on', p.on));
+    if (p.off) out.push(half('off', p.off));
+    return out;
   }
 
-  /** Rows keep their place; a joined row takes the place of the half that was listed first (the newer-created key). */
+  /** Rows keep their place; a joined row, or the two halves of a split pair (MSB then LSB), take the place of the half that was listed first (the newer-created key). */
   function derive(): LiveRow[] {
     const out: LiveRow[] = [];
     const byKey = new Map(base.map((r) => [r.key, r]));
@@ -290,7 +297,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       if (row.kind === 'note' && splits.has(row.key)) { out.push(...noteHalves(row)); continue; }
       const mine = single(row);
       const pair = mine.pair;
-      if (pair?.kind === 'ccah' && pair.state === 'waiting' && mine.best && row.number !== null) {
+      if (pair?.kind === 'ccah' && mine.best && pair.state !== 'joined' && row.number !== null) {
         const via = mine.best.via as 'msb' | 'lsb';
         const other = byKey.get(`${row.inputId}|cc:${row.channel}:${partnerOf(row.number, via)}`);
         const theirs = other && !consumed.has(other.key) ? single(other) : null;
@@ -298,7 +305,8 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
         if (other && theirs?.best?.control.id === mine.best.control.id && theirs.best.via === complement) {
           consumed.add(other.key);
           const [msb, lsb] = via === 'msb' ? [row, other] : [other, row];
-          out.push(joined(msb, lsb, pair.key));
+          if (splits.has(pair.key)) out.push(single(msb), single(lsb));
+          else out.push(joined(msb, lsb, pair.key));
           continue;
         }
       }
@@ -317,7 +325,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       ...msb, key, value: msb.value * 128 + lsb.value, on: null, at: Math.max(msb.at, lsb.at),
       count: Math.max(msb.count, lsb.count), lastMoved: msb.lastMoved || lsb.lastMoved,
     };
-    const live = build(row, applyPin(key, both), { key, kind: 'ccah', state: 'joined' });
+    const live = build(row, applyPin(key, both), { key, kind: 'ccah', state: 'joined', role: null });
     if (!inner) joinedCache.set(msb, (inner = new WeakMap()));
     inner.set(lsb, live);
     return live;

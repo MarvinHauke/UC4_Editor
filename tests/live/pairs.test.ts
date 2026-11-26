@@ -89,10 +89,61 @@ describe('a CCAh pair', () => {
     for (const n of [8, 40, 10, 42]) send(s, cc(1, n, 3));
     expect(s.rows.map((r) => r.key)).toEqual(['uc4|ccah:1:10', 'uc4|ccah:1:8']);
     s.split('uc4|ccah:1:8');
-    expect(s.rows.map((r) => [r.key, r.pair?.state])).toEqual([['uc4|ccah:1:10', 'joined'], ['uc4|cc:1:40', 'split'], ['uc4|cc:1:8', 'split']]);
+    expect(s.rows.map((r) => [r.key, r.pair?.state])).toEqual([['uc4|ccah:1:10', 'joined'], ['uc4|cc:1:8', 'split'], ['uc4|cc:1:40', 'split']]);
     expect(s.rows.find((r) => r.key === 'uc4|cc:1:8')!.pair!.key).toBe('uc4|ccah:1:8');
     s.join('uc4|ccah:1:8');
     expect(s.rows.map((r) => r.pair?.state)).toEqual(['joined', 'joined']);
+  });
+
+  it('splits in place: MSB then LSB at the pair\'s place, even when the halves arrived apart; new values and Join keep it', () => {
+    const s = live(ccah((se) => { se.encoderGroups[0]!.encoders[2]!.type = 'CCAh'; }));
+    send(s, cc(1, 8, 1)); // oldest half
+    send(s, cc(1, 10, 2));
+    send(s, cc(1, 99, 3));
+    send(s, cc(1, 42, 4));
+    send(s, cc(1, 40, 5)); // LSB of 8 arrives late: base order is 40, 42, 99, 10, 8
+    send(s, cc(1, 98, 6)); // a plain row on top
+    const keys = () => s.rows.map((r) => r.key);
+    expect(keys()).toEqual(['uc4|cc:1:98', 'uc4|ccah:1:8', 'uc4|ccah:1:10', 'uc4|cc:1:99']);
+    const joinedKeys = keys();
+    const at8 = joinedKeys.indexOf('uc4|ccah:1:8');
+    s.split('uc4|ccah:1:8');
+    const split = keys();
+    expect(split.indexOf('uc4|cc:1:8')).toBe(at8);
+    expect(split.indexOf('uc4|cc:1:40')).toBe(at8 + 1);
+    expect(s.rows.slice(at8, at8 + 2).map((r) => [r.pair?.state, r.pair?.role])).toEqual([['split', 'msb'], ['split', 'lsb']]);
+    expect(split.filter((k) => k !== 'uc4|cc:1:8' && k !== 'uc4|cc:1:40')).toEqual(joinedKeys.filter((k) => k !== 'uc4|ccah:1:8'));
+    send(s, cc(1, 40, 77)); // a new value on a split half does not move it
+    expect(keys()).toEqual(split);
+    expect(s.rows[at8 + 1]).toMatchObject({ value: 77, lastMoved: true });
+    s.join('uc4|ccah:1:8');
+    expect(keys()).toEqual(joinedKeys);
+    expect(s.rows[at8]).toMatchObject({ value: 1 * 128 + 77, pair: { state: 'joined', role: null } });
+  });
+
+  it('lists a split CCAh with only one half as a lone row with its role, at its own place', () => {
+    const s = live(ccah());
+    send(s, cc(1, 40, 5));
+    send(s, cc(1, 99, 1));
+    s.split('uc4|ccah:1:8');
+    expect(s.rows.map((r) => [r.key, r.pair?.state, r.pair?.role])).toEqual([['uc4|cc:1:99', undefined, undefined], ['uc4|cc:1:40', 'split', 'lsb']]);
+  });
+
+  it('splits a note pair in place between other rows', () => {
+    const s = live(config());
+    send(s, noteOn(0));
+    send(s, cc(1, 5, 1));
+    send(s, noteOn(1));
+    const before = s.rows.map((r) => r.key);
+    s.split('uc4|note:1:0');
+    const keys = () => s.rows.map((r) => r.key);
+    expect(keys()).toEqual(['uc4|note:1:1', 'uc4|cc:1:5', 'uc4|note:1:0#on']);
+    send(s, noteOff(0));
+    expect(keys()).toEqual(['uc4|note:1:1', 'uc4|cc:1:5', 'uc4|note:1:0#on', 'uc4|note:1:0#off']);
+    send(s, noteOn(0, 90));
+    expect(keys()).toEqual(['uc4|note:1:1', 'uc4|cc:1:5', 'uc4|note:1:0#on', 'uc4|note:1:0#off']);
+    s.join('uc4|note:1:0');
+    expect(keys()).toEqual(before);
   });
 
   it('ignores a split for a pair that is not listed', () => {
@@ -146,7 +197,8 @@ describe('a note\'s press and release', () => {
     ]);
     expect(s.rows[0]!.best?.control.name).toBe('Pbt1 · EG1');
     send(s, noteOff(0));
-    expect(s.rows.map((r) => r.key)).toEqual(['uc4|note:1:0#off', 'uc4|note:1:0#on']);
+    expect(s.rows.map((r) => r.key)).toEqual(['uc4|note:1:0#on', 'uc4|note:1:0#off']); // fixed order: on, then off
+    expect(s.rows.map((r) => r.pair?.role)).toEqual(['on', 'off']);
     s.join('uc4|note:1:0');
     expect(s.rows.map((r) => r.valueText)).toEqual(['off 0']);
   });
