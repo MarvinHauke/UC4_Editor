@@ -7,11 +7,11 @@
 //   step 4  `offer` (3 in a row matching only another group or setup), `dismissOffer(target)`, `silenceOffers`
 //   step 7/8 `mapPlan(rowKey, target)` → a planned edit or a refusal reason; Map by touch reads the next UC4 event.
 // The rows never leave memory (decision 11).
-import { messageKey, type ChannelEvent, type MessageKind } from './messages.ts';
+import { rowKey, type ChannelEvent, type MessageKind } from './messages.ts';
 
 /** One monitor row: the latest value of one message key. */
 export interface MonitorRow {
-  /** `kind:channel:number`; stable for the row's life. */
+  /** `inputId|kind:channel:number` (see `rowKey`); stable for the row's life, one source per row. */
   key: string;
   kind: MessageKind;
   channel: number;
@@ -66,7 +66,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
         Number.isInteger(m.channel) && m.channel >= 1 && m.channel <= 16 &&
         inRange(m.number, 127) && (m.number !== null || m.kind === 'pitchBend' || m.kind === 'aftertouch') && inRange(m.value, m.kind === 'pitchBend' ? 16383 : 127);
       if (!valid) return;
-      const key = messageKey(m);
+      const key = rowKey(inputId, m);
       const on = m.kind === 'note' ? (m.on ?? m.value > 0) : null;
       const index = rows.findIndex((r) => r.key === key);
       const previous = index >= 0 ? rows[index] : null;

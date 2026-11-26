@@ -19,7 +19,7 @@ describe('monitor rows', () => {
     s.receive(ev(cc(16, 8, 10)));
     s.receive(ev(cc(16, 9, 20)));
     s.receive(ev({ kind: 'note', channel: 1, number: 64, value: 127, on: true }));
-    expect(s.rows.map((r) => r.key)).toEqual(['note:1:64', 'cc:16:9', 'cc:16:8']);
+    expect(s.rows.map((r) => r.key)).toEqual(['in1|note:1:64', 'in1|cc:16:9', 'in1|cc:16:8']);
   });
 
   it('updates a known key in place: same place, new value, count up', () => {
@@ -27,7 +27,7 @@ describe('monitor rows', () => {
     s.receive(ev(cc(16, 8, 10)));
     s.receive(ev(cc(16, 9, 20)));
     s.receive(ev(cc(16, 8, 55)));
-    expect(s.rows.map((r) => [r.key, r.value, r.count])).toEqual([['cc:16:9', 20, 1], ['cc:16:8', 55, 2]]);
+    expect(s.rows.map((r) => [r.key, r.value, r.count])).toEqual([['in1|cc:16:9', 20, 1], ['in1|cc:16:8', 55, 2]]);
   });
 
   it('marks the row that moved last, and only that one', () => {
@@ -35,8 +35,8 @@ describe('monitor rows', () => {
     s.receive(ev(cc(1, 1, 1)));
     s.receive(ev(cc(1, 2, 1)));
     s.receive(ev(cc(1, 1, 2)));
-    expect(s.lastMovedKey).toBe('cc:1:1');
-    expect(s.rows.filter((r) => r.lastMoved).map((r) => r.key)).toEqual(['cc:1:1']);
+    expect(s.lastMovedKey).toBe('in1|cc:1:1');
+    expect(s.rows.filter((r) => r.lastMoved).map((r) => r.key)).toEqual(['in1|cc:1:1']);
   });
 
   it('tells apart type, channel and number', () => {
@@ -62,14 +62,19 @@ describe('monitor rows', () => {
     s.receive(ev({ kind: 'pitchBend', channel: 3, number: null, value: 16383 }));
     s.receive(ev({ kind: 'aftertouch', channel: 3, number: null, value: 5 }));
     s.receive(ev({ kind: 'program', channel: 3, number: 12, value: 0 }));
-    expect(s.rows.map((r) => [r.key, r.number])).toEqual([['program:3:12', 12], ['aftertouch:3:', null], ['pitchBend:3:', null]]);
+    expect(s.rows.map((r) => [r.key, r.number])).toEqual([['in1|program:3:12', 12], ['in1|aftertouch:3:', null], ['in1|pitchBend:3:', null]]);
   });
 
-  it('carries the source: input id, UC4 mark and time of the latest message', () => {
+  it('gives the same message from two inputs two rows, each with its one source', () => {
     const s = createLiveSession();
-    s.receive(ev(cc(1, 1, 1), { inputId: 'a', isUc4: false }));
-    s.receive(ev(cc(1, 1, 2), { inputId: 'b', isUc4: true }));
-    expect(s.rows[0]).toMatchObject({ inputId: 'b', isUc4: true, at: t });
+    s.receive(ev(cc(1, 1, 1), { inputId: 'synth', isUc4: false }));
+    s.receive(ev(cc(1, 1, 2), { inputId: 'uc4', isUc4: true }));
+    s.receive(ev(cc(1, 1, 3), { inputId: 'synth', isUc4: false }));
+    expect(s.rows.map((r) => [r.key, r.inputId, r.isUc4, r.value, r.count])).toEqual([
+      ['uc4|cc:1:1', 'uc4', true, 2, 1],
+      ['synth|cc:1:1', 'synth', false, 3, 2],
+    ]);
+    expect(s.rows[0]).toMatchObject({ at: t - 1 });
   });
 
   it('ignores a message out of range instead of throwing', () => {

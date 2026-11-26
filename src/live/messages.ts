@@ -25,7 +25,12 @@ export interface ChannelEvent {
   at: number;
 }
 
-/** The message key: type, channel and number (decision 3). One monitor row per key. */
+/** The message's own key: type, channel and number, without its source. */
 export function messageKey(m: Pick<ChannelMessage, 'kind' | 'channel' | 'number'>): string {
   return `${m.kind}:${m.channel}:${m.number ?? ''}`;
+}
+
+/** The monitor row's key (plan 0008 decision 3): the message key plus the input it came from, so a row has exactly one source. */
+export function rowKey(inputId: string, m: Pick<ChannelMessage, 'kind' | 'channel' | 'number'>): string {
+  return `${inputId}|${messageKey(m)}`;
 }
