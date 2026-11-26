@@ -115,9 +115,9 @@
   {:else}
     <rect class="hit hitbox" x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx="8" />
     {#if shape.horizontal}
-      <line class="track" x1={shape.x + 10} y1={shape.y + shape.height / 2 - 6} x2={shape.x + shape.width - 10} y2={shape.y + shape.height / 2 - 6} />
-      <rect class="handle" x={capCentre - 14} y={shape.y + 2} width="28" height="44" rx="3" />
-      <text class="idx" x={capCentre} y={shape.y + 29}>{controlNumber(index)}</text>
+      <line class="track" x1={shape.x + 10} y1={shape.y + shape.height / 2} x2={shape.x + shape.width - 10} y2={shape.y + shape.height / 2} />
+      <rect class="handle" x={capCentre - 14} y={shape.y + shape.height / 2 - 22} width="28" height="44" rx="3" />
+      <text class="idx" x={capCentre} y={shape.y + shape.height / 2 + 5}>{controlNumber(index)}</text>
     {:else}
       <line class="track" x1={cx} y1={shape.y + 6} x2={cx} y2={shape.y + shape.height - 6} />
       <rect class="handle" x={cx - 13} y={capCentre - 18} width="26" height="36" rx="3" />
