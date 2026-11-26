@@ -385,6 +385,13 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    view, never behaviour; for notes the joined row already shows on/off and velocity, and the plain text keeps the
    rare check (a release velocity, a 7-bit half) without a switch or rows that move. Rejected: Split for `CCAh` only.
 
+29. **"Ignore" instead of "Waive"** (user, 2026-11-27): the word for accepting a warning is **Ignore**; its undo is
+   **Show again**, the filter **Show ignored**, the state "ignored"; "Send anyway" ignores the open warnings once the
+   port took the send. Code names follow the glossary (`waive` → `ignore`, `Waiver` → `Ignored`, `'waived'` →
+   `'ignored'`); the browser storage key stays, so warnings already waived stay ignored. Why: "waive" (from DRC tools)
+   was not understood, "Unwaive" even less. Rejected: Accept (the architect's pick), Suppress (developer jargon),
+   Dismiss (already closes a dump notice). Earlier decisions that say "waive" mean this.
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it

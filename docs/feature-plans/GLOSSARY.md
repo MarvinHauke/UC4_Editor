@@ -203,9 +203,10 @@ Something in a setup that may be a mistake but is allowed, such as two controls 
 sending the same message; it never blocks a send.
 _Avoid_: problem (the validator rejects), error
 
-**Waive**:
-To accept a warning before a send; the editor remembers it and hides the warning until "Show waived".
-_Avoid_: ignore, dismiss, mute
+**Ignore**:
+To accept a warning as intended; the editor remembers it, hides it until "Show ignored", and counts it again as
+soon as either control's message changes. "Show again" undoes it.
+_Avoid_: waive, suppress, accept; dismiss (that closes a dump notice)
 
 **Map**:
 Giving a control the command type, channel and number of a MIDI monitor row's message.

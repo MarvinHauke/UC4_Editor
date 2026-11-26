@@ -24,6 +24,16 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
   "one right edge" and `docs/agents/browser-checks.md` (`5b9a0b3`), STATUS pruned. 0008 step 12 (no Split) done;
   crossfader centred (`771109b`).
 
+## Next (2026-11-27)
+
+- **Rename Waive → Ignore** (0008 decision 29): UI text, code names, tests; uc4-model (storage/model) then uc4-ui.
+- **From the user's /code-review of `feat/live-view`** (2026-11-27): Map by touch stays stuck after a refused
+  target (decision 20; no test); a waiver keyed by the lowest shared program doesn't lapse when a `PrGC` range grows
+  (story 43); the status bar can hold the "Switched to … · Back" note and the warning count at once (decision 25);
+  dead `'#'` split keys in `pin()` and a stale comment in `switchNote.svelte.ts`. Judgement calls: one model helper
+  for the message key, "what a control sends", the encoder half and slot names. First `git fetch` and fast-forward
+  local `main`: `main...HEAD` showed 0010/0012 work as new.
+
 ## Waiting for the user
 
 - **0008:** the hands-on review and the listen-only hardware list; Connect from the dump guide on the real UC4.
