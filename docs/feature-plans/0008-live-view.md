@@ -379,6 +379,12 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    0–127; nothing when the range is empty. One rule in the model, used by the warnings and the live matching. Why:
    a clamp made up program 127 for upper 200, and an unbounded range froze the tab.
 
+28. **No Split** (user, 2026-11-26, after trying step 10; replaces decision 12's "unchainable" and decision 25's
+   split-in-place bullet): a `CCAh` pair and a note's press and release stay one row, always. The open row shows the
+   parts as plain text in its details ("MSB 64 · LSB 0", "last on 127 · last off 0"). Why: Split changed only the
+   view, never behaviour; for notes the joined row already shows on/off and velocity, and the plain text keeps the
+   rare check (a release velocity, a 7-bit half) without a switch or rows that move. Rejected: Split for `CCAh` only.
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it
@@ -491,6 +497,10 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 11. **Clear a colliding mapping** (decision 26) — done 2026-11-26: uc4-ui (`295faeb`, `f1b6e4a`; reviewed; browser-checked by the architect: no ✕ without a collision, reset, result-line Undo brings the mark back) — uc4-ui · blocked by: 10 · ✕ on an open mapped row's target when
    the control has a warning; resets the control to factory (one undo step, result line); the mark goes. Checks:
    unit test for the factory control of a slot and group, browser list.
+
+12. **Remove Split** (decision 28) — uc4-protocol (live: `split`/`join` and the saved `splits` go, joined rows expose
+   their parts), then uc4-ui (switch and sub-rows go, parts as text in the open row) · blocked by: 10 · Checks:
+   live-module tests, browser list.
 
 ## Out of scope
 
