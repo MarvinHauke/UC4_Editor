@@ -353,7 +353,7 @@ Grilled in four rounds with the user; answers in decisions 7–22. Open for the 
 
 Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names who builds it and what gates it.
 
-1. **Monitor, first rows** — uc4-protocol (connection, live module: done `2101d1b`, reviewed), then uc4-ui (monitor) · blocked by: none ·
+1. **Monitor, first rows** — done 2026-11-26: uc4-protocol (`2101d1b`), uc4-ui (`624ec19`, browser-checked by the architect on `/?midi=fake`; the blocked-MIDI state and the hardware list left for the user) · blocked by: none ·
    the connection lists every input with plug and unplug and delivers channel messages of the chosen inputs,
    real-time dropped and counted; the live module turns messages into rows (one per key, value in place, newest on
    top, last-moved marked); the monitor at the bottom of Connections with the input picker ("All inputs",
