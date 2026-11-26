@@ -28,13 +28,14 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
 
 - **Review judgement calls** (user's /code-review of `feat/live-view`, 2026-11-27): one model helper for the message
   key, "what a control sends", the encoder half and slot names. Done from that review: `d26800d`, `c760681`, `809ab0e`
-  (Ignore rename, 0008 decision 29).
-- **Wording question for the user:** "Show" (go to the control) beside "Show again" (un-ignore) in an ignored row of
-  the Problems and warnings dialog; the architect suggests "Go to".
+  (Ignore rename, 0008 decision 29); 0008 step 13, the check always reachable (`7766162`, decision 30).
+- **To grill with the user** (`/grill-with-docs`): the word for un-ignoring ("Show again"; the architect suggests
+  Ignore as a toggle) and a **Resolve** action (which control changes, to what, factory layout, pairs and ranges).
+  "Show" stays (as in the MIDI monitor). Also: Review… in the Send dialog on its own line or at the row's right edge.
 
 ## Waiting for the user
 
-- **0008:** Ignore checks by hand (ignore, reload, Show again, `PrGC` widen re-opens, "Send anyway" wording); the hands-on review and the listen-only hardware list; Connect from the dump guide on the real UC4.
+- **0008:** Ignore and check-line checks by hand (status-bar ✓ item opens the dialog, ignore, reload, Show again, `PrGC` widen re-opens, "Send anyway" wording); the hands-on review and the listen-only hardware list; Connect from the dump guide on the real UC4.
 - **Look and size checks:** light theme and 1024 px of the Connections column, the guide, Copy / Paste flash,
   Reset all; light theme `--border` `#b9b9b3` on white is 1.97:1 (below 3:1 for field edges; a token pass).
 - **Hardware look list** (look only): what the display shows on entering edit mode and whether a value falls back
