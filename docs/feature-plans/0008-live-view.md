@@ -303,6 +303,18 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    Before a control first sends, the cap and ring stay as drawn today ("unknown"). Built `fb3b0d1` (uc4-ui,
    reviewed; browser-checked by the architect: fader 1 and 9 at 0, ring at 64 and 127).
 
+24. **A calmer monitor** (user, 2026-11-26, after trying steps 1–8; replaces the drag handle of decisions 11 and 18):
+   - **One line per row, click to expand**: U mark, message, channel, value and the best match in muted text
+     ("FAd7 · FG1 +1"), or "→ Enc1 · EG1" once mapped. A click (or Enter) opens the row's details: the other
+     matches with Pin, Split/Join, the source input and Map. The row that moved last stays marked.
+   - **Map is an arrow "→"**, shown on the hovered, focused or expanded row only, the same arrow a mapped row shows.
+     Not "M" (reads as mute), not the crosshair.
+   - **One scrollbar, no handle**: the monitor fills the space left at the bottom of Connections; only its list
+     scrolls, with a thin scrollbar that shows on hover. The sections above (Connection, Kept dumps) fold to one
+     heading line each, so the monitor can grow; a section with something to say (an error, a waiting dump) opens by
+     itself. "MIDI clock ignored" moves into the status line ("Listening to 6 inputs · clock ignored"). One line
+     stays as it is.
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it
