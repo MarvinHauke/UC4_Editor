@@ -19,7 +19,7 @@ Stages: **draft** → **grilled** → **decided** (spec + steps) → **in work**
 | [0005](0005-web-midi-transfer.md) | Web MIDI: receive and send dumps | built: receive, send and restore (milestone 4, 2026-11-18, steps 1–17) | uc4-protocol |
 | [0006](0006-editor-ui.md) | Editor UI | built through step 25 (Copy / Paste, Reset all, help line, key help); command mode an idea | uc4-ui |
 | [0007](0007-files-and-backup.md) | Files: `.json`, `.syx`, `.zip` archive, local library | milestone 3 built; Files toolbar built (step 5); `.zip` archive open | uc4-model |
-| [0008](0008-live-view.md) | Live view: values from the controller; the ARS test rig brief | draft, to grill | uc4-ui, uc4-protocol |
+| [0008](0008-live-view.md) | Live view: MIDI monitor, matching, warnings, learn; the ARS test rig brief | draft, decisions 3–7 (2026-11-26); to grill | uc4-ui, uc4-protocol |
 | [0009](0009-user-guide.md) | User guide (Zensical, annotated screenshots) | built (steps 1–6); hosting open | uc4-docs |
 | [0010](0010-ux-pass.md) | UX pass: audit as a newcomer, ranked barriers, fixes | decided (Q36–Q40); steps 1–2 in work | architect, uc4-ui |
 | [0011](0011-public-release.md) | Public release: editor and guide on GitHub Pages, public repo | decided (Q41–Q46); steps 1–5 in work | architect, uc4-ui, uc4-docs |

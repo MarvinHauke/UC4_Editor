@@ -1,6 +1,6 @@
 # 0008 — Live view: values from the controller
 
-_Stage: draft — proposed by the user 2026-11-15, extended by monitor and learn; grill when milestone 2 is built._
+_Stage: draft, to grill — proposed by the user 2026-11-15, extended by monitor and learn; monitor, matching and warnings shaped by the user 2026-11-26 (decisions 3–7)._
 _Owner: uc4-ui (view), uc4-protocol (MIDI input and matching) · Depends on: 0005 step 1, 0006_
 
 ## Problem
@@ -49,6 +49,28 @@ Listen only (CLAUDE.md, "Hardware safety"): the app opens the UC4's MIDI input a
    display from the app would be a separate plan behind the send rules (user, 2026-11-15).
 2. No new dependency: Web MIDI in Chromium, the same access as 0005 step 1 (architect,
    2026-11-15).
+3. **The MIDI monitor sits at the bottom of the Connections column and works like cmdAbl's `midi monitor`**
+   (user, 2026-11-26): one row per message key (type, channel, number); a new key adds a row on top, after that
+   only its value changes in place, and the row that moved last is marked. It says that it listens, or why it
+   stopped. An input picker: "All inputs" or one input; rows from the UC4's port carry a UC4 mark. An output
+   picker comes later (sending is its own decision, decision 1). Why: a log of every value buries the controls;
+   one row per control is what learn and matching need.
+4. **A message from the UC4 is matched to its controls and ranked by context** (user, 2026-11-26): the active
+   setup and its two active groups first, then the other groups of the active setup, then the other setups. The
+   device view lights the best match; the row names it ("FAd3 · FG2") with "+n" for the others. Why: the UC4
+   sends nothing on a setup or group change (listen check below), so the editor can only rank.
+5. **Pinning** (user, 2026-11-26): on a row with several matches the user picks the control it is; the pin holds
+   for that message key until the active setup changes. Why: settles what the context can't.
+6. **Follow the evidence, as an offer only** (user, 2026-11-26): when messages keep matching another group (or
+   setup) better than the active one, the editor offers "The UC4 seems to be on encoder group 3 — switch?". It
+   never switches by itself.
+7. **Collisions are warnings, not problems, and can be waived** (user, 2026-11-26): two controls that send the
+   same message in the same active groups (or the same setup) give a **warning**; it does not block a send or an
+   export, since mapping one CC twice can be intended. The user can **waive** a warning (like a DRC waiver in a
+   circuit-board designer): it is hidden, and a "Show waived" switch brings it back, where it can be un-waived.
+   A waiver belongs to the setup and names the two controls and the message; when either control's message
+   changes, the waiver no longer applies. Why: a problem (0006) means the validator rejects a value and blocks a
+   send; a collision is a valid choice the user may have made on purpose.
 
 ## Open questions
 
@@ -60,8 +82,8 @@ sends nothing on a group change; it also has a **learn** mode worth grilling.
    visible pane while the user switches setup, encoder group and fader/button group. Recommended:
    if it sends, the app follows the device; if not, the user picks the active setup and groups
    in the app, and the app suggests a switch when messages match another group better.
-2. **Two controls with the same message** in the active groups: mark both, or the first?
-   Recommended: mark both, with a hint in the problem list (0006) that they collide.
+2. ~~Two controls with the same message~~ — answered by decisions 4 and 7: both light up, ranked; a warning,
+   waivable.
 3. **Where the matching lives**: `src/protocol/` (MIDI meaning of a command) or `src/live/`.
    Recommended: a small `src/live/` module that uses the model only; the protocol engine stays
    SysEx-only.
@@ -107,6 +129,22 @@ script against the setup's real messages. To grill:
 2. Sending into Live is new for the editor: its own decision, and the UI note that an automated check run may play too.
 3. Which setup and groups apply (the script expects SE17; the rig can't know the UC4's active group).
 4. Relative modes other than `CCr1` are untested.
+
+### To grill (2026-11-26)
+
+1. Where a waiver is stored: in the setup in the `uc4-config` file (a `schemaVersion` change, the user's call), or
+   in the library beside it. Recommended: in the file, so a waiver survives export and import.
+2. Where warnings show: the problem list (0006) with a warning mark, or a list of their own. Recommended: the same
+   list, warnings after problems, with the "Show waived" switch.
+3. Do warnings cover other setups, or only collisions inside one setup's groups? Recommended: inside one setup
+   (an encoder group and a fader/button group can be active together; across setups never).
+4. "Evidence": how many messages, and how they are weighed. Recommended: three messages in a row that match only
+   another group.
+5. The monitor's size, a clear button, and whether rows from other inputs are matched (learn) or only listed.
+6. Learn from the monitor ("Assign to…" on a row) and/or the next message while a control is selected.
+7. `CCAh` (CC n and n+32) and `notE` (on/off) as one row each.
+8. Where matching lives (question 3 above) and the order of steps: monitor first, then matching, then
+   warnings, then learn.
 
 ## Steps
 

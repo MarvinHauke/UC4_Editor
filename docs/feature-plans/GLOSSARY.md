@@ -176,8 +176,27 @@ The device view with no control selected, showing what the UC4 sends.
 _Avoid_: monitor mode, play mode
 
 **MIDI monitor**:
-The list of MIDI messages arriving from every connected input.
+The list at the bottom of Connections of the messages arriving from the chosen inputs, one row per message key
+(type, channel, number) whose value updates in place.
 _Avoid_: log, console
+
+**Match**:
+A control of the library whose message is the one that arrived; several matches are ranked by the active setup and
+groups.
+_Avoid_: hit, mapping
+
+**Pin**:
+The user's pick of which match a message key is, held until the active setup changes.
+_Avoid_: lock, bind
+
+**Warning**:
+Something in a setup that may be a mistake but is allowed, such as two controls sending the same message; it never
+blocks a send.
+_Avoid_: problem (the validator rejects), error
+
+**Waive**:
+To hide a warning on purpose; "Show waived" brings it back.
+_Avoid_: ignore, dismiss, mute
 
 **Learn**:
 Taking a control's command type, channel and number from the next message of another MIDI device.
@@ -207,7 +226,7 @@ _Avoid_: shortcut
 **Problem**:
 A value in a loaded configuration that the validator rejects; it is marked, never changed, and
 blocks sending.
-_Avoid_: error (a refused file), warning
+_Avoid_: error (a refused file), warning (allowed, see Warning)
 
 **Transfer**:
 Receiving a dump from the device or sending one to it over MIDI.

@@ -4,7 +4,7 @@ The working state: what is built, what is in work, what needs a check, and open 
 Maintained by the architect. The order of features is in the [plan index](README.md#next-in-dependency-order);
 decisions live in the numbered plans. Finished work is in the git history, not here.
 
-_Last updated: 2026-11-25 (0011 public release in work; Faderfox's documentation checked; PR #2 open)._
+_Last updated: 2026-11-26 (public repo live, PR #1 merged and deployed; 0008 live view next, to grill)._
 
 ## Now
 
@@ -49,6 +49,12 @@ _Last updated: 2026-11-25 (0011 public release in work; Faderfox's documentation
     layout is not worked out yet.
 
 ## In work
+
+- **0008 live view** (user, 2026-11-26, branch `feat/live-view`): MIDI monitor at the bottom of Connections (as in
+  cmdAbl), matching ranked by context, pinning, "follow the evidence" as an offer, collisions as waivable warnings
+  (decisions 3–7). Next: `/grill-with-docs` on 0008 (questions "To grill (2026-11-26)"), then `/to-spec`, `/to-tickets`.
+- **Public release:** the repo `MarvinHauke/UC4_Editor` is public, PR #1 merged 2026-11-26 and deployed to Pages;
+  the old workshop repo is `UC4_Editor-workshop`. Open: Q47 (commit email), 0011 step 3's book icon, then 0011 built.
 
 - **Local branches, not pushed** (user tries first, 0010 decision 7): `fix/guide-and-dump-overlay` → `feat/onboarding` (0012, welcome card `d6b7a9f`) → `feat/compact-dumps` (0010 step 6 in work). Open, light theme: `--border` `#b9b9b3` on white is 1.97:1, below 3:1 for field edges; app-wide, left for a token pass.
 - **0011 public release** (2026-11-25): steps 2–4 and 6 done; PR #2 with the user; privacy check done except the commit email (Q47). **For uc4-model**, from Faderfox's documentation (uc4-sysex.md §11): the push button's +4 low nibble is a mode/scale byte (not "none"); the number is unused for `PrGC`, `AFtt` and `Pbnd`, so validation must not reject any value there. **uc4-protocol** (later): `tests/protocol/markOLikely.ts` mutates the shared profile; convert to a test engine from `createEngine` with a modified profile, as `guard.test.ts` does.
