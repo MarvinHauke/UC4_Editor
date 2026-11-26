@@ -82,7 +82,8 @@
   .panel:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   /* 1320 = WIDE_PX in connections.ts */
   @media (min-width: 1320px) { .panel { position: static; width: auto; } .conn.open .strip { left: auto; right: 6px; } }
-  h2 { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); padding-right: 36px; font-size: var(--text-lg); line-height: 24px; }
+  /* Sticky: when the panel scrolls, content passes beneath the heading and never under the close arrow ‹ that sits on its line. */
+  h2 { position: sticky; top: calc(-1 * var(--space-3)); z-index: 0; display: flex; align-items: center; gap: var(--space-2); margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-3)) var(--space-2); padding: var(--space-3) 36px var(--space-1) var(--space-3); background: var(--surface); font-size: var(--text-lg); line-height: 24px; }
   section :global(h3), .panel :global(h3) { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-md); }
   .how { margin-top: var(--space-3); min-height: var(--target); width: 100%; padding: 3px var(--space-3); font: inherit; text-align: left; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .how:hover { background: var(--accent-soft); }
