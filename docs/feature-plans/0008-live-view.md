@@ -498,7 +498,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    the control has a warning; resets the control to factory (one undo step, result line); the mark goes. Checks:
    unit test for the factory control of a slot and group, browser list.
 
-12. **Remove Split** (decision 28) — uc4-protocol (live: `split`/`join` and the saved `splits` go, joined rows expose
+12. **Remove Split** (decision 28) — done 2026-11-26: uc4-protocol (`f145183`, `pair.parts`), uc4-ui (`ed2d787`; reviewed; screenshots checked by the architect, parts line 5.5:1 light, 5.1:1 dark) — uc4-protocol (live: `split`/`join` and the saved `splits` go, joined rows expose
    their parts), then uc4-ui (switch and sub-rows go, parts as text in the open row) · blocked by: 10 · Checks:
    live-module tests, browser list.
 

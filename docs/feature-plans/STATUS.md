@@ -11,7 +11,7 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
 
 - **0008 live view** (user, 2026-11-26, branch `feat/live-view`, local): monitor, matching, pins, Follow, switch offer,
   warnings with waivers and the Problems and warnings dialog, Map by click and by touch, clearing a colliding
-  mapping (decisions 3–28). Steps 1–11 built and browser-checked; the code review's 9 findings fixed (decision 27);
+  mapping (decisions 3–28). Steps 1–12 built and browser-checked; the code review's 9 findings fixed (decision 27);
   1477 tests. Not browser-checked: the "● n problems" button, Connect from the dump guide, ✕ on an already-factory
   control (unit-tested). PR only on the user's word. Later: monitor sorting (decision 25 Q5), a control label field,
   DAW feedback, Learn, check mode (decisions 16, 9, 19).
@@ -19,10 +19,10 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
   `feat/onboarding` (0012, welcome card `d6b7a9f`) → `feat/compact-dumps` (0010 step 6 in work).
 - **Public:** `MarvinHauke/UC4_Editor` (PR #1 merged and deployed 2026-11-26; the old repo is `UC4_Editor-workshop`).
   0011: PR #2 with the user. 0009 user guide built (`ab52ad4`; preview `npm run docs` on :8000).
-- **Retro 2026-11-26** (user OK'd root config): CI on every push and pull request (lint, test, build,
-  `tools/check-plans.ts`) and the plan check — uc4-protocol; lint green and one storage-key module with a lint rule —
-  uc4-ui; 0008 step 12 (remove Split, decision 28) — uc4-protocol then uc4-ui. The architect: "one right edge" in
-  `uc4-ui-design`, `docs/agents/browser-checks.md`.
+- **Retro 2026-11-26** done: CI on every push and pull request (`ac1c652`: plan check, lint, test, build),
+  `tools/check-plans.ts` (`7696577`), lint green (`a1a2c2e`), one storage-key module with a lint rule (`a664155`),
+  "one right edge" and `docs/agents/browser-checks.md` (`5b9a0b3`), STATUS pruned. 0008 step 12 (no Split) done;
+  crossfader centred (`771109b`).
 
 ## Waiting for the user
 
