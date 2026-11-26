@@ -82,9 +82,9 @@
       {#if row.matches.length > 0}
         <ul class="alts" aria-label="Controls that send this message">
           {#each row.matches as m, i (m.control.id)}
-            {@const w = whereWord(m)}
+            {@const w = m.tier === 3 ? whereWord(m) : null}
             <li>
-              <span class="altname">{#if i === 0 && row.pinned}<span class="pinmark" title="Pinned" aria-hidden="true">◆</span><span class="sr">pinned </span>{/if}{m.control.name}{#if w}{' '}<span class="where">· {w}</span>{/if}</span>
+              <span class="altname">{#if i === 0 && row.pinned}<span class="pinmark" title="Pinned" aria-hidden="true">◆</span><span class="sr">pinned </span>{/if}<span class="nm">{m.control.name}</span>{#if w}{' '}<span class="where">· {w}</span>{/if}</span>
               <button type="button" class="act show" data-help="Show {m.control.name} in the editor" onclick={() => { onselect(m); }}>Show</button>
               {#if row.matches.length > 1}
                 {#if i === 0 && row.pinned}
@@ -146,10 +146,11 @@
   .where { color: var(--text-muted); }
   .alts { margin: 0; padding: 0; list-style: none; }
   /* Actions in fixed right-aligned columns: Show and Pin/Unpin always stand in the same place. */
-  .alts li { display: grid; grid-template-columns: minmax(0, 1fr) 46px 54px; align-items: center; gap: var(--space-2); min-height: 28px; }
+  .alts li { display: grid; grid-template-columns: minmax(0, 1fr) 46px 46px; align-items: center; gap: var(--space-2); min-height: 28px; }
   .alts .show { grid-column: 2; } .alts .pinbtn { grid-column: 3; }
   .pinmark { margin-right: var(--space-1); color: var(--text-muted); }
-  .altname { min-width: 0; overflow-wrap: anywhere; }
+  .altname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .alts .act { padding: 0 var(--space-1); }
   .act { min-height: 24px; min-width: 24px; padding: 0 var(--space-2); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .act:hover { background: var(--accent-soft); }
   .act:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
