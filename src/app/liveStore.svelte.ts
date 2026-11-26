@@ -21,7 +21,7 @@ export function createLive(inputs: MidiInputs, session: LiveSession = createLive
 
   inputs.select(loadSelection(storage)); // re-applied on load; an id that isn't plugged in keeps its choice and listens to nothing
   selection = inputs.selection;
-  // Split pairs and "don't ask again" live as long as the tab: restored before the first message, saved after each change that alters them.
+  // "Don't ask again" lives as long as the tab: restored before the first message, saved after each change that alters them.
   session.restoreState(loadSessionState(sessionStore));
   let savedText = JSON.stringify(session.getState());
   const saveState = (): void => {
@@ -72,9 +72,6 @@ export function createLive(inputs: MidiInputs, session: LiveSession = createLive
     nextUnmapped(rowKey?: string): LiveRow | null { return session.nextUnmapped(rowKey); },
     /** For every control of the open groups: can it take this row's message (dim the others). Reads `rows`, so a caller in a `$derived` updates. */
     mapTargets(rowKey: string): MapTarget[] { void rows; return session.mapTargets(rowKey); },
-    /** A pair's single messages (Split) or the joined row (Join); `row.pair.key`. */
-    split(pairKey: string): void { session.split(pairKey); },
-    join(pairKey: string): void { session.join(pairKey); },
     get inputs() { return list; },
     get selection() { return selection; },
     get status() { return status; },

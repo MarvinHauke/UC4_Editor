@@ -72,7 +72,7 @@ describe('live context', () => {
 });
 
 describe('session state', () => {
-  it('saves a split and restores it in a new store of the same tab', async () => {
+  it('saves the silenced offers and restores them in a new store of the same tab', async () => {
     const tab = memory();
     const f1 = fakeEnv();
     const u1 = new FakeInput('u', 'Faderfox UC4'); f1.access.inputs.set('u', u1);
@@ -80,15 +80,16 @@ describe('session state', () => {
     await a.connect();
     u1.emit(0x91, 60, 100); u1.emit(0x81, 60, 0);
     expect(a.rows).toHaveLength(1);
-    a.split(a.rows[0]!.pair!.key);
-    expect(a.rows).toHaveLength(2);
-    expect(tab.m.get(SESSION_STATE_KEY)).toContain('splits');
+    a.declineOffer(true);
+    expect(a.silenced).toBe(true);
+    expect(tab.m.get(SESSION_STATE_KEY)).toContain('silenceOffers');
     const f2 = fakeEnv();
     const u2 = new FakeInput('u', 'Faderfox UC4'); f2.access.inputs.set('u', u2);
     const b = createLive(createMidiInputs({ portName: 'Faderfox UC4', env: f2.env }), undefined, memory(), tab);
     await b.connect();
     u2.emit(0x91, 60, 100); u2.emit(0x81, 60, 0);
-    expect(b.rows).toHaveLength(2);
+    expect(b.silenced).toBe(true);
+    expect(b.rows).toHaveLength(1);
     expect(createLive(createMidiInputs({ portName: 'x', env: fakeEnv().env }), undefined, memory(), memory()).rows).toEqual([]);
   });
 });

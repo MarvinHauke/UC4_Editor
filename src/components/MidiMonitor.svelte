@@ -36,8 +36,7 @@
         ontoggle={() => { openKey = openKey === row.key ? null : row.key; }}
         onreset={row.mappedTo && mapUi.canReset(row.mappedTo) ? () => { map.resetToFactory(row.key, row.mappedTo!); } : undefined}
         armed={map.armed === row.key} next={map.nextKey === row.key} onmap={() => { map.toggle(row.key); }}
-        onselect={onselectmatch} onpin={(id) => { live.pin(row.key, id); }}
-        onsplit={() => { if (row.pair) live.split(row.pair.key); }} onjoin={() => { if (row.pair) live.join(row.pair.key); }} />
+        onselect={onselectmatch} onpin={(id) => { live.pin(row.key, id); }} />
     {:else}
       <p class="empty">{listening ? 'No messages yet. Move a control on a MIDI device and its row appears here.' : 'Nothing to list yet. The line above says what to do.'}</p>
     {/each}
