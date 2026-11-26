@@ -456,7 +456,8 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 10. **Row polish and split in place** (decision 25, Q5, Q9) — uc4-protocol (live module: split rows keep their
    place), then uc4-ui · blocked by: 9 · whole row one target, full-width band behind the arrow, match text its
    own target; split rows as indented sub-lines under the pair, updating in place; Split/Join a small switch on
-   the open row's first line. Checks: live-module tests, browser list.
+   the open row's first line; the match text is cut ("F…") at 320 px today, make it fit (uc4-ui, step 9). Checks:
+   live-module tests, browser list.
 
 ## Out of scope
 
