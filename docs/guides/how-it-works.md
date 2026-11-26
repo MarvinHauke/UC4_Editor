@@ -111,8 +111,9 @@ A byte outside these tables is shown as a problem. It is never mapped silently.
 The eight encoder group names of a setup are 4 bytes each, one character per byte. The UC4 stores no
 case, because its display has seven segments. The characters are the digits `0`–`9`, the letters
 `a b c d e f g h i j l m n o p q r s t u x y z` (there is no `k` and no `w`, and `u` and `v` show the
-same sign) and six symbols, the last of which is a blank. Every character code is **confirmed**
-except `o`, which is only **likely**: it was seen in a factory name but never set on purpose.
+same sign) and six symbols, the last of which is a blank: 39 codes in all, `0` to `38`. Every
+character code is **confirmed**: all but `o` by dumps that changed them on the device, and `o` by
+Faderfox's own list of the device's characters, which matches this order code for code.
 
 ## What the UC4 does itself
 
