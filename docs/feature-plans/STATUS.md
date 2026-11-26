@@ -54,8 +54,8 @@ _Last updated: 2026-11-26 (0008 live view: steps 1–5, 7, 8 built; round 5 gril
   warnings, Map by click and by touch; grilled in five rounds (decisions 3–25). **Steps 1–5, 7, 8 done and
   browser-checked 2026-11-26**, plus decisions 23 (`fb3b0d1`) and 24 (`bc9f905`). Round 5 (decision 25, user,
   2026-11-26): one highlight language, Follow instead of One line, row polish, split in place, a warnings dialog;
-  factory collisions start waived (B). Step 9 done `cda7fdd` (browser-checked). Bug found in the check, with uc4-ui: the section folds and the
-  Connections column share one browser key (`bc9f905`), so the column forgets it was open. Frontier: step 10 (row polish, uc4-protocol then uc4-ui), then step 6 reshaped (warnings dialog and waivers,
+  factory collisions start waived (B). Step 9 done `cda7fdd` (browser-checked). Bug found in the check and fixed `5fbdfa0` (folds and the Connections
+  column shared one browser key). Frontier: step 10 (in work 2026-11-26) (row polish, uc4-protocol then uc4-ui), then step 6 reshaped (warnings dialog and waivers,
   uc4-model then uc4-ui). With step 6: `warnings.ts` names green buttons `Btn3`, must be `btn3`. Later: sort the
   monitor by type, channel or last touched (decision 25 Q5). Offer placement settled (kept; shares the warnings'
   place in the status bar when Connections is folded). Hardware list (listen only) for the user.
