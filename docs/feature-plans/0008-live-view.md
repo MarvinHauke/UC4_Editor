@@ -346,9 +346,11 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
      waived". The ‹ › stepper goes, for problems too: the problem count also opens the dialog (architect,
      2026-11-26, from the step 6 review). The property panel keeps a short line naming the other control ("Also sent by
      Enc3 · EG1"), and the device view keeps the mark on the control, so it stays visible which control is
-     affected. **Factory collisions start waived** (B), marked "factory layout", until one of the two controls
-     changes: a fresh library shows no warning. Send lists unwaived warnings with "Send anyway" (waives them) and
-     "Review…" (opens the dialog).
+     affected. **Factory collisions start waived** (B), marked "factory layout", until what one of the two controls
+     sends changes (type, mode, channel, number, lower, upper; a label or display scale doesn't count): a fresh
+     library shows no warning. Send lists unwaived warnings with "Send anyway" and "Review…" (opens the dialog);
+     **Send anyway waives them only after the port took the send** (architect, 2026-11-26, from the code review:
+     a failed send leaves them open).
    - **Follow is on by default** (user, 2026-11-26, after trying step 9); turning it off is remembered. Follow and
      Clear have the same button size.
    - **Row details** (architect, 2026-11-26, from the user's screenshot, built in step 10): on an open row, Map is a
@@ -370,6 +372,12 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    result line ("FAd1 · FG1 back to factory: CCAb 32 ch1"); the row's mapped mark goes and it shows its match again.
    Why only on a collision: a mapping that clashes with nothing needs no clearing; the property panel stays the way
    to change it otherwise. Built from `factorySetup` and `setControl`, no new library API (architect).
+
+27. **A program range outside 0–127 is cut, not clamped** (architect, 2026-11-26, from the code review): an
+   imported `PrGC` control with values out of range (a problem, still loaded) collides and matches only on the
+   programs that exist: an encoder's or fader's lower…upper intersected with 0–127, a button's upper only if it is
+   0–127; nothing when the range is empty. One rule in the model, used by the warnings and the live matching. Why:
+   a clamp made up program 127 for upper 200, and an unbounded range froze the tab.
 
 ## Open questions
 
