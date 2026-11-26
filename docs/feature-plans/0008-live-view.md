@@ -473,7 +473,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    the open row's first line; the match text is cut ("F…") at 320 px today, make it fit (uc4-ui, step 9). Checks:
    live-module tests, browser list.
 
-11. **Clear a colliding mapping** (decision 26) — uc4-ui · blocked by: 10 · ✕ on an open mapped row's target when
+11. **Clear a colliding mapping** (decision 26) — done 2026-11-26: uc4-ui (`295faeb`, `f1b6e4a`; reviewed; browser-checked by the architect: no ✕ without a collision, reset, result-line Undo brings the mark back) — uc4-ui · blocked by: 10 · ✕ on an open mapped row's target when
    the control has a warning; resets the control to factory (one undo step, result line); the mark goes. Checks:
    unit test for the factory control of a slot and group, browser list.
 
