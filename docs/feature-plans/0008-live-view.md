@@ -368,7 +368,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 2. **Matching and live values** — done 2026-11-26: uc4-protocol (`66dfa17`), uc4-ui (`931d9f6`, browser-checked by the architect: match line, +1 list, pin ◆, row click switches groups without an undo step, ring and button fill; the relative tick and the PrGC pulse left for the user) · blocked by: 1 · UC4 rows name their match, ranked in
    three tiers, "+n" with the list, pins, a click on a UC4 row selects its control; the device view lights the
    match and shows live values (fader, ring, press), "unknown" until first sent. Stories 14–21. Hardware list.
-3. **Pairs, values and monitor size** — uc4-protocol (done `ba09253`, reviewed; a note's press and release are one row for every input, a `CCAh` pair only when it matches), then uc4-ui · blocked by: 2 · `CCAh` pair and `notE` press and
+3. **Pairs, values and monitor size** — done 2026-11-26: uc4-protocol (`ba09253`; a note's press and release are one row for every input, a `CCAh` pair only when it matches), uc4-ui (`841cf2a`, browser-checked by the architect: split/join, one line, height kept; row actions as small icon buttons on line 1, architect) · blocked by: 2 · `CCAh` pair and `notE` press and
    release as one row, split for the tab's life; values 0–16383, "on/off", "+1/−1"; resize with a scrollbar, one
    line. Stories 8–12.
 4. **Switch offer** — uc4-protocol (done `218308d`, reviewed; a message that matches several other groups is no evidence), then uc4-ui · blocked by: 2 · 3 in a row → offer; switch as one undo step; "no"
