@@ -361,6 +361,14 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
      (on / off, MSB / LSB) updating in place; Split/Join is a small switch on the open row's first line. Tried, not
      settled: Split may go again if it isn't needed.
 
+26. **Clearing a mapping resets the control to factory** (user, 2026-11-26, after trying step 10; option (b) of
+   three, not "give back the old command" and not "remove the mark only"): on an open mapped row, the mapped target
+   ("→ FAd1 · FG1") gets a ✕ **only when that control collides** with another one (it has a warning, waived or
+   not). The ✕ puts the whole control back to its factory settings for its slot and group, as one undo step, with a
+   result line ("FAd1 · FG1 back to factory: CCAb 32 ch1"); the row's mapped mark goes and it shows its match again.
+   Why only on a collision: a mapping that clashes with nothing needs no clearing; the property panel stays the way
+   to change it otherwise. Built from `factorySetup` and `setControl`, no new library API (architect).
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it
@@ -459,11 +467,15 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    field has focus, no undo step, remembered), replacing the offer while on; One line removed; the monitor folds;
    with Connections folded, the offer takes the warning count's place in the status bar while it shows.
    Checks: browser list with `/?midi=fake`, screenshots light and dark.
-10. **Row polish and split in place** (decision 25, Q5, Q9) — live half done 2026-11-26: uc4-protocol (`4768de4`, `pair.role` on split halves, halves adjacent at the pair's place, stable keys); UI half `8d416f5` (uc4-ui, reviewed; browser-checked by the architect, one fix open: alt names wrap) — uc4-protocol (live module: split rows keep their
+10. **Row polish and split in place** (decision 25, Q5, Q9) — live half done 2026-11-26: uc4-protocol (`4768de4`, `pair.role` on split halves, halves adjacent at the pair's place, stable keys); UI half `8d416f5` and `586a8c3` (uc4-ui, reviewed; browser-checked by the architect). Done 2026-11-26 — uc4-protocol (live module: split rows keep their
    place), then uc4-ui · blocked by: 9 · whole row one target, full-width band behind the arrow, match text its
    own target; split rows as indented sub-lines under the pair, updating in place; Split/Join a small switch on
    the open row's first line; the match text is cut ("F…") at 320 px today, make it fit (uc4-ui, step 9). Checks:
    live-module tests, browser list.
+
+11. **Clear a colliding mapping** (decision 26) — uc4-ui · blocked by: 10 · ✕ on an open mapped row's target when
+   the control has a warning; resets the control to factory (one undo step, result line); the mark goes. Checks:
+   unit test for the factory control of a slot and group, browser list.
 
 ## Out of scope
 
