@@ -300,7 +300,8 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    live position (fader 9 sideways), with its number in it, instead of a line drawn across a cap that stays in the
    middle; an encoder's ring sweeps like a real knob from bottom left (0) clockwise to bottom right (127), so the
    gap sits at the bottom, behind the push button's label. A relative encoder's tick moves on the same sweep.
-   Before a control first sends, the cap and ring stay as drawn today ("unknown").
+   Before a control first sends, the cap and ring stay as drawn today ("unknown"). Built `fb3b0d1` (uc4-ui,
+   reviewed; browser-checked by the architect: fader 1 and 9 at 0, ring at 64 and 127).
 
 ## Open questions
 
