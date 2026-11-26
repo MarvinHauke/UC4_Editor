@@ -12,14 +12,15 @@
   import ConnectionSection from './ConnectionSection.svelte';
   import DumpNotice from './DumpNotice.svelte';
   import DumpsList from './DumpsList.svelte';
+  import type { Match } from '../live/index.ts';
   import MidiMonitor from './MidiMonitor.svelte';
 
   interface Props {
     device: Device; live: Live; profile: Pick<DeviceProfile, 'deviceName'>; store: Store | null; confirm: Confirm;
     queue: readonly Notice[]; arrivals: number; open: boolean; onopen: (open: boolean) => void;
-    onsenddump: () => void; onreview: (n: Notice) => void; onexport: (n: Notice) => void; ondismiss: (n: Notice) => void;
+    onsenddump: () => void; onselectmatch: (match: Match) => void; onreview: (n: Notice) => void; onexport: (n: Notice) => void; ondismiss: (n: Notice) => void;
   }
-  let { device, live, profile, store, confirm, queue, arrivals, open, onopen, onreview, onexport, ondismiss, onsenddump }: Props = $props();
+  let { device, live, profile, store, confirm, queue, arrivals, open, onopen, onreview, onexport, ondismiss, onsenddump, onselectmatch }: Props = $props();
   let strip = $state<HTMLButtonElement | null>(null);
   let panel = $state<HTMLElement | null>(null);
   const info = $derived(stripInfo(profile.deviceName, device.state, queue.length));
@@ -52,7 +53,7 @@
       {/if}
       {#if store}<DumpsList {store} {confirm} />{/if}
       <button type="button" class="how" data-help="How to send a dump · UC4: shows the steps on the device view; the editor only listens" onclick={() => { onsenddump(); }}>How to send a dump from the {profile.deviceName}</button>
-      <MidiMonitor {live} />
+      <MidiMonitor {live} {onselectmatch} />
     </div>
   {/if}
 </aside>

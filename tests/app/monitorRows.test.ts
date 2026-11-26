@@ -1,22 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { INPUT_KEY, loadSelection, pickerOptions, rowLabel, rowText, saveSelection, sourceName } from '../../src/app/monitorRows.ts';
-import type { MonitorRow } from '../../src/live/index.ts';
+import type { LiveRow } from '../../src/live/index.ts';
 
-const row = (p: Partial<MonitorRow>): MonitorRow => ({
-  key: 'a|cc:2:74', kind: 'cc', channel: 2, number: 74, value: 64, on: null, inputId: 'a', isUc4: false, at: 0, count: 1, lastMoved: false, ...p,
+const row = (p: Partial<LiveRow>): LiveRow => ({
+  key: 'a|cc:2:74', kind: 'cc', channel: 2, number: 74, value: 64, on: null, inputId: 'a', isUc4: false, at: 0, count: 1, lastMoved: false, matches: [], best: null, more: 0, pinned: false, pair: null, mappedTo: null, valueText: '64', ...p,
 });
 
 describe('rowText', () => {
-  it('shows raw values per kind', () => {
-    expect(rowText(row({}))).toEqual({ message: 'CC 74', channel: '2', value: '64' });
-    expect(rowText(row({ kind: 'note', number: 60, value: 127, on: true })).value).toBe('on 127');
-    expect(rowText(row({ kind: 'note', number: 60, value: 0, on: false })).value).toBe('off 0');
-    expect(rowText(row({ kind: 'pitchBend', number: null, value: 16383 }))).toMatchObject({ message: 'Bend', value: '16383' });
-    expect(rowText(row({ kind: 'program', number: 5, value: 0 })).value).toBe('—');
+  it('names the message per kind', () => {
+    expect(rowText(row({}))).toEqual({ message: 'CC 74', channel: '2' });
+    expect(rowText(row({ kind: 'note', number: 60 })).message).toBe('Note 60');
+    expect(rowText(row({ kind: 'pitchBend', number: null }))).toEqual({ message: 'Bend', channel: '2' });
   });
   it('labels a row with its source for screen readers', () => {
     expect(rowLabel(row({ isUc4: true }), 'Faderfox UC4')).toBe('CC 74 ch 2, 64, from Faderfox UC4 (the UC4)');
-    expect(rowLabel(row({ kind: 'pitchBend', number: null, value: 8192 }), 'Synth')).toBe('Bend ch 2, 8192, from Synth');
+    expect(rowLabel(row({ kind: 'pitchBend', number: null, value: 8192, valueText: '8192' }), 'Synth')).toBe('Bend ch 2, 8192, from Synth');
+  });
+  it('adds the match, pinned and the others to the label', () => {
+    const best = { control: { id: 'x', setupId: 's', setupName: 'SE01', area: 'faders', group: 0, index: 0, name: 'FAd1 · FG1' }, tier: 1, via: 'message' } as LiveRow['best'];
+    expect(rowLabel(row({ isUc4: true, best, more: 1, pinned: true }), 'UC4')).toBe('CC 74 ch 2, 64, from UC4 (the UC4), FAd1 · FG1 (pinned), 1 more');
   });
   it('names the source, also when it is gone', () => {
     expect(sourceName(row({}), [{ id: 'a', name: 'Synth', isUc4: false }])).toBe('Synth');

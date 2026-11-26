@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createLive } from '../../src/app/liveStore.svelte.ts';
+import { createLiveSession, type LiveContext } from '../../src/live/index.ts';
 import { createMidiInputs } from '../../src/midi/inputs.ts';
 import { FakeInput, fakeEnv } from '../midi/fakeMidi.ts';
 
@@ -40,5 +41,30 @@ describe('live store', () => {
     expect(live.clockIgnored).toBe(false);
     uc4.emit(0xf8);
     expect(live.clockIgnored).toBe(true);
+  });
+});
+
+describe('live context', () => {
+  it('reaches the session only when the setup, a group selection or the configuration changes', () => {
+    const f = fakeEnv();
+    const session = createLiveSession();
+    const sent: unknown[] = [];
+    const real = session.setContext.bind(session);
+    session.setContext = (c) => { sent.push(c); real(c); };
+    const live = createLive(createMidiInputs({ portName: 'Faderfox UC4', env: f.env }), session, memory());
+    const configuration = { setups: [] } as unknown as LiveContext['configuration'];
+    const ctx = (over: Partial<LiveContext> = {}): LiveContext => ({ configuration, setupId: 's1', encoderGroup: 0, faderButtonGroup: 0, ...over });
+    live.setContext(ctx());
+    live.setContext(ctx()); // a control selected, a save status flipped: same four inputs
+    live.setContext(ctx());
+    expect(sent).toHaveLength(1);
+    live.setContext(ctx({ encoderGroup: 2 }));
+    live.setContext(ctx({ encoderGroup: 2, faderButtonGroup: 1 }));
+    live.setContext(ctx({ encoderGroup: 2, faderButtonGroup: 1, setupId: 's2' }));
+    live.setContext(ctx({ encoderGroup: 2, faderButtonGroup: 1, setupId: 's2', configuration: { setups: [] } as unknown as LiveContext['configuration'] }));
+    expect(sent).toHaveLength(5);
+    live.setContext(null);
+    live.setContext(null);
+    expect(sent).toHaveLength(6);
   });
 });

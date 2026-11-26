@@ -7,6 +7,8 @@
   import { GEOMETRY } from '../app/profile/uc4Geometry.ts';
   import type { Direction } from '../app/navigation.ts';
   import { AREA_NAMES, controlNumber } from '../app/profile/uc4Properties.ts';
+  import type { ControlState } from '../live/index.ts';
+  import { relativeAngle, ringPath, stateText } from '../app/liveView.ts';
 
   interface Props {
     area: ControlArea;
@@ -22,6 +24,10 @@
     problemCount: number;
     /** Warnings that name this control (plan 0008): an amber triangle beside the problem mark; nothing is blocked. */
     warningCount?: number;
+    /** What the UC4 last sent from this control (plan 0008): absent while unknown, never a guessed position. */
+    live?: ControlState;
+    /** The last UC4 message was matched to this control: it is lit like a guide's cue. */
+    touched?: boolean;
     /** `shift`: Shift was held (click or Enter): on encoders and green buttons that picks the group, as on the UC4. */
     onselect: (shift: boolean) => void;
     /** For encoders and green buttons: the group a Shift-click shows ("encoder group 3 · Send 3"). */
@@ -32,7 +38,7 @@
     onfocused: () => void;
   }
   const copy = useCopyHold(); // needs COPY_CONTEXT, which App sets // needs COPY_CONTEXT (AreaView's parent sets it)
-  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, warningCount = 0, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
+  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, warningCount = 0, live, touched = false, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
 
   const shape = $derived(GEOMETRY[area][index]!);
   const name = $derived(`${AREA_NAMES[area].singular} ${controlNumber(index)}`);
@@ -46,8 +52,9 @@
   const kindWord = $derived(AREA_NAMES[area].singular.toLowerCase());
   const kindClass = $derived(area === 'encoders' || area === 'pushButtons' ? 'enc' : 'fb');
   // Schema (decision 39): what it is · the one way · UC4. On encoders and green buttons the one way is Shift + click.
+  const liveText = $derived(stateText(live));
   const help = $derived(
-    `${name}: ${type} ${number}${problemCount > 0 ? ` · ${problemCount} problem${problemCount === 1 ? '' : 's'}` : ''}${warningCount > 0 ? ` · ${warningCount} warning${warningCount === 1 ? '' : 's'}` : ''} · ${shiftTarget ? `Shift + click: ${shiftTarget}` : 'click to edit'}${shiftTarget ? ' · UC4: Shift + press' : ''}`,
+    `${name}: ${type} ${number}${liveText ? ` · live ${liveText}` : ''}${problemCount > 0 ? ` · ${problemCount} problem${problemCount === 1 ? '' : 's'}` : ''}${warningCount > 0 ? ` · ${warningCount} warning${warningCount === 1 ? '' : 's'}` : ''} · ${shiftTarget ? `Shift + click: ${shiftTarget}` : 'click to edit'}${shiftTarget ? ' · UC4: Shift + press' : ''}`,
   );
   function key(e: KeyboardEvent): void {
     const move = matchKey(e, ['controlMove']);
@@ -57,6 +64,21 @@
   // Centre of the text block; faders put it under the track, the others inside the shape.
   const cx = $derived(shape.shape === 'disc' ? shape.cx : shape.x + shape.width / 2);
   const cy = $derived(shape.shape === 'disc' ? shape.cy : shape.shape === 'pill' ? shape.y + shape.height / 2 : shape.y + shape.height);
+  // The UC4's own values (plan 0008 step 2): a fader's mark on its track, an encoder's ring, a button's press. Unknown draws nothing.
+  const fraction = $derived(live?.kind === 'absolute' ? live.fraction : null);
+  const faderMark = $derived.by((): { x: number; y: number; width: number; height: number } | null => {
+    if (shape.shape !== 'fader' || fraction === null) return null;
+    if (shape.horizontal) { const x1 = shape.x + 10, x2 = shape.x + shape.width - 10; return { x: x1 + fraction * (x2 - x1) - 2, y: shape.y + 4, width: 4, height: shape.height - 8 }; }
+    const top = shape.y + 6, bottom = shape.y + shape.height - 6;
+    return { x: cx - 16, y: bottom - fraction * (bottom - top) - 2, width: 32, height: 4 };
+  });
+  const ring = $derived(shape.shape === 'disc' && (area === 'encoders') && live?.kind === 'absolute' && fraction !== null ? ringPath(shape.cx, shape.cy, shape.r + 7, fraction) : '');
+  const tick = $derived.by((): { x: number; y: number } | null => {
+    if (shape.shape !== 'disc' || area !== 'encoders' || live?.kind !== 'relative') return null;
+    const a = (relativeAngle(live.total) * Math.PI) / 180, r = shape.r + 7;
+    return { x: shape.cx + r * Math.sin(a), y: shape.cy - r * Math.cos(a) };
+  });
+  const pressed = $derived(live?.kind === 'button' ? live.on : false);
   const mark = $derived(
     shape.shape === 'disc' ? { x: shape.cx + shape.r * 0.7, y: shape.cy - shape.r * 0.7 } : { x: shape.x + shape.width - 2, y: shape.y + 2 },
   );
@@ -65,14 +87,14 @@
 <g
   class="control {kindClass}"
   class:selected
-  class:lit
+  class:lit={lit || touched}
   class:paste-dim={pasteTarget}
   use:flashOn={{ flash: copy.flash, target: `control:${area}:${index}`, svg: true }}
   data-control="{area}:{index}"
   role="button"
   tabindex={tabStop ? 0 : -1}
   aria-pressed={selected}
-  aria-label="{name}, {type} {number}{problemCount > 0 ? `, ${problemCount} problems` : ''}{warningCount > 0 ? `, ${warningCount} warnings` : ''}"
+  aria-label="{name}, {type} {number}{liveText ? `, live ${liveText}` : ''}{problemCount > 0 ? `, ${problemCount} problems` : ''}{warningCount > 0 ? `, ${warningCount} warnings` : ''}"
   data-help={help}
   onclick={(e) => { onselect(e.shiftKey); }}
   onkeydown={key}
@@ -109,6 +131,19 @@
   {#if problemCount > 0}
     <circle class="problem" cx={mark.x} cy={mark.y} r="6" />
     <text class="problem-text" x={mark.x} y={mark.y + 4}>!</text>
+  {/if}
+  {#if faderMark}<rect class="live-mark" x={faderMark.x} y={faderMark.y} width={faderMark.width} height={faderMark.height} rx="2" />{/if}
+  {#if ring}<path class="live-ring" d={ring} />{/if}
+  {#if tick}<circle class="live-tick" cx={tick.x} cy={tick.y} r="4" />{/if}
+  {#if pressed && (shape.shape === 'disc' || shape.shape === 'pill')}
+    {#if shape.shape === 'disc'}<circle class="live-on" cx={shape.cx} cy={shape.cy} r={shape.r - 5} />
+    {:else}<rect class="live-on" x={shape.x + 3} y={shape.y + 3} width={shape.width - 6} height={shape.height - 6} rx="4" />{/if}
+  {/if}
+  {#if live?.kind === 'trigger' && (shape.shape === 'disc' || shape.shape === 'pill')}
+    {#key live.at}
+      {#if shape.shape === 'disc'}<circle class="live-on pulse" cx={shape.cx} cy={shape.cy} r={shape.r - 5} />
+      {:else}<rect class="live-on pulse" x={shape.x + 3} y={shape.y + 3} width={shape.width - 6} height={shape.height - 6} rx="4" />{/if}
+    {/key}
   {/if}
   {#if warningCount > 0}
     <!-- Beside the problem mark (14 units to its left when there is one), so both can show. -->
@@ -149,6 +184,13 @@
   .type { font-family: var(--mono); }
   .num { font-family: var(--mono); font-weight: 400; }
   .problem { fill: var(--danger); pointer-events: none; }
+  .live-mark { fill: var(--accent); pointer-events: none; }
+  .live-ring { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; pointer-events: none; }
+  .live-tick { fill: var(--accent); pointer-events: none; }
+  .live-on { fill: var(--led); opacity: 0.4; pointer-events: none; }
+  .pulse { animation: pulse-fade 700ms ease-out forwards; }
+  @keyframes pulse-fade { from { opacity: 0.7; } to { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; opacity: 0.4; } }
   .warn { fill: var(--warn); stroke: var(--surface-2); stroke-width: 1; stroke-linejoin: round; pointer-events: none; }
   .problem-text { fill: var(--on-danger); font-size: 14px; }
 </style>

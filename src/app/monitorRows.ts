@@ -1,6 +1,6 @@
 // What the MIDI monitor shows for a row, and the remembered input choice (plan 0008 step 1, decisions 3 and 19).
 // Pure: no Svelte, no DOM. Raw values only; pairs, "+1/−1" and matches come with later steps.
-import type { MessageKind, MonitorRow } from '../live/index.ts';
+import type { LiveRow, MessageKind } from '../live/index.ts';
 import type { InputInfo, InputSelection } from '../midi/inputs.ts';
 
 export const INPUT_KEY = 'uc4-editor-monitor-input';
@@ -10,22 +10,22 @@ const KIND_LABEL: Record<MessageKind, string> = {
   cc: 'CC', note: 'Note', program: 'Prog', pitchBend: 'Bend', aftertouch: 'Touch', polyAftertouch: 'Poly',
 };
 
-export interface RowText { message: string; channel: string; value: string }
+export interface RowText { message: string; channel: string }
 
-export function rowText(row: Pick<MonitorRow, 'kind' | 'channel' | 'number' | 'value' | 'on'>): RowText {
-  const value = row.kind === 'note' ? `${row.on ? 'on' : 'off'} ${row.value}` : row.kind === 'program' ? '—' : String(row.value);
+export function rowText(row: Pick<LiveRow, 'kind' | 'channel' | 'number'>): RowText {
   const kind = KIND_LABEL[row.kind];
-  return { message: row.number === null ? kind : `${kind} ${row.number}`, channel: String(row.channel), value };
+  return { message: row.number === null ? kind : `${kind} ${row.number}`, channel: String(row.channel) };
 }
 
 /** One sentence for screen readers and the tooltip; `source` is the input's name. */
-export function rowLabel(row: MonitorRow, source: string): string {
+export function rowLabel(row: LiveRow, source: string): string {
   const t = rowText(row);
-  return `${t.message} ch ${t.channel}, ${t.value}, from ${source}${row.isUc4 ? ' (the UC4)' : ''}`;
+  const match = row.best ? `, ${row.best.control.name}${row.pinned ? ' (pinned)' : ''}${row.more > 0 ? `, ${row.more} more` : ''}` : '';
+  return `${t.message} ch ${t.channel}, ${row.valueText}, from ${source}${row.isUc4 ? ' (the UC4)' : ''}${match}`;
 }
 
 /** The input's name for a row: the plugged-in input's name, else a plain note (the row outlives its input). */
-export function sourceName(row: Pick<MonitorRow, 'inputId'>, inputs: readonly InputInfo[]): string {
+export function sourceName(row: Pick<LiveRow, 'inputId'>, inputs: readonly InputInfo[]): string {
   const i = inputs.find((x) => x.id === row.inputId);
   return i ? i.name || i.id : 'an input that is not connected';
 }

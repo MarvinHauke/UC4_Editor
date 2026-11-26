@@ -18,7 +18,9 @@
   import { createDeviceConnection } from '../midi/connection.ts';
   import { appMidiEnv } from './midiEnv.ts';
   import { createMidiInputs } from '../midi/inputs.ts';
-  import { createLive } from './liveStore.svelte.ts';
+  import { createLive, LIVE_CONTEXT } from './liveStore.svelte.ts';
+  import { selectMatch } from './liveView.ts';
+  import type { Match } from '../live/index.ts';
   import { GUIDE_CONTEXT, createGuide } from './guide.svelte.ts';
   import { COPY_CONTEXT, createCopyHold } from './copyHold.svelte.ts';
   import { copyKey, isTextTarget, levelOf } from './copyPaste.ts';
@@ -57,6 +59,7 @@
   const device = createDevice(createDeviceConnection({ portName: faderfoxUc4.portName, deviceName: faderfoxUc4.deviceName, env: midiEnv, checkSendable: uc4Engine.checkSendable }));
   // The MIDI monitor's inputs (plan 0008): the same browser access, listening only.
   const live = createLive(createMidiInputs({ portName: faderfoxUc4.portName, env: midiEnv, connectLabel: `Connect ${faderfoxUc4.deviceName}` }));
+  setContext(LIVE_CONTEXT, live);
   setContext(GUIDE_CONTEXT, createGuide());
   const notices = createNotices();
   const dumpGuide = createDumpGuide();
@@ -109,6 +112,15 @@
     if (settings.theme === 'system') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = settings.theme;
   });
+  // The live view ranks matches by the open setup and its two group selections (plan 0008 decision 4).
+  $effect(() => {
+    const s = store?.state;
+    live.setContext(s ? { configuration: s.configuration, setupId: s.selection.setupId, encoderGroup: s.selection.encoderGroup, faderButtonGroup: s.selection.faderButtonGroup } : null);
+  });
+  /** A click on a UC4 row: shows its best match (its group, and its setup when it is another one) as ordinary selections. */
+  function showMatch(match: Match): void {
+    if (store) selectMatch(store, match, store.state.selection.setupId);
+  }
   onMount(() => {
     const mq = matchMedia(`(min-width: ${WIDE_PX}px)`);
     const onWide = (): void => { wide = mq.matches; };
@@ -228,7 +240,7 @@
     <button type="button" class="gear" data-settings-toggle bind:this={gear} aria-label="Settings" aria-expanded={settings.open}
       data-help="Settings: theme, keys and slide speed · Cmd-," onclick={() => { settings.toggle(); }}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg></button>
   </header>
-  <ConnectionsColumn bind:this={column} {live} onsenddump={() => { dumpGuide.show(); }} {device} profile={faderfoxUc4} {store} {confirm} queue={notices.queue} open={connOpen} onopen={setConnOpen} {arrivals}
+  <ConnectionsColumn bind:this={column} {live} onselectmatch={showMatch} onsenddump={() => { dumpGuide.show(); }} {device} profile={faderfoxUc4} {store} {confirm} queue={notices.queue} open={connOpen} onopen={setConnOpen} {arrivals}
     onreview={review} onexport={exportNotice} ondismiss={(n) => { notices.remove(n.dumpId); }} />
   <SettingsPanel {settings} opener={() => gear} onallkeys={showKeys} ontour={startTour} />
   <KeysHelp open={keysOpen} vim={settings.keys === 'vim'} onclose={closeKeys} />
