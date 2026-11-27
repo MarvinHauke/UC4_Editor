@@ -6,7 +6,7 @@
   import type { ResolvePlanState } from '../app/resolvePlanState.svelte.ts';
   import { checkPlanValue } from '../model/index.ts';
   import { nameOfPath } from '../live/mapping.ts';
-  import { flashTargets, keepRefused, lineKey, propertyName } from '../app/resolvePlan.ts';
+  import { flashTargets, keepRefused, lineKey, propertyName, setAfter } from '../app/resolvePlan.ts';
   import { SvelteMap } from 'svelte/reactivity';
   import { useCopyHold } from '../app/copyHold.svelte.ts';
 
@@ -26,12 +26,24 @@
     const n = Number(input.value);
     if (!/^\d+$/.test(input.value.trim())) return;
     note = '';
+    // A range edit that would be clamped waits for Enter or leaving the field: writing it now would change the field under the typing hand ("1" → 10, then "5" → 105).
+    if (setAfter(plan.plan, index, n)[index]?.entry.after !== n) return;
     forget(lineKey(plan.plan[index]!.entry));
     plan.setAfter(index, n);
   }
   /** On leaving the field: a value that is no whole number goes back to the planned one, and says so. */
   function left(index: number, input: HTMLInputElement): void {
-    if (!/^\d+$/.test(input.value.trim())) { note = 'The new value must be a whole number.'; input.value = String(plan.plan[index]!.entry.after); }
+    if (!/^\d+$/.test(input.value.trim())) { note = 'The new value must be a whole number.'; input.value = String(plan.plan[index]!.entry.after); return; }
+    const n = Number(input.value);
+    const entry = plan.plan[index]!.entry;
+    forget(lineKey(entry));
+    plan.setAfter(index, n);
+    const now = plan.plan[index]!.entry.after;
+    if (now === n) { note = ''; return; }
+    // The range moved to stay inside 0–127: the field shows what was planned, and the note says why it is not what was typed.
+    input.value = String(now);
+    const ends = plan.plan.filter((i) => i.entry.path === entry.path && (i.entry.property === 'lower' || i.entry.property === 'upper')).map((i) => i.entry.after).sort((a, b) => a - b);
+    note = ends.length === 2 ? `Moved to ${ends[0]}–${ends[1]} to stay inside 0–127.` : `Kept at ${now}.`;
   }
   function apply(): void {
     const r = store.applyPlan(plan.entries);

@@ -5,7 +5,7 @@
 import { getContext } from 'svelte';
 import { controlId, type LiveSession, type MapPlan, type TouchTarget } from '../live/index.ts';
 import { readControl } from '../live/mapping.ts';
-import type { Uc4Config } from '../model/index.ts';
+import { isEncoderArea, type Uc4Config } from '../model/index.ts';
 import { factoryReset } from './factoryControl.ts';
 import type { AnyControl, ControlAddress, ControlArea, SelectionChange } from '../storage/index.ts';
 
@@ -123,7 +123,7 @@ export function createMapFlow(options: {
       const store = options.store();
       if (rowKey === null || !store) return false;
       const sel = store.state.selection;
-      const group = area === 'encoders' || area === 'pushButtons' ? sel.encoderGroup : sel.faderButtonGroup;
+      const group = isEncoderArea(area) ? sel.encoderGroup : sel.faderButtonGroup;
       const plan = live.mapPlan(rowKey, controlId(sel.setupId, area, group, index), { spotRelative: options.spotRelative() });
       apply(rowKey, plan, { control: { area, index } });
       return true;
@@ -172,7 +172,7 @@ export function createMapFlow(options: {
       if (!store) return;
       const plan = factoryReset(store.state.configuration as Uc4Config, ref, ref.name);
       if (!plan) { show({ text: `${ref.name} has no factory settings to go back to`, alsoSentBy: [], notes: [], error: true, undoable: false, rowKey: null, configuration: null }); return; }
-      const toEncoder = ref.area === 'encoders' || ref.area === 'pushButtons';
+      const toEncoder = isEncoderArea(ref.area);
       const selection: SelectionChange = { setupId: ref.setupId, ...(toEncoder ? { encoderGroup: ref.group } : { faderButtonGroup: ref.group }), control: { area: ref.area, index: ref.index } };
       const before = store.state.configuration, placeBefore = place(store.state);
       const answer = store.setControl({ setupId: ref.setupId, area: ref.area, group: ref.group, index: ref.index }, plan.control, selection) as { message?: string } | undefined;

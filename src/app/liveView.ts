@@ -1,5 +1,6 @@
 // What the live view draws and says (plan 0008 step 2): the match label of a monitor row, how a match is selected in the
 // editor, and the shapes of a control's live state (fader mark, encoder ring). Pure; the matching itself is `src/live/`.
+import { isEncoderArea } from '../model/index.ts';
 import type { ControlRef, ControlState, LiveRow, Match } from '../live/index.ts';
 
 export interface MatchLabel { name: string; more: number; where: string | null }
@@ -26,7 +27,7 @@ export interface SelectCommands {
 export function selectMatch(commands: SelectCommands, match: Match, currentSetupId: string): void {
   const c = match.control;
   if (c.setupId !== currentSetupId) commands.selectSetup(c.setupId);
-  commands.selectGroup(c.area === 'encoders' || c.area === 'pushButtons' ? 'encoder' : 'faderButton', c.group);
+  commands.selectGroup(isEncoderArea(c.area) ? 'encoder' : 'faderButton', c.group);
   commands.selectControl({ area: c.area, index: c.index });
 }
 

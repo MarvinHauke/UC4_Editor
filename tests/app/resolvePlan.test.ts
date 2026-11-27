@@ -29,6 +29,26 @@ describe('pickRow', () => {
 describe('editing the plan', () => {
   const plan = [item('r1', 0, 'a'), item('r2', 0, 'b', 71)];
   it('removes one line', () => { expect(removeAt(plan, 0).map((i) => i.entry.path)).toEqual(['b']); });
+  it('moves the other end of a planned PrGC range with the one edited, and keeps each line\'s row', () => {
+    const path = 'setups[0].encoderGroups[0].encoders[0]';
+    const range: PlanItem[] = [
+      { rowId: 'r', choice: 0, entry: { path, property: 'lower', before: 0, after: 10 } },
+      { rowId: 'r', choice: 0, entry: { path, property: 'upper', before: 127, after: 20 } },
+    ];
+    const next = setAfter(range, 0, 30);
+    expect(next.map((i) => i.entry.after)).toEqual([30, 40]);
+    expect(next.every((i) => i.rowId === 'r' && i.choice === 0)).toBe(true);
+  });
+  it('pins the clamp: 15 into Upper of a 20–30 range puts Lower at 5; 200 holds the block at the top', () => {
+    const path = 'setups[0].encoderGroups[0].encoders[0]';
+    const range: PlanItem[] = [
+      { rowId: 'r', choice: 0, entry: { path, property: 'lower', before: 0, after: 20 } },
+      { rowId: 'r', choice: 0, entry: { path, property: 'upper', before: 127, after: 30 } },
+    ];
+    expect(setAfter(range, 1, 15).map((i) => i.entry.after)).toEqual([5, 15]);
+    expect(setAfter(range, 1, 1).map((i) => i.entry.after)).toEqual([0, 10]); // the typed "1" would clamp: the table waits for Enter
+    expect(setAfter(range, 1, 200).map((i) => i.entry.after)).toEqual([117, 127]);
+  });
   it('changes an After value', () => { expect(setAfter(plan, 1, 90)[1]!.entry.after).toBe(90); expect(plan[1]!.entry.after).toBe(71); });
   it('drops a row and lists the rest', () => { expect(withoutRow(plan, 'r1')).toEqual([plan[1]]); });
 });

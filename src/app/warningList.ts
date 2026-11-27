@@ -1,9 +1,9 @@
 // What the Warnings dialog lists (plan 0008 decision 25, step 6): problems first, then warnings, filtered by scope, state and control.
 // Pure: the dialog renders it, the store's commands act on it.
-import type { Problem, Warning } from '../model/index.ts';
+import { isEncoderArea, type Problem, type Warning } from '../model/index.ts';
 import type { ListedWarning, SelectionChange } from '../storage/index.ts';
 import { nameOfPath } from '../live/mapping.ts';
-import { parseControlPath } from './warningMarks.ts';
+import { controlPlaceOf } from './warningMarks.ts';
 
 export type Scope = 'this' | 'all';
 export interface ProblemEntry { index: number; problem: Problem }
@@ -38,15 +38,15 @@ export function otherName(w: Warning, path: string): string {
 export function showSelection(w: Warning, path: string = w.controls[0]): SelectionChange {
   const change: SelectionChange = { setupId: w.setupId };
   for (const p of w.controls) {
-    const place = parseControlPath(p);
+    const place = controlPlaceOf(p);
     if (!place) continue;
-    if (place.area === 'encoders' || place.area === 'pushButtons') change.encoderGroup = place.group;
+    if (isEncoderArea(place.area)) change.encoderGroup = place.group;
     else change.faderButtonGroup = place.group;
   }
   // The chosen control's group wins when both lie in one half.
-  const chosen = parseControlPath(path);
+  const chosen = controlPlaceOf(path);
   if (chosen) {
-    if (chosen.area === 'encoders' || chosen.area === 'pushButtons') change.encoderGroup = chosen.group;
+    if (isEncoderArea(chosen.area)) change.encoderGroup = chosen.group;
     else change.faderButtonGroup = chosen.group;
     change.control = { area: chosen.area, index: chosen.index };
   }

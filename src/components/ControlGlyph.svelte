@@ -3,6 +3,7 @@
   import { matchKey } from '../app/keyTable.ts';
   import { useCopyHold } from '../app/copyHold.svelte.ts';
   // One drawn control: its shape, "type number" text, a mark when it has problems. A button for mouse and keyboard.
+  import { isEncoderArea } from '../model/index.ts';
   import type { ControlArea } from '../storage/index.ts';
   import { GEOMETRY } from '../app/profile/uc4Geometry.ts';
   import type { Direction } from '../app/navigation.ts';
@@ -53,7 +54,7 @@
     return shape.horizontal ? { x: shape.x + shape.width - 20, y: shape.y } : { x: shape.x + shape.width / 2, y: shape.y };
   });
   const kindWord = $derived(AREA_NAMES[area].singular.toLowerCase());
-  const kindClass = $derived(area === 'encoders' || area === 'pushButtons' ? 'enc' : 'fb');
+  const kindClass = $derived(isEncoderArea(area) ? 'enc' : 'fb');
   // Schema (decision 39): what it is · the one way · UC4. On encoders and green buttons the one way is Shift + click.
   const liveText = $derived(stateText(live));
   const help = $derived(mapState ? (mapState.ok ? `${name}: click to map the row's message here` : (mapState.reason ?? `${name} can't take this message`)) :

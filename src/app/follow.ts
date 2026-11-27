@@ -1,5 +1,6 @@
 // Follow (plan 0008 decision 25, step 9): while on, a UC4 message whose best match is a control selects that control in the editor.
 // Pure rules and the stored switch; the wiring (selection, focus) is in App.
+import { isEncoderArea } from '../model/index.ts';
 import type { ControlRef, Match } from '../live/index.ts';
 
 import { FOLLOW_KEY } from './storageKeys.ts';
@@ -27,7 +28,7 @@ export interface FollowSelection { setupId: string; encoderGroup: number; faderB
 
 /** The match Follow selects for a touched control, or null when it is selected already (same setup, its group and the control itself). */
 export function followTarget(sel: FollowSelection, control: ControlRef): Match | null {
-  const group = control.area === 'encoders' || control.area === 'pushButtons' ? sel.encoderGroup : sel.faderButtonGroup;
+  const group = isEncoderArea(control.area) ? sel.encoderGroup : sel.faderButtonGroup;
   if (sel.setupId === control.setupId && group === control.group && sel.control?.area === control.area && sel.control.index === control.index) return null;
   return { control, tier: 1, via: 'message' };
 }

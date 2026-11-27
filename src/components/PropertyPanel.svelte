@@ -3,10 +3,10 @@
   import type { Store } from '../app/libraryStore.svelte.ts';
   import { FIELDS, AREA_NAMES, controlNumber } from '../app/profile/uc4Properties.ts';
   import { controlAt, groupOf, selectedSetup } from '../app/selectors.ts';
-  import { controlPath, problemsOf } from '../app/controlProblems.ts';
+  import { problemsOf } from '../app/controlProblems.ts';
   import { warningsOf } from '../app/warningMarks.ts';
   import { keepChannel, otherName } from '../app/warningList.ts';
-  import { wellKnownCc } from '../model/index.ts';
+  import { controlPathOf, isEncoderArea, wellKnownCc } from '../model/index.ts';
   import { useResolvePlan } from '../app/resolvePlanState.svelte.ts';
   import { useWarningsDialog } from '../app/warningsDialog.svelte.ts';
   import { NOTICE_SHORT } from '../app/links.ts';
@@ -32,8 +32,8 @@
     const group = groupOf(state, sel.area);
     const control = controlAt(state.configuration, setup.id, sel.area, group, sel.index);
     if (!control) return null;
-    const problems = problemsOf(state.problems, controlPath(setupIndex, sel.area, group, sel.index));
-    const path = controlPath(setupIndex, sel.area, group, sel.index);
+    const problems = problemsOf(state.problems, controlPathOf(setupIndex, sel.area, group, sel.index));
+    const path = controlPathOf(setupIndex, sel.area, group, sel.index);
     const warned = warningsOf(store.warnings, path);
     return { sel, group, control, setup, problems, warned, path };
   });
@@ -49,7 +49,7 @@
           <h2>{AREA_NAMES[sel.area].singular} {controlNumber(sel.index)}</h2>
           <p class="where">
             {setup.name} ·
-            {sel.area === 'encoders' || sel.area === 'pushButtons' ? `encoder group ${group + 1}` : `fader/button group ${group + 1}`}
+            {isEncoderArea(sel.area) ? `encoder group ${group + 1}` : `fader/button group ${group + 1}`}
           </p>
         </div>
         <CopyBar level="control" holding={copy.held?.kind === 'control'} canCopy={true}

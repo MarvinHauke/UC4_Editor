@@ -14,7 +14,8 @@
   import { canPasteControl, isHeldControl } from '../app/copyPaste.ts';
   import { useGuide } from '../app/guide.svelte.ts';
   import { FRAMES, GROUP_LED, groupPitch, CROSSFADER, GROUP_LED_X, VIEWS } from '../app/profile/uc4Geometry.ts';
-  import { controlPath, problemsOf } from '../app/controlProblems.ts';
+  import { problemsOf } from '../app/controlProblems.ts';
+  import { controlPathOf } from '../model/index.ts';
   import { warningsOf } from '../app/warningMarks.ts';
   import { glyphNumber } from '../app/glyphText.ts';
   import { useLive } from '../app/liveStore.svelte.ts';
@@ -56,12 +57,12 @@
   const name = $derived(view.setup.encoderGroups[view.eg]!.name);
   const selected = $derived(view.state.selection.control);
   const count = (area: ControlArea, index: number): number =>
-    problemsOf(view.state.problems, controlPath(view.setupIndex, area, groupOf(view.state, area), index)).length;
+    problemsOf(view.state.problems, controlPathOf(view.setupIndex, area, groupOf(view.state, area), index)).length;
   const live = useLive();
   const map = useMap();
   const idOf = (area: ControlArea, index: number): string => controlId(view.setup.id, area, groupOf(view.state, area), index);
   const warned = (area: ControlArea, index: number): number =>
-    warningsOf(store.warnings, controlPath(view.setupIndex, area, groupOf(view.state, area), index)).length;
+    warningsOf(store.warnings, controlPathOf(view.setupIndex, area, groupOf(view.state, area), index)).length;
   // The slide's length is a setting (0–400 ms); with less motion asked for by the system it is off unless the user set a speed.
   const settings = useSettings();
   const active = useActiveArea();

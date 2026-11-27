@@ -1,6 +1,6 @@
 // The Resolve plan's pure part (plan 0008 decision 35): which row picked which choice, the Changes table's lines, and which controls
 // to flash after Apply. The plan itself is the model's `PlanEntry` list; here each line also knows its row.
-import type { PlanEntry } from '../model/index.ts';
+import { isEncoderArea, parseControlPath, setPlanAfter, type PlanEntry } from '../model/index.ts';
 import { FIELDS } from './profile/uc4Properties.ts';
 import type { ControlAddress, ControlProperty, Selection } from '../storage/index.ts';
 
@@ -25,7 +25,13 @@ export function pickRow(plan: Plan, rowId: string, choice: number, entries: read
 }
 
 export const removeAt = (plan: Plan, index: number): Plan => plan.filter((_, i) => i !== index);
-export const setAfter = (plan: Plan, index: number, after: number): Plan => plan.map((it, i) => (i === index ? { ...it, entry: { ...it.entry, after } } : it));
+/** Sets the After of line `index`; the model moves the partner end of a planned PrGC range with it (it never reads "programs 20–17"), so more than one line can change. */
+export function setAfter(plan: Plan, index: number, after: number): Plan {
+  const at = plan[index];
+  if (!at) return plan;
+  const next = setPlanAfter(planEntries(plan), at.entry.path, at.entry.property, after);
+  return plan.map((it, i) => (next[i] === undefined || next[i]!.after === it.entry.after ? it : { ...it, entry: { ...it.entry, after: next[i]!.after } }));
+}
 
 /** The line a plan entry occupies: a control's property is planned once. */
 export const lineKey = (e: Pick<PlanEntry, 'path' | 'property'>): string => `${e.path}|${e.property}`;
@@ -37,10 +43,9 @@ export function keepRefused(plan: Plan, refused: readonly { entry: Pick<PlanEntr
 }
 
 const WORD: Record<PlanEntry['property'], string> = { channel: 'Channel', number: 'Number', lower: 'Lower', upper: 'Upper' };
-const AREA = /\.(encoders|pushButtons|faders|buttons)\[/;
 /** The property's name as the panel shows it for that kind of control ("MIDI channel", "Upper value"). */
 export function propertyName(path: string, property: PlanEntry['property']): string {
-  const area = AREA.exec(path)?.[1] as keyof typeof FIELDS | undefined;
+  const area = parseControlPath(path)?.area;
   return (area && FIELDS[area].find((f) => f.key === property)?.friendly) || WORD[property];
 }
 
@@ -48,6 +53,6 @@ export interface ChangedControl { address: ControlAddress; properties: ControlPr
 /** The device view's flash targets (`control:<area>:<index>`) for what Apply changed: only controls of the open setup in the groups on show. */
 export function flashTargets(changed: readonly ChangedControl[], sel: Pick<Selection, 'setupId' | 'encoderGroup' | 'faderButtonGroup'>): string[] {
   return changed
-    .filter(({ address: a }) => a.setupId === sel.setupId && a.group === (a.area === 'encoders' || a.area === 'pushButtons' ? sel.encoderGroup : sel.faderButtonGroup))
+    .filter(({ address: a }) => a.setupId === sel.setupId && a.group === (isEncoderArea(a.area) ? sel.encoderGroup : sel.faderButtonGroup))
     .map(({ address: a }) => `control:${a.area}:${a.index}`);
 }

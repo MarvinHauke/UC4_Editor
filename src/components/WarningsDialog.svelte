@@ -49,7 +49,7 @@
   const kept = async (): Promise<void> => { await tick(); (dialog?.querySelector<HTMLElement>('.entry .acts button') ?? closeButton)?.focus(); };
   function show(w: ListedWarning): void { ui.close(); store.showWarning(w); }
   function ignoreWarning(w: ListedWarning): void { store.ignore([w]); void kept(); }
-  function showAgain(w: ListedWarning): void { store.unignore(w); void kept(); }
+  function unignore(w: ListedWarning): void { store.unignore(w); void kept(); }
   function showProblem(index: number): void { ui.close(); store.showProblem(index); }
   const problemId = (p: Problem): string => `problem|${p.path}|${p.message}`;
   /** What the row would plan: its own earlier pick doesn't reserve numbers against itself. */
@@ -114,7 +114,7 @@
             <WarningRow where={ui.scope === 'all' ? setupName(w.setupId) : undefined} message={w.message} options={optionsFor(w, id)} picked={pickedChoice(resolvePlan.plan, id)} quiet={w.state !== 'open'}
               ignore={w.state === 'open' ? 'open' : 'ignored'}
               showHelp="Show: selects {w.controls[0] === w.controls[1] ? '' : 'the first of the two '}controls and closes the list{w.setupId === here.setup.id ? '' : ', opening that setup'}"
-              onshow={() => { show(w); }} onpick={(c) => { pick(w, id, c); }} onignore={() => { if (w.state === 'open') ignoreWarning(w); else showAgain(w); }} />
+              onshow={() => { show(w); }} onpick={(c) => { pick(w, id, c); }} onignore={() => { if (w.state === 'open') ignoreWarning(w); else unignore(w); }} />
           {/each}
         </ul>
         {/if}
