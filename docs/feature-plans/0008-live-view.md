@@ -583,7 +583,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    tests, browser list (toggle, block order, Resolve both kinds, undo, property panel line, Review… placement).
 16. **Monitor row cleanup** (decision 34) — done 2026-11-27, before 15: uc4-ui (`e15f082`; reviewed; screenshots checked by the architect) — uc4-ui · blocked by: none · Checks: tests,
    browser list with the MIDI stub (closed row, Map on hover, click selects and opens with Follow on and off).
-17. **Resolve plan: model** (decision 35) — uc4-model · blocked by: none · suggestions that respect planned
+17. **Resolve plan: model** (decision 35) — done 2026-11-27: uc4-model (`ceca4c7`; reviewed) — uc4-model · blocked by: none · suggestions that respect planned
    changes (reserved numbers) and skip the well-known CCs; a plan type (control, property, before, after); applying
    a plan as one library edit; checking a typed After value for collisions; factory warnings can be counted again.
    Checks: model and storage tests (reserved numbers move on, skip list, one undo step, factory toggle).
