@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blocksOf, keepChannel, listEntries, otherName, showSelection } from '../../src/app/warningList.ts';
+import { blocksOf, keepValues, solutionLabel, listEntries, otherName, showSelection } from '../../src/app/warningList.ts';
 import type { ListedWarning } from '../../src/storage/index.ts';
 
 const w = (setupId: string, a: string, b: string, state: ListedWarning['state'] = 'open'): ListedWarning =>
@@ -54,10 +54,23 @@ describe('showSelection', () => {
   });
 });
 
-describe('keepChannel', () => {
+describe('keepValues', () => {
   it('joins "ch" and its number with a no-break space', () => {
-    expect(keepChannel('both send CC 41 ch 1')).toBe('both send CC 41 ch\u00a01');
-    expect(keepChannel('a ch 12, b ch 3')).toBe('a ch\u00a012, b ch\u00a03');
-    expect(keepChannel('Enc1 and church')).toBe('Enc1 and church');
+    expect(keepValues('both send CC 41 ch 1')).toBe('both send CC\u00a041 ch\u00a01');
+    expect(keepValues('a ch 12, b ch 3')).toBe('a ch\u00a012, b ch\u00a03');
+    expect(keepValues('Enc1 and church')).toBe('Enc1 and church');
+  });
+});
+
+describe('solutionLabel', () => {
+  it('joins the en dash of a range so it cannot break after it', () => {
+    expect(keepValues('programs 31–41')).toContain('31\u2060–\u206041');
+  });
+  it('breaks only after the arrow and keeps the value together', () => {
+    expect(solutionLabel('Enc2 → programs 31–41')).toBe('Enc2\u00a0→ programs\u00a031\u2060–\u206041');
+    expect(solutionLabel('FAd9 → CC 70 on ch 2')).toBe('FAd9\u00a0→ CC\u00a070\u00a0on\u00a0ch\u00a02');
+  });
+  it('keeps CC, ch and programs values in a message', () => {
+    expect(keepValues('both send CC 41 ch 1, programs 31–41')).toBe('both send CC\u00a041 ch\u00a01, programs\u00a031\u2060–\u206041');
   });
 });

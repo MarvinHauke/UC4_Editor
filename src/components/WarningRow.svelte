@@ -2,7 +2,7 @@
   // One entry of the Warnings dialog (plan 0008 decisions 31, 35): the message, and the actions in three fixed columns:
   // Solution (one pick per control, stacked; a pick only plans, the Changes table applies) · Actions (Show over Ignore; the pressed
   // "Ignored" counts the warning again on a click). The dialog's heading row names the columns.
-  import { keepChannel } from '../app/warningList.ts';
+  import { keepValues, solutionLabel } from '../app/warningList.ts';
   import type { ResolveOption } from '../app/resolveView.ts';
 
   interface Props {
@@ -30,14 +30,14 @@
   <span class="text">
     {#if problem}<span class="what">Problem</span>{/if}
     {#if where}<span class="where">{where}</span>{/if}
-    <span class="msg">{keepChannel(message)}</span>
-    {#each reasons as o (o.choice)}<span class="reason">{keepChannel(o.label)}</span>{/each}
+    <span class="msg">{keepValues(message)}</span>
+    {#each reasons as o (o.choice)}<span class="reason">{keepValues(o.label)}</span>{/each}
   </span>
   <span class="cols">
     <span class="solutions">
       {#each options.filter((o) => o.ok) as o (o.choice)}
         <button type="button" class:on={picked === o.choice} aria-pressed={picked === o.choice} onclick={() => { onpick(o.choice); }}
-          data-help={picked === o.choice ? `Planned: ${o.label} · click to take it back · Apply in the Changes table below` : `Solution: ${o.label} · adds it to the Changes table below; nothing changes until Apply`}>{keepChannel(o.label)}</button>
+          data-help={picked === o.choice ? `Planned: ${o.label} · click to take it back · Apply in the Changes table below` : `Solution: ${o.label} · adds it to the Changes table below; nothing changes until Apply`}>{solutionLabel(o.label)}</button>
       {/each}
     </span>
     <span class="acts">

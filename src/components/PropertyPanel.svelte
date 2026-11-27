@@ -5,7 +5,7 @@
   import { controlAt, groupOf, selectedSetup } from '../app/selectors.ts';
   import { problemsOf } from '../app/controlProblems.ts';
   import { warningsOf } from '../app/warningMarks.ts';
-  import { keepChannel, otherName } from '../app/warningList.ts';
+  import { keepValues, otherName } from '../app/warningList.ts';
   import { controlPathOf, isEncoderArea, wellKnownCc } from '../model/index.ts';
   import { useResolvePlan } from '../app/resolvePlanState.svelte.ts';
   import { useWarningsDialog } from '../app/warningsDialog.svelte.ts';
@@ -63,8 +63,8 @@
         {#each warned as w (w.message)}
           {@const free = store.suggest(w, resolvePlan.entries).choices.find((c) => c.path === path)?.suggestion?.text}
           <li>
-            <span class="alsoby" data-help="Warning: {w.message} · allowed, but check it is intended"><span aria-hidden="true">▲</span> Also sent by {keepChannel(otherName(w, path))}</span>
-            <span class="fix">{#if free}<span class="free">Free: {keepChannel(free)}</span>{/if}
+            <span class="alsoby" data-help="Warning: {w.message} · allowed, but check it is intended"><span aria-hidden="true">▲</span> Also sent by {keepValues(otherName(w, path))}</span>
+            <span class="fix">{#if free}<span class="free">Free: {keepValues(free)}</span>{/if}
               <button type="button" class="open" onclick={() => { warningsDialog.show({ control: path }); }}
                 data-help="Open in Problems and warnings: plan a change, show or ignore this warning">Open in Problems and warnings</button></span>
           </li>

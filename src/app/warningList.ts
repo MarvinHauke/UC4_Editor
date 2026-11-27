@@ -53,5 +53,14 @@ export function showSelection(w: Warning, path: string = w.controls[0]): Selecti
   return change;
 }
 
-/** Keeps "ch 1" on one line: a no-break space after "ch", so a wrapped message never leaves the channel number alone. Text only; the message itself is unchanged. */
-export const keepChannel = (text: string): string => text.replace(/\bch (\d)/g, 'ch\u00a0$1');
+/** Keeps a value phrase on one line ("ch 1", "CC 70", "programs 31–41"): a no-break space after the word, so a wrapped message never leaves the number alone. Text only; the message itself is unchanged. */
+export const keepValues = (text: string): string =>
+  // The word joiner (U+2060) around an en dash between digits: the dash allows a break after it (UAX #14), "31–" / "41" would be cut.
+  text.replace(/\b(ch|CC|programs?|notes?) (\d)/g, '$1\u00a0$2').replace(/(\d)–(\d)/g, '$1\u2060–\u2060$2');
+
+/** A solution label ("Enc2 → programs 31–41") breaks only after the arrow: the name stays with the arrow and the whole value stays together. */
+export function solutionLabel(label: string): string {
+  const at = label.indexOf(' → ');
+  if (at < 0) return keepValues(label);
+  return `${label.slice(0, at)}\u00a0→ ${keepValues(label.slice(at + 3)).replace(/ /g, '\u00a0')}`;
+}
