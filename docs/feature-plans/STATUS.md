@@ -36,6 +36,9 @@ _Last updated: 2026-11-27 (0008 PR #2 open; retro next). Before: 2026-11-27 (000
   named outright); UX item 16 and "Long text and narrow widths" in `browser-checks.md`. Next: draft a
   **codebase-design plan** (user, 2026-11-27): splits for `live/session.ts` (579-line closure) and
   `storage/library.ts` (1547 lines), and a module-size point for the branch review.
+  Per-edit cost (uc4-model, 2026-11-27, after the CI timeout fixed in `6440aa3`): an edit costs about 7 ms, and
+  `save(config)` takes 5–6 ms of it (far more than `JSON.stringify` alone, 0.7 ms). Validate runs up to 3 times per edit
+  (about 0.8 ms each) and the warnings 1–2 times (about 0.7 ms each).
 - **Later, own plan:** a warning level setting ("hard" turns warnings into errors; user, 2026-11-27).
 
 - **Fixes from the user's /code-review of `feat/live-view`** (2026-11-27) as 0008 steps 20 and 21: done and
