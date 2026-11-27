@@ -460,8 +460,10 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    gets a heading row **Finding · Solution · Actions**, kept in view while the list scrolls. **Show** and the
    **Ignore** toggle stack in the Actions column, the way the two solution buttons stack in theirs. Pressed toggles
    (a picked solution, "Ignored") get a soft pressed style (tinted, accent border); solid accent stays for
-   **Apply** alone, the one action that changes the setup (architect, from the step 18 review). Why: the columns
-   had no names, and three button columns read as clutter.
+   **Apply** alone, the one action that changes the setup (architect, from the step 18 review). Block headings are
+   bands (a line above, even padding) so they never read as part of a row; the Factory layout block folds, folded
+   by default, its state kept for the session (architect, after the user's "factory layout · 7 looks off"). Why:
+   the columns had no names, and three button columns and eight factory rows read as clutter.
 
 ## Open questions
 
