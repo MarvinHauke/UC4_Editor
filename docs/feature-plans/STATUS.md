@@ -32,14 +32,17 @@ _Last updated: 2026-11-27 (0008 PR #2 open; retro next). Before: 2026-11-27 (000
 - **0008 steps 14–16 done** (`a1b9589`, `edcc82a`, `e15f082`; decisions 31–34).
 - **0008 steps 17–18 done** (`ceca4c7`, `530b1c1`, decision 35); step 19 (headings, Actions column, factory fold) done (`5ff76d5`).
   Later: idea C, ghost labels on the device view and a docked side panel.
+- **Retro 2026-11-27:** branch reviews by uc4-reviewer every few steps and before a PR (`mattpocock-skills:code-review`
+  named outright); UX item 16 and "Long text and narrow widths" in `browser-checks.md`. Next: draft a
+  **codebase-design plan** (user, 2026-11-27): splits for `live/session.ts` (579-line closure) and
+  `storage/library.ts` (1547 lines), and a module-size point for the branch review.
 - **Later, own plan:** a warning level setting ("hard" turns warnings into errors; user, 2026-11-27).
 
 - **Fixes from the user's /code-review of `feat/live-view`** (2026-11-27) as 0008 steps 20 and 21: done and
   browser-checked (`1c6e53e`, `adfb3c7`, `a61386f`); follow-ups `9bbab4f` (labels wrap, focus after Remove) and
   `c839a36` (value phrases kept on one line); PR #2 open; the retro next. Architect part done: `src/live/` in CLAUDE.md
   and the layer chain; the unasked-for bits kept as 0008 decision 37 ([Map] on the next-to-map row too).
-  Judgement calls for later: `live/session.ts` (579-line closure) and `storage/library.ts` (1547 lines) splits;
-  `FakeInput` duplicated in devMidi and tests; shared button CSS.
+  Judgement calls for later: `FakeInput` duplicated in devMidi and tests; shared button CSS.
 
 ## Waiting for the user
 

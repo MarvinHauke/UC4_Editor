@@ -42,6 +42,12 @@ Alignment is a number. For a list or a button group, log each button's right edg
 `[...root.querySelectorAll('button')].map(b => [b.textContent.trim(), Math.round(b.getBoundingClientRect().right)])`.
 Buttons of the same column share one right edge, to the pixel (see **one right edge** in the `uc4-ui-design` skill).
 
+## Long text and narrow widths
+
+Every list, dialog and button row is checked twice: at 1024 px wide (`resize_window`) and with its longest
+real text (the longest setup name, a `PrGC` range, a two-control warning). Read each line break: a label wraps
+inside its button, a value phrase ("CC 10 ch 1", "1–5") never splits. A screenshot of both goes with the report.
+
 ## Leave it clean
 
 The check ends with the dev library unchanged: undo every edit, and the toolbar Undo is disabled again. A reload

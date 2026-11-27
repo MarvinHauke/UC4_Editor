@@ -66,6 +66,8 @@ team (see `CLAUDE.md`, "Agent team"):
   14. Every control looks pressable: a surface, border or hover background, never a bare dot or
       glyph (user, 2026-11-17).
   15. Text and a control beside it keep at least `--space-3` apart (user, 2026-11-17).
+  16. Long text wraps where a reader would break it: a label wraps inside its button, a value phrase
+      ("CC 10 ch 1", "1–5") stays on one line (retro, 2026-11-27). Check with the longest real text.
   Keep the list short. When a review finds a new kind of problem, propose an item to the architect
   instead of adding it yourself.
 - Never push. Don't edit `src/model/`, `src/protocol/`, `src/midi/` or `src/storage/` — send the
