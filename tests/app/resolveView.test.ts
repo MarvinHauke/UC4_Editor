@@ -24,19 +24,29 @@ describe('resolveOptions', () => {
 
 describe('plannedText', () => {
   it('shows the edited value in the suggestion\'s words', () => {
-    expect(plannedText('CC 70', 70, 33)).toBe('CC 33');
-    expect(plannedText('CC 9 on ch 2', 9, 12)).toBe('CC 12 on ch 2');
-    expect(plannedText('CC 70', 70, 70)).toBe('CC 70');
-    expect(plannedText('programs 15–17', 15, 20)).toBe('programs 20–17');
+    expect(plannedText('CC 70', [{ property: 'number', suggested: 70, after: 33 }])).toBe('CC 33');
+    expect(plannedText('CC 70', [{ property: 'number', suggested: 70, after: 70 }])).toBe('CC 70');
+  });
+  it('shows a program block\'s edits as they are planned (lower and upper are separate lines)', () => {
+    // One end edited: the plan really holds a reversed range (lower 20, upper 17), and the text says so.
+    expect(plannedText('programs 15–17', [{ property: 'lower', suggested: 15, after: 20 }])).toBe('programs 20–17');
+    expect(plannedText('programs 15–17', [{ property: 'lower', suggested: 15, after: 20 }, { property: 'upper', suggested: 17, after: 22 }])).toBe('programs 20–22');
+  });
+  it('tells the channel from the number', () => {
+    const t = 'CC 2 on ch 2';
+    expect(plannedText(t, [{ property: 'channel', suggested: 2, after: 5 }])).toBe('CC 2 on ch 5');
+    expect(plannedText(t, [{ property: 'number', suggested: 2, after: 9 }])).toBe('CC 9 on ch 2');
+    expect(plannedText(t, [{ property: 'number', suggested: 2, after: 9 }, { property: 'channel', suggested: 2, after: 12 }])).toBe('CC 9 on ch 12');
   });
 });
 
 describe('withPlanned', () => {
-  const r: Resolution = { choices: [{ ...choice('Enc2', 'CC 16'), suggestion: { change: { number: 16 }, text: 'CC 16' } }, choice('Enc1', 'CC 17')], sideBySide: false };
-  it('shows the edited After on the picked option only', () => {
-    const o = withPlanned(resolveOptions(r), r, { choice: 0, entry: { path: 'p', property: 'number', before: 1, after: 99 } });
-    expect(o[0]!.label).toBe('Enc2 → CC 99');
+  const r: Resolution = { choices: [{ ...choice('Enc2', 'CC 9 on ch 2'), suggestion: { change: { number: 9, channel: 2 }, text: 'CC 9 on ch 2' } }, choice('Enc1', 'CC 17')], sideBySide: false };
+  const entry = (property: 'number' | 'channel', after: number) => ({ path: 'p', property, before: 1, after });
+  it('shows every edited After on the picked option only', () => {
+    const o = withPlanned(resolveOptions(r), r, { choice: 0, entries: [entry('channel', 3), entry('number', 33)] });
+    expect(o[0]!.label).toBe('Enc2 → CC 33 on ch 3');
     expect(o[1]!.label).toBe('Enc1 → CC 17');
   });
-  it('changes nothing without a pick', () => { expect(withPlanned(resolveOptions(r), r, null)[0]!.label).toBe('Enc2 → CC 16'); });
+  it('changes nothing without a pick', () => { expect(withPlanned(resolveOptions(r), r, null)[0]!.label).toBe('Enc2 → CC 9 on ch 2'); });
 });

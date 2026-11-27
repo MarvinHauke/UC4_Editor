@@ -23,15 +23,14 @@
   /** Checked as it is typed (a collision is marked at once); only a whole number reaches the plan. */
   function typed(index: number, input: HTMLInputElement): void {
     const n = Number(input.value);
-    if (input.value.trim() === '' || !Number.isInteger(n)) return;
+    if (!/^\d+$/.test(input.value.trim())) return;
     note = '';
     forget(lineKey(plan.plan[index]!.entry));
     plan.setAfter(index, n);
   }
   /** On leaving the field: a value that is no whole number goes back to the planned one, and says so. */
   function left(index: number, input: HTMLInputElement): void {
-    const n = Number(input.value);
-    if (input.value.trim() === '' || !Number.isInteger(n)) { note = 'The new value must be a whole number.'; input.value = String(plan.plan[index]!.entry.after); }
+    if (!/^\d+$/.test(input.value.trim())) { note = 'The new value must be a whole number.'; input.value = String(plan.plan[index]!.entry.after); }
   }
   function apply(): void {
     const r = store.applyPlan(plan.entries);

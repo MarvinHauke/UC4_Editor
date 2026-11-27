@@ -11,15 +11,31 @@ export function resolveOptions(r: Resolution): ResolveOption[] {
     : { choice, short: c.short, label: `${c.short}: ${c.reason ?? 'No suggestion'}`, text: null, ok: false });
 }
 
-/** A suggestion's words with the edited value in them ("CC 70" → "CC 33"): the first whole number that is the suggested one. */
-export const plannedText = (text: string, suggested: number, after: number): string =>
-  suggested === after ? text : text.replace(new RegExp(`(?<!\\d)${suggested}(?!\\d)`), String(after));
+export interface TextEdit { property: PlanEntry['property']; suggested: number; after: number }
 
-/** The row's picked option shows the planned After, so an edit in the Changes table is seen in the row too. */
-export function withPlanned(options: ResolveOption[], r: Resolution, planned: { choice: number; entry: PlanEntry } | null): ResolveOption[] {
+/**
+ * A suggestion's words with the edited values in them ("CC 9 on ch 2": the channel is the number after "ch", the others the
+ * first other number equal to what was suggested). All edits are placed on the original text, so one never lands on another.
+ */
+export function plannedText(text: string, edits: readonly TextEdit[]): string {
+  const found: { at: number; len: number; to: string }[] = [];
+  for (const e of edits) {
+    if (e.suggested === e.after) continue;
+    const re = e.property === 'channel' ? new RegExp(`(?<=ch )${e.suggested}(?!\\d)`) : new RegExp(`(?<!ch )(?<!\\d)${e.suggested}(?!\\d)`);
+    const m = re.exec(text);
+    if (m && !found.some((f) => f.at === m.index)) found.push({ at: m.index, len: String(e.suggested).length, to: String(e.after) });
+  }
+  return found.sort((a, b) => b.at - a.at).reduce((t, f) => t.slice(0, f.at) + f.to + t.slice(f.at + f.len), text);
+}
+
+/** The row's picked option shows the planned After(s), so an edit in the Changes table is seen in the row too. */
+export function withPlanned(options: ResolveOption[], r: Resolution, planned: { choice: number; entries: readonly PlanEntry[] } | null): ResolveOption[] {
   if (!planned) return options;
-  const suggested = (r.choices[planned.choice]?.suggestion?.change as Record<string, number | undefined> | undefined)?.[planned.entry.property];
-  return options.map((o) => (o.choice === planned.choice && o.text !== null && suggested !== undefined
-    ? { ...o, text: plannedText(o.text, suggested, planned.entry.after), label: `${o.short} → ${plannedText(o.text, suggested, planned.entry.after)}` }
-    : o));
+  const change = (r.choices[planned.choice]?.suggestion?.change ?? {}) as Record<string, number | undefined>;
+  const edits = planned.entries.flatMap((e) => (change[e.property] === undefined ? [] : [{ property: e.property, suggested: change[e.property]!, after: e.after }]));
+  return options.map((o) => {
+    if (o.choice !== planned.choice || o.text === null) return o;
+    const text = plannedText(o.text, edits);
+    return { ...o, text, label: `${o.short} → ${text}` };
+  });
 }

@@ -19,13 +19,15 @@
 
   let { store, warnings: ui }: { store: Store; warnings: WarningsDialog } = $props();
   const resolvePlan = useResolvePlan();
+  /** The Factory layout block is folded until opened; the choice stays while the page is open. A list narrowed to one control shows it (decision 36). */
+  let factoryOpen = $state(false);
   let dialog = $state<HTMLDialogElement | null>(null);
   let closeButton = $state<HTMLButtonElement | null>(null);
   const lib = $derived(store.state);
   const here = $derived(selectedSetup(lib));
   const options = $derived({ scope: ui.scope, setupId: here.setup.id, setupIndex: here.index, control: ui.control });
   const entries = $derived(listEntries(lib.problems, store.allWarnings, options));
-  const blocks = $derived.by(() => { const b = blocksOf(entries.warnings); return [{ title: 'Open warnings', list: b.open }, { title: 'Ignored', list: b.ignored }, { title: 'Factory layout', list: b.factory }]; });
+  const blocks = $derived.by(() => { const b = blocksOf(entries.warnings); return [{ title: 'Open warnings', list: b.open }, { title: 'Ignored', list: b.ignored }, { title: 'Factory layout', list: b.factory, fold: true }]; });
   const total = $derived(entries.problems.length + entries.warnings.length);
   const setupName = (setupId: string): string => {
     const s = lib.setups.find((x) => x.id === setupId);
@@ -38,12 +40,12 @@
   };
 
   $effect(() => {
-    if (ui.open && dialog && !dialog.open) { dialog.showModal(); void tick().then(() => { (dialog?.querySelector<HTMLElement>('.entry .c1') ?? closeButton)?.focus(); }); }
+    if (ui.open && dialog && !dialog.open) { dialog.showModal(); void tick().then(() => { (dialog?.querySelector<HTMLElement>('.entry .acts button') ?? closeButton)?.focus(); }); }
     else if (!ui.open && dialog?.open) dialog.close();
   });
   onMount(() => () => { if (dialog?.open) dialog.close(); });
 
-  const kept = async (): Promise<void> => { await tick(); (dialog?.querySelector<HTMLElement>('.entry .c1') ?? closeButton)?.focus(); };
+  const kept = async (): Promise<void> => { await tick(); (dialog?.querySelector<HTMLElement>('.entry .acts button') ?? closeButton)?.focus(); };
   function show(w: ListedWarning): void { ui.close(); store.showWarning(w); }
   function ignoreWarning(w: ListedWarning): void { store.ignore([w]); void kept(); }
   function showAgain(w: ListedWarning): void { store.showAgain(w); void kept(); }
@@ -55,8 +57,8 @@
   const optionsFor = (item: Warning | Problem, rowId: string) => {
     const r = suggestFor(item, rowId);
     const picked = pickedChoice(resolvePlan.plan, rowId);
-    const planned = picked === null ? null : resolvePlan.plan.find((i) => i.rowId === rowId && i.choice === picked) ?? null;
-    return withPlanned(resolveOptions(r), r, planned);
+    const entries = picked === null ? [] : resolvePlan.plan.filter((i) => i.rowId === rowId && i.choice === picked).map((i) => i.entry);
+    return withPlanned(resolveOptions(r), r, picked === null ? null : { choice: picked, entries });
   };
   function pick(item: Warning | Problem, rowId: string, choice: number): void {
     const c = suggestFor(item, rowId).choices[choice];
@@ -80,6 +82,8 @@
     <p class="narrow">Only the warnings of one control. <button type="button" class="link" onclick={() => { ui.clearControl(); }}>Show all of this setup</button></p>
   {/if}
   <div class="list" tabindex="-1">
+    <!-- The column names stay in view while the list scrolls; they sit over the columns of the rows (decision 36). -->
+    <div class="heads" aria-hidden="true"><span class="hf">Finding</span><span class="hcols"><span>Solution</span><span>Actions</span></span></div>
     {#if total === 0}
       <p class="empty">{ui.control ? 'No warnings for this control.' : ui.scope === 'this' ? 'Nothing to review in this setup.' : 'Nothing to review in any setup.'}</p>
     {/if}
@@ -95,7 +99,14 @@
     {/if}
     {#each blocks as b (b.title)}
       {#if b.list.length > 0}
-        <h3 class="block">{b.title} · {b.list.length}</h3>
+        {@const shown = !b.fold || factoryOpen || ui.control !== null}
+        {#if b.fold && ui.control === null}
+          <h3 class="block"><button type="button" class="fold" aria-expanded={shown} onclick={() => { factoryOpen = !factoryOpen; }}
+            data-help={shown ? 'Factory layout: the warnings of the UC4\'s own layout; click to fold' : 'Factory layout: the warnings of the UC4\'s own layout, folded; click to unfold'}><span aria-hidden="true">{shown ? '▾' : '▸'}</span> {b.title} · {b.list.length}</button></h3>
+        {:else}
+          <h3 class="block">{b.title} · {b.list.length}</h3>
+        {/if}
+        {#if shown}
         <ul>
           {#each b.list as w (warningId(w))}
             {@const id = warningId(w)}
@@ -105,6 +116,7 @@
               onshow={() => { show(w); }} onpick={(c) => { pick(w, id, c); }} onignore={() => { if (w.state === 'open') ignoreWarning(w); else showAgain(w); }} />
           {/each}
         </ul>
+        {/if}
       {/if}
     {/each}
   </div>
@@ -117,6 +129,8 @@
     width: min(760px, calc(100vw - 2 * var(--space-4))); max-height: calc(100vh - 2 * var(--space-4)); padding: var(--space-4);
     color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   }
+  /* The two button columns, once: the heading row and every row use them, so they cannot drift apart. */
+  dialog { --col-solution: 130px; --col-actions: 78px; }
   dialog[open] { display: flex; flex-direction: column; }
   dialog::backdrop { background: rgb(0 0 0 / 45%); }
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3); }
@@ -134,10 +148,18 @@
   .narrow { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--text-sm); }
   .link { min-height: 24px; padding: 0 var(--space-2); }
   /* A fixed height, so the dialog never jumps when entries are ignored or the toggle changes the list. */
-  .list { height: min(420px, 55vh); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
+  .list { height: min(420px, 55vh); overflow-y: auto; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--border) transparent; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
   ul { margin: 0; padding: 0; list-style: none; }
   ul :global(.entry:last-child) { border-bottom: 0; }
-  .block { margin: 0; padding: var(--space-2) var(--space-3); font-size: var(--text-sm); font-weight: 400; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+  .heads { position: sticky; top: 0; z-index: 1; display: flex; gap: var(--space-3); padding: var(--space-1) var(--space-3); font-size: var(--text-sm); color: var(--text-muted); background: var(--surface-2); border-bottom: 1px solid var(--border); }
+  .hf { flex: 1; margin-left: calc(1em + var(--space-3)); }
+  .hcols { flex: none; display: grid; grid-template-columns: var(--col-solution) var(--col-actions); gap: var(--space-2); }
+  /* A block heading is a band: a line above and below, the same padding, a faint tint, so it starts a section and never reads as part of a row. */
+  .block { margin: 0; padding: var(--space-2) var(--space-3); font-size: var(--text-sm); font-weight: 400; color: var(--text-muted); background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .heads + .block, .heads + :global(.block) { border-top: 0; }
+  .fold { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 24px; margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-3)); padding: var(--space-2) var(--space-3); box-sizing: content-box; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; cursor: pointer; }
+  .fold:hover { background: var(--accent-soft); }
+  .fold:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   .empty { margin: 0; padding: var(--space-4); color: var(--text-muted); }
   .note { margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--text-muted); }
 </style>
