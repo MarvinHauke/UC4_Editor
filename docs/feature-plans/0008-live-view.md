@@ -613,13 +613,13 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
 19. **Dialog headings and Actions column** (decision 36) — done 2026-11-27: uc4-ui (`530b1c1` follow-ups `c503716`, `5ff76d5`; reviewed) — uc4-ui · blocked by: 18 · Checks: browser at 1024 px,
    dark and light, columns and heading aligned, heading stays on scroll.
 
-20. **Review fixes: UI** (user's /code-review, 2026-11-27) — uc4-ui · blocked by: none · Review… always on the Send
+20. **Review fixes: UI** (user's /code-review, 2026-11-27) — done: uc4-ui (`1c6e53e`; reviewed; browser-checked by the architect at 1024 and 1400 px, dark and light; follow-up: Solution labels clip at 1024 px, focus after Remove) — uc4-ui · blocked by: none · Review… always on the Send
    check line (decision 30); the factory fold's state in sessionStorage through the storage-key module (36); the
    This setup / All setups switch in the soft pressed style, not solid accent (36); the well-known-CC hint only on a
    value the user typed, not on a suggestion (35); a Changes line is dropped with a "Remove" text button, not ✕ (✕ clears a mapping, glossary); raw px
    spacing in ConnectionsColumn, MidiMonitor, FollowSwitch, MonitorRow onto the spacing tokens. Checks: tests,
    browser list at 1024 px, dark and light.
-21. **Review fixes: model** (user's /code-review, 2026-11-27) — model half done: uc4-model (`adfb3c7`; reviewed: `src/model/controlPath.ts`, `setPlanAfter`, `unignore`); UI call sites and `setAfter` → `setPlanAfter` with uc4-ui — uc4-model · blocked by: none · remove
+21. **Review fixes: model** (user's /code-review, 2026-11-27) — done: uc4-model (`adfb3c7`), uc4-ui (`a61386f`, call sites, `setPlanAfter`; reviewed; browser-checked: a one-end PrGC edit moves the block, 200 → 117–127 with a note) — uc4-model · blocked by: none · remove
    `library.resolve` (35); `showAgain` renamed `unignore` (the glossary avoids "Show again"); one helper for the encoder-side areas
    (replaces the `area === 'encoders' || area === 'pushButtons'` copies) and one control-path parse/format (replaces
    three regexes); a one-end edit of a planned `PrGC` range moves the block (keeps its width, never reverses).
