@@ -600,7 +600,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    control, the Changes table (editable After, ✕, Discard, Apply n changes), flash on the device view, the plan kept
    while the dialog is closed; the panel's hint line and "Open in Problems and warnings"; factory rows' toggle; the
    well-known-CC hint. Checks: tests, browser list.
-19. **Dialog headings and Actions column** (decision 36) — uc4-ui · blocked by: 18 · Checks: browser at 1024 px,
+19. **Dialog headings and Actions column** (decision 36) — done 2026-11-27: uc4-ui (`530b1c1` follow-ups `c503716`, `5ff76d5`; reviewed) — uc4-ui · blocked by: 18 · Checks: browser at 1024 px,
    dark and light, columns and heading aligned, heading stays on scroll.
 
 ## Out of scope

@@ -32,8 +32,9 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
 - **0008 steps 14–16 done** (`a1b9589`, `edcc82a`, `e15f082`; decisions 31–34). Left from step 15: a 1024 px browser
   run of the dialog (long "change … instead" lines, a long panel label); "ch 1" wraps before the 1 in dialog rows
   (keep it together in the UI, not in the model text the tests read).
-- **0008 steps 17–18 done** (`ceca4c7`, `530b1c1`, decision 35); uc4-ui on the review's small fixes. Asked the user:
-  pressed toggles softer, solid accent only on Apply. Later: remove the unused `library.resolve` (uc4-model). Later: idea C, ghost labels on the device view and a docked side panel.
+- **0008 steps 17–18 done** (`ceca4c7`, `530b1c1`, decision 35); step 19 (headings, Actions column, factory fold) done (`5ff76d5`).
+  Open: editing one end of a planned `PrGC` range in Changes can reverse it ("programs 20–17"); should a one-end
+  edit move the block? (uc4-model). Later: remove the unused `library.resolve` (uc4-model). Later: idea C, ghost labels on the device view and a docked side panel.
 - **Later, own plan:** a warning level setting ("hard" turns warnings into errors; user, 2026-11-27).
 
 ## Waiting for the user
