@@ -403,7 +403,8 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
 
 31. **Ignore is a toggle; the dialog in four blocks** (user, 2026-11-27, grill R1-Q2, R2-Q5–Q6): an open row has
    **Ignore**, an ignored row the pressed button **Ignored** (no ✓: a check mark read as "fine"); a click on it
-   counts the warning again. "Show again" and the "ignored" tag go (supersedes that part of decision 29). The list
+   counts the warning again. "Show again", the "ignored" tag and the "Show ignored" checkbox go: every block is always listed (supersedes
+   that part of decision 29). The list
    runs problems → open warnings → ignored → factory layout, each block under a quiet heading with its count, so
    what needs work is on top. Rejected: "Count again", "Un-ignore", a checkbox column.
 

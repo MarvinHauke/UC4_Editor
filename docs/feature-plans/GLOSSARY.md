@@ -204,7 +204,7 @@ sending the same message; it never blocks a send.
 _Avoid_: problem (the validator rejects), error
 
 **Ignore**:
-To accept a warning as intended; the editor remembers it, hides it until "Show ignored", and counts it again as
+To accept a warning as intended; the editor remembers it, lists it under "Ignored", and counts it again as
 soon as either control's message changes. A second click on the pressed "Ignored" button undoes it.
 _Avoid_: waive, suppress, accept; dismiss (that closes a dump notice); "Show again"
 

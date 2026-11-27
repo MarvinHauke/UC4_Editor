@@ -35,7 +35,7 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
 
 ## Waiting for the user
 
-- **0008:** Ignore and check-line checks by hand (status-bar ✓ item opens the dialog, ignore, reload, Show again, `PrGC` widen re-opens, "Send anyway" wording); the hands-on review and the listen-only hardware list; Connect from the dump guide on the real UC4.
+- **0008:** Ignore and check-line checks by hand (status-bar ✓ item opens the dialog, ignore, reload, the Ignored toggle, `PrGC` widen re-opens, "Send anyway" wording); the hands-on review and the listen-only hardware list; Connect from the dump guide on the real UC4.
 - **Look and size checks:** light theme and 1024 px of the Connections column, the guide, Copy / Paste flash,
   Reset all; light theme `--border` `#b9b9b3` on white is 1.97:1 (below 3:1 for field edges; a token pass).
 - **Hardware look list** (look only): what the display shows on entering edit mode and whether a value falls back
