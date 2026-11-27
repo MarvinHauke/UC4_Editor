@@ -29,9 +29,9 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
 - **Review judgement calls** (user's /code-review of `feat/live-view`, 2026-11-27): one model helper for the message
   key, "what a control sends", the encoder half and slot names. Done from that review: `d26800d`, `c760681`, `809ab0e`
   (Ignore rename, 0008 decision 29); 0008 step 13, the check always reachable (`7766162`, decision 30).
-- **To grill with the user** (`/grill-with-docs`): the word for un-ignoring ("Show again"; the architect suggests
-  Ignore as a toggle) and a **Resolve** action (which control changes, to what, factory layout, pairs and ranges).
-  "Show" stays (as in the MIDI monitor). Also: Review… in the Send dialog on its own line or at the row's right edge.
+- **0008 steps 14–16** (grill 2026-11-27, decisions 31–34): Resolve suggestions (uc4-model), then the dialog and
+  panel (Ignore toggle, four blocks, ↺ Resolve, Review… on the check line), then the monitor row cleanup (uc4-ui).
+- **Later, own plan:** a warning level setting ("hard" turns warnings into errors; user, 2026-11-27).
 
 ## Waiting for the user
 

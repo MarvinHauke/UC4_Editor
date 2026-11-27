@@ -401,6 +401,39 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    list), a separate check page before the steps (a click on every send). Open: the word for un-ignoring and a
    Resolve action (to grill); "Show" stays, as in the MIDI monitor.
 
+31. **Ignore is a toggle; the dialog in four blocks** (user, 2026-11-27, grill R1-Q2, R2-Q5–Q6): an open row has
+   **Ignore**, an ignored row the pressed button **Ignored** (no ✓: a check mark read as "fine"); a click on it
+   counts the warning again. "Show again" and the "ignored" tag go (supersedes that part of decision 29). The list
+   runs problems → open warnings → ignored → factory layout, each block under a quiet heading with its count, so
+   what needs work is on top. Rejected: "Count again", "Un-ignore", a checkbox column.
+
+32. **Resolve** (user, 2026-11-27, grill R1-Q3–Q4, R2-Q7–Q9, R3-Q13–Q15, Q17–Q18): each row of the dialog has
+   **Show · ↺ Resolve · Ignore**, and the property panel's warning line has ↺ Resolve too. Resolve suggests a value
+   and applies it with one click: one undo step; the editor selects the control and flashes the changed field, as
+   Map does. It never changes a value you haven't seen.
+   - **Which control:** in a collision, the one that differs from factory (the one you changed); both or neither
+     → the second-named. Always with "change <other> instead". A **factory collision** shows both suggestions side
+     by side; the layout is the builder's pick, judged by the user afterwards (no prototype).
+   - **Which value:** the next number upwards that no control of this setup sends on that channel and type (all
+     groups), wrapping at 127. None free → the same number on the next channel up (16 → 1), then the next free one
+     there; the suggestion names both ("CC 9 on ch 2"). A `CCAh` pair needs n and n+32 free; a `PrGC` range moves
+     as a block of the same width. Nothing free anywhere → "No free CC" and no suggestion.
+   - **Problems:** the suggestion is the nearest valid value (an upper of 200 → 127).
+   - **Icons:** ↺ means Resolve everywhere; the monitor's ✕ keeps clearing a colliding mapping (decision 26).
+   Why: Show only takes you there; for a collision the work is finding a free number. Rejected: an automatic fix
+   with no suggestion shown; changing faders of the factory layout by default.
+
+33. **Review… on the check line** (user, 2026-11-27, grill R1-Q1): in the Send dialog Review… sits at the right edge
+   of the check line (or of the "▲ n warnings" heading), not on a line of its own.
+
+34. **A cleaner monitor row** (user, 2026-11-27, grill R2-Q10–Q11, R3-Q16): a closed row shows the source chip on the
+   left (written "UC4" when it fits, otherwise the builder moves it), message · channel · value, a small "→" on rows
+   mapped this session, and **[Map]** as a text button on hover and on the last-moved row (replaces the arrow icon).
+   The control name, Show, Pin and ✕ live in the open row only. A click on a UC4 row selects its pinned or first
+   match and opens the row; with Follow on the device view also goes there (setup and groups); a second click
+   closes it. With Follow off the click only opens the row. Why: the name and buttons were shown twice; the room
+   goes to a readable Map button. Supersedes the closed-row parts of decisions 25 and 26 (✕ stays, in the open row).
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it
@@ -520,6 +553,14 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    or "✓ No warnings · n ignored"), Send dialog check line with Review…; the switch note still hides the count
    (decision 25). Checks: statusInfo tests, browser list (all ignored → item stays and opens the dialog; Send with
    none open shows the line).
+14. **Resolve suggestions** (decision 32) — uc4-model · blocked by: none · in `src/model`: for a warning, the
+   control to change (differs from factory, else second; factory collisions: both) and its suggested value (free
+   number, channel step, `CCAh` pairs, `PrGC` blocks); for a problem, the nearest valid value; applying is one
+   library edit. Checks: model tests for each rule, factory SE01 collisions.
+15. **Dialog and panel: Ignore toggle, blocks, Resolve** (decisions 31–33) — uc4-ui · blocked by: 14 · Checks:
+   tests, browser list (toggle, block order, Resolve both kinds, undo, property panel line, Review… placement).
+16. **Monitor row cleanup** (decision 34) — uc4-ui · blocked by: none (after 15, one builder) · Checks: tests,
+   browser list with the MIDI stub (closed row, Map on hover, click selects and opens with Follow on and off).
 
 ## Out of scope
 
