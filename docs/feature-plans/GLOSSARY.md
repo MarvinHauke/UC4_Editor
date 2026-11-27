@@ -205,8 +205,23 @@ _Avoid_: problem (the validator rejects), error
 
 **Ignore**:
 To accept a warning as intended; the editor remembers it, hides it until "Show ignored", and counts it again as
-soon as either control's message changes. "Show again" undoes it.
-_Avoid_: waive, suppress, accept; dismiss (that closes a dump notice)
+soon as either control's message changes. A second click on the pressed "Ignored" button undoes it.
+_Avoid_: waive, suppress, accept; dismiss (that closes a dump notice); "Show again"
+
+**Factory collision**:
+A warning that comes from the factory layout itself (each factory setup's EG4 encoders and FG1 faders send the same
+CC); it starts ignored and is marked "factory layout" until either control changes.
+_Avoid_: default warning
+
+**Resolve**:
+To fix a warning or problem with the editor's **suggestion**, in one click and one undo step (icon ↺). For a factory
+collision both controls are offered.
+_Avoid_: fix, auto-fix; ✕ (that clears a mapping)
+
+**Suggestion**:
+The value Resolve would give a control: the next free number on its channel (or the next channel), or for a
+problem the nearest valid value. Shown before it is applied, never applied unseen.
+_Avoid_: proposal, auto value
 
 **Map**:
 Giving a control the command type, channel and number of a MIDI monitor row's message.

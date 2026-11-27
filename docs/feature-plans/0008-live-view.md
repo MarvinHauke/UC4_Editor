@@ -553,7 +553,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    or "✓ No warnings · n ignored"), Send dialog check line with Review…; the switch note still hides the count
    (decision 25). Checks: statusInfo tests, browser list (all ignored → item stays and opens the dialog; Send with
    none open shows the line).
-14. **Resolve suggestions** (decision 32) — uc4-model · blocked by: none · in `src/model`: for a warning, the
+14. **Resolve suggestions** (decision 32) — done 2026-11-27: uc4-model (`a1b9589`; reviewed) — uc4-model · blocked by: none · in `src/model`: for a warning, the
    control to change (differs from factory, else second; factory collisions: both) and its suggested value (free
    number, channel step, `CCAh` pairs, `PrGC` blocks); for a problem, the nearest valid value; applying is one
    library edit. Checks: model tests for each rule, factory SE01 collisions.
