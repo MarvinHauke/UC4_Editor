@@ -1,6 +1,6 @@
 <script lang="ts">
   // The Warnings dialog (plan 0008 decision 25): problems first, then warnings. Show selects the control and closes the dialog;
-  // Four blocks (decision 31): problems, open warnings, ignored, the factory layout's. Ignore is a toggle; ↺ Resolve applies a suggestion
+  // Four blocks (decision 31): problems, open warnings, ignored, the factory layout's. Ignore is a toggle; Resolve applies a suggestion
   // (decision 32) as one undo step, selects the control and closes the list, like Show.
   import { onMount, tick } from 'svelte';
   import type { Store } from '../app/libraryStore.svelte.ts';

@@ -6,6 +6,7 @@
   import type { Device } from '../app/deviceStore.svelte.ts';
   import type { Sender } from '../app/sender.svelte.ts';
   import type { DeviceProfile } from '../protocol/profile.ts';
+  import { keepChannel } from '../app/warningList.ts';
   import { restoreView, sendCheck, sendView } from '../app/sendFlow.ts';
   import { useGuide } from '../app/guide.svelte.ts';
   import { RECEIVE_GUIDE } from '../app/profile/uc4Guides.ts';
@@ -99,7 +100,7 @@
         <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to show, resolve or ignore them one by one · this dialog stays">Review…</button>
       </div>
       <ul class="changes" aria-label="Warnings">
-        {#each pending.slice(0, 5) as w, i (i)}<li>{w.message}</li>{/each}
+        {#each pending.slice(0, 5) as w, i (i)}<li>{keepChannel(w.message)}</li>{/each}
         {#if pending.length > 5}<li class="more">+ {pending.length - 5} more</li>{/if}
       </ul>
       <p class="muted">A warning blocks nothing. “Send anyway” ignores these, so they stop counting; Undo brings them back.</p>

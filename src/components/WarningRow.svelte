@@ -1,6 +1,7 @@
 <script lang="ts">
   // One entry of the Warnings dialog (plan 0008 decisions 31, 32): the message, under it what Resolve would do, and the actions in
-  // three fixed columns: Show · ↺ Resolve · Ignore (an ignored row shows the pressed "Ignored"; a factory row has neither).
+  // three fixed columns: Show · Resolve · Ignore (an ignored row shows the pressed "Ignored"; a factory row has neither).
+  import { keepChannel } from '../app/warningList.ts';
   import type { ResolveOption } from '../app/resolveView.ts';
 
   interface Props {
@@ -28,19 +29,19 @@
   <span class="text">
     {#if problem}<span class="what">Problem</span>{/if}
     {#if where}<span class="where">{where}</span>{/if}
-    <span class="msg">{message}</span>
+    <span class="msg">{keepChannel(message)}</span>
     {#if options.length > 0}
       <span class="sugg">
         {#if sideBySide}
           {#each options as o (o.choice)}
             <button type="button" class="alt" disabled={!o.ok} onclick={() => { onresolve(o.choice); }}
-              data-help={o.ok ? `Resolve: ${o.label} · one undo step · the control is selected and the changed field flashes` : o.label}><span aria-hidden="true">↺</span> {o.label}</button>
+              data-help={o.ok ? `Resolve: ${o.label} · one undo step · the control is selected and the changed field flashes` : o.label}>{keepChannel(o.label)}</button>
           {/each}
         {:else}
-          {#if first}<span class="line">{first.label}</span>{/if}
+          {#if first}<span class="line">{keepChannel(first.label)}</span>{/if}
           {#if second}
             <button type="button" class="alt" disabled={!second.ok} onclick={() => { onresolve(second.choice); }}
-              data-help={second.ok ? `Change ${second.short} instead: ${second.label} · one undo step` : second.label}>{second.ok ? `change ${second.short} instead → ${second.text}` : `${second.label}`}</button>
+              data-help={second.ok ? `Change ${second.short} instead: ${second.label} · one undo step` : second.label}>{second.ok ? keepChannel(`change ${second.short} instead → ${second.text}`) : keepChannel(second.label)}</button>
           {/if}
         {/if}
       </span>
@@ -50,7 +51,7 @@
     <button type="button" class="c1" onclick={onshow} data-help={showHelp}>Show</button>
     {#if !sideBySide && first}
       <button type="button" class="c2" disabled={!first.ok} onclick={() => { onresolve(first.choice); }}
-        data-help={first.ok ? `Resolve: ${first.label} · one undo step · the control is selected and the changed field flashes` : first.label}><span aria-hidden="true">↺</span> Resolve</button>
+        data-help={first.ok ? `Resolve: ${first.label} · one undo step · the control is selected and the changed field flashes` : first.label}>Resolve</button>
     {/if}
     {#if ignore === 'open'}
       <button type="button" class="c3" onclick={onignore} data-help="Ignore: accept this warning; it moves to Ignored and stops counting until one of the two controls changes · Undo brings it back">Ignore</button>

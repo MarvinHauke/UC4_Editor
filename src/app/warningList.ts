@@ -52,3 +52,6 @@ export function showSelection(w: Warning, path: string = w.controls[0]): Selecti
   }
   return change;
 }
+
+/** Keeps "ch 1" on one line: a no-break space after "ch", so a wrapped message never leaves the channel number alone. Text only; the message itself is unchanged. */
+export const keepChannel = (text: string): string => text.replace(/\bch (\d)/g, 'ch\u00a0$1');

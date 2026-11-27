@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blocksOf, listEntries, otherName, showSelection } from '../../src/app/warningList.ts';
+import { blocksOf, keepChannel, listEntries, otherName, showSelection } from '../../src/app/warningList.ts';
 import type { ListedWarning } from '../../src/storage/index.ts';
 
 const w = (setupId: string, a: string, b: string, state: ListedWarning['state'] = 'open'): ListedWarning =>
@@ -51,5 +51,13 @@ describe('showSelection', () => {
   });
   it('selects the other control when asked', () => {
     expect(showSelection(w('a', enc, fad), fad).control).toEqual({ area: 'faders', index: 4 });
+  });
+});
+
+describe('keepChannel', () => {
+  it('joins "ch" and its number with a no-break space', () => {
+    expect(keepChannel('both send CC 41 ch 1')).toBe('both send CC 41 ch\u00a01');
+    expect(keepChannel('a ch 12, b ch 3')).toBe('a ch\u00a012, b ch\u00a03');
+    expect(keepChannel('Enc1 and church')).toBe('Enc1 and church');
   });
 });

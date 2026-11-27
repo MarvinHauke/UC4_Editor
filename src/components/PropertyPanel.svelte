@@ -5,7 +5,7 @@
   import { controlAt, groupOf, selectedSetup } from '../app/selectors.ts';
   import { controlPath, problemsOf } from '../app/controlProblems.ts';
   import { warningsOf } from '../app/warningMarks.ts';
-  import { otherName } from '../app/warningList.ts';
+  import { keepChannel, otherName } from '../app/warningList.ts';
   import { resolveOptions } from '../app/resolveView.ts';
   import { useWarningsDialog } from '../app/warningsDialog.svelte.ts';
   import { NOTICE_SHORT } from '../app/links.ts';
@@ -61,8 +61,8 @@
           <li><button type="button" onclick={() => { warningsDialog.show({ control: path }); }}
             data-help="Warning: {w.message} · allowed, but check it is intended · click to review, show or ignore it"><span aria-hidden="true">▲</span> Also sent by {otherName(w, path)}</button>
             {#if o?.ok}
-              <button type="button" class="resolve" aria-label="Resolve: {o.label}" onclick={() => { store.resolve(w, 0); }}
-                data-help="Resolve: {o.label} · one undo step · the control is selected and the changed field flashes"><span aria-hidden="true">↺</span> {o.label}</button>
+              <button type="button" class="resolve" onclick={() => { store.resolve(w, 0); }}
+                data-help="Resolve: {o.label} · one undo step · the control is selected and the changed field flashes">Resolve: {keepChannel(o.label)}</button>
             {/if}</li>
         {/each}
       </ul>
