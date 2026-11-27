@@ -68,7 +68,9 @@
   .where, .reason { font-size: var(--text-sm); color: var(--text-muted); }
   .reason { flex: 1 1 100%; }
   /* Two fixed columns, so Solution and Actions stand at the same x in every row; the buttons stack inside them. */
-  .cols { flex: none; display: grid; grid-template-columns: var(--col-solution) var(--col-actions); gap: var(--space-2); align-items: center; }
+  .cols { flex: none; display: grid; grid-template-columns: var(--col-solution) var(--col-actions); gap: var(--space-2); align-items: stretch; }
   .solutions, .acts { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
-  .cols button { min-width: 0; width: 100%; white-space: nowrap; }
+  .cols button { min-width: 0; width: 100%; flex: 1; } /* both stacks share the row height, so Show and Ignore stand beside their solution even when a label wraps */
+  /* A long solution ("Enc2 → programs 50–60") wraps inside its button instead of being cut off; the columns keep their width. */
+  .solutions button { height: auto; padding-block: var(--space-1); line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
 </style>

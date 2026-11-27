@@ -8,6 +8,7 @@
   import { nameOfPath } from '../live/mapping.ts';
   import { flashTargets, keepRefused, lineKey, propertyName, setAfter } from '../app/resolvePlan.ts';
   import { SvelteMap } from 'svelte/reactivity';
+  import { tick } from 'svelte';
   import { useCopyHold } from '../app/copyHold.svelte.ts';
 
   let { store, plan }: { store: Store; plan: ResolvePlanState } = $props();
@@ -54,14 +55,24 @@
     note = r.message ?? '';
     if (r.changed) copy.pulse(flashTargets(r.changed, store.state.selection));
   }
+  let section = $state<HTMLElement | null>(null);
+  /** Drops a line and keeps the keyboard where it was: focus goes to the next line's Remove, else the previous one's, else the empty-table text. */
+  async function remove(index: number): Promise<void> {
+    forget(lineKey(plan.plan[index]!.entry));
+    plan.remove(index);
+    note = '';
+    await tick();
+    const buttons = section?.querySelectorAll<HTMLElement>('button.x') ?? [];
+    (buttons[Math.min(index, buttons.length - 1)] ?? section?.querySelector<HTMLElement>('.empty'))?.focus();
+  }
   function discard(): void { plan.discard(); note = ''; reasons.clear(); }
 </script>
 
-<section class="changes" aria-label="Changes">
+<section class="changes" aria-label="Changes" bind:this={section}>
   <h3>Changes{plan.plan.length > 0 ? ` · ${plan.plan.length}` : ''}</h3>
   <div class="table">
     {#if plan.plan.length === 0}
-      <p class="empty">{note || 'Pick a solution in a row to plan a change. Nothing changes until you press Apply.'}</p>
+      <p class="empty" tabindex="-1">{note || 'Pick a solution in a row to plan a change. Nothing changes until you press Apply.'}</p>
     {:else}
       <ul>
         {#each plan.plan as item, i (lineKey(item.entry))}
@@ -74,7 +85,7 @@
             <span class="arrow" aria-hidden="true">→</span>
             <input class="after" class:bad={c && !c.valid} class:warn={c?.valid && c.collidesWith.length > 0} inputmode="numeric" aria-label="After: {propertyName(item.entry.path, item.entry.property)} of {nameOf(item.entry.path)}"
               value={item.entry.after} oninput={(e) => { typed(i, e.currentTarget); }} onchange={(e) => { left(i, e.currentTarget); }} data-help="After: the new value; edit it to plan another one · a value another control sends is marked" />
-            <button type="button" class="x" aria-label="Remove {nameOf(item.entry.path)} from the changes" data-help="Remove: drops this line from the plan; nothing was changed" onclick={() => { forget(lineKey(item.entry)); plan.remove(i); note = ''; }}>Remove</button>
+            <button type="button" class="x" aria-label="Remove {nameOf(item.entry.path)} from the changes" data-help="Remove: drops this line from the plan; nothing was changed" onclick={() => { void remove(i); }}>Remove</button>
             {#if why}<span class="note bad">Not applied: {why}</span>
             {:else if c && !c.valid}<span class="note bad">{c.reason}</span>
             {:else if c && c.collidesWith.length > 0}<span class="note warn">▲ Also sent by {c.collidesWith.map((x) => x.name).join(', ')}</span>{/if}
@@ -97,6 +108,7 @@
   /* A reserved height, so the dialog never jumps when a pick is made or taken back. */
   .table { height: 112px; overflow-y: auto; scrollbar-width: thin; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
   ul { margin: 0; padding: 0; list-style: none; }
+  .empty:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   .empty { margin: 0; padding: var(--space-3); color: var(--text-muted); font-size: var(--text-sm); }
   .line { display: grid; grid-template-columns: minmax(0, 1fr) 5em 3em 1.2em 5em auto; align-items: center; column-gap: var(--space-2); padding: var(--space-1) var(--space-3); border-bottom: 1px solid var(--border); }
   .line:last-child { border-bottom: 0; }
