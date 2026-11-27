@@ -440,7 +440,7 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    meant closing and reopening the dialog. Now:
    - **Solution column:** each row offers one choice per control (`Enc3 → CC 70`, `FAd3 → CC 70`) and leave.
      Picking one changes nothing yet: it adds a line to the **Changes** table at the bottom of the dialog (control,
-     property, before, after, ✕). A planned number is **reserved**, so the next row's suggestion moves on.
+     property, before, after, Remove). A planned number is **reserved**, so the next row's suggestion moves on.
    - **The After value is editable**; a value that collides is marked at once.
    - **Apply n changes** is one undo step; the dialog stays open, solved rows leave the list, the changed values
      flash on the device view. Discard drops the plan. Closing the dialog keeps the plan quietly until it is
@@ -460,7 +460,7 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    gets a heading row **Finding · Solution · Actions**, kept in view while the list scrolls. **Show** and the
    **Ignore** toggle stack in the Actions column, the way the two solution buttons stack in theirs. Pressed toggles
    (a picked solution, "Ignored") get a soft pressed style (tinted, accent border); solid accent stays for
-   **Apply** alone, the one action that changes the setup (architect, from the step 18 review). Block headings are
+   **Apply** alone, the one action that changes the setup (architect, from the step 18 review); the same soft style for every on switch, Follow included (architect, 2026-11-27, step 20). Block headings are
    bands (a line above, even padding) so they never read as part of a row; the Factory layout block folds, folded
    by default, its state kept for the session (architect, after the user's "factory layout · 7 looks off"). Why:
    the columns had no names, and three button columns and eight factory rows read as clutter.
