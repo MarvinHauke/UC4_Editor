@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CONNECTIONS_KEY, loadOpen as loadColumn, saveOpen as saveColumn } from '../../src/app/connections.ts';
-import { FOLD_KEY, loadOpen, parseOpen, saveOpen } from '../../src/app/foldState.ts';
+import { FOLD_KEY, loadFactoryOpen, loadOpen, saveFactoryOpen, parseOpen, saveOpen } from '../../src/app/foldState.ts';
 
 const memory = () => { const m = new Map<string, string>(); return { m, getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, v); } }; };
 const blocked = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
@@ -60,5 +60,21 @@ describe('the column and its folds share one storage', () => {
     s.setItem(FOLD_KEY, 'open');
     expect(loadOpen('monitor', s, true)).toBe(true);
     expect(loadOpen('dumps', s)).toBe(false);
+  });
+});
+
+describe('the Factory layout fold (sessionStorage)', () => {
+  const mem = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, v); } }; };
+  it('is folded until opened, and keeps the choice', () => {
+    const s = mem();
+    expect(loadFactoryOpen(s)).toBe(false);
+    saveFactoryOpen(true, s);
+    expect(loadFactoryOpen(s)).toBe(true);
+    saveFactoryOpen(false, s);
+    expect(loadFactoryOpen(s)).toBe(false);
+  });
+  it('survives storage that is not there', () => {
+    expect(loadFactoryOpen(null)).toBe(false);
+    expect(() => saveFactoryOpen(true, null)).not.toThrow();
   });
 });

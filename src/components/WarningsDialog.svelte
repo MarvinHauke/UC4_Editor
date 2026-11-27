@@ -14,13 +14,14 @@
   import { resolveOptions, withPlanned } from '../app/resolveView.ts';
   import { problemText } from '../app/controlProblems.ts';
   import { slotName } from '../app/format.ts';
+  import { loadFactoryOpen, saveFactoryOpen } from '../app/foldState.ts';
   import { blocksOf, listEntries } from '../app/warningList.ts';
   import { selectedSetup } from '../app/selectors.ts';
 
   let { store, warnings: ui }: { store: Store; warnings: WarningsDialog } = $props();
   const resolvePlan = useResolvePlan();
-  /** The Factory layout block is folded until opened; the choice stays while the page is open. A list narrowed to one control shows it (decision 36). */
-  let factoryOpen = $state(false);
+  /** The Factory layout block is folded until opened; the choice stays for the session (sessionStorage). A list narrowed to one control shows it (decision 36). */
+  let factoryOpen = $state(loadFactoryOpen());
   let dialog = $state<HTMLDialogElement | null>(null);
   let closeButton = $state<HTMLButtonElement | null>(null);
   const lib = $derived(store.state);
@@ -48,7 +49,7 @@
   const kept = async (): Promise<void> => { await tick(); (dialog?.querySelector<HTMLElement>('.entry .acts button') ?? closeButton)?.focus(); };
   function show(w: ListedWarning): void { ui.close(); store.showWarning(w); }
   function ignoreWarning(w: ListedWarning): void { store.ignore([w]); void kept(); }
-  function showAgain(w: ListedWarning): void { store.showAgain(w); void kept(); }
+  function showAgain(w: ListedWarning): void { store.unignore(w); void kept(); }
   function showProblem(index: number): void { ui.close(); store.showProblem(index); }
   const problemId = (p: Problem): string => `problem|${p.path}|${p.message}`;
   /** What the row would plan: its own earlier pick doesn't reserve numbers against itself. */
@@ -101,7 +102,7 @@
       {#if b.list.length > 0}
         {@const shown = !b.fold || factoryOpen || ui.control !== null}
         {#if b.fold && ui.control === null}
-          <h3 class="block"><button type="button" class="fold" aria-expanded={shown} onclick={() => { factoryOpen = !factoryOpen; }}
+          <h3 class="block"><button type="button" class="fold" aria-expanded={shown} onclick={() => { factoryOpen = !factoryOpen; saveFactoryOpen(factoryOpen); }}
             data-help={shown ? 'Factory layout: the warnings of the UC4\'s own layout; click to fold' : 'Factory layout: the warnings of the UC4\'s own layout, folded; click to unfold'}><span aria-hidden="true">{shown ? '▾' : '▸'}</span> {b.title} · {b.list.length}</button></h3>
         {:else}
           <h3 class="block">{b.title} · {b.list.length}</h3>
@@ -144,7 +145,7 @@
   .seg button { border-radius: 0; }
   .seg button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
   .seg button:last-child { border-radius: 0 var(--radius) var(--radius) 0; margin-left: -1px; }
-  .seg button[aria-pressed='true'] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+  .seg button[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); }
   .narrow { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--text-sm); }
   .link { min-height: 24px; padding: 0 var(--space-2); }
   /* A fixed height, so the dialog never jumps when entries are ignored or the toggle changes the list. */

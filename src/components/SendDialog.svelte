@@ -107,7 +107,7 @@
     {:else if target?.kind === 'send'}
       <div class="checkline">
         <p class="muted check"><span aria-hidden="true">✓</span> <span class="nowrap">{check.text}</span></p>
-        {#if ignoredCount > 0}<button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list, to see the ignored warnings · this dialog stays">Review…</button>{/if}
+        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to see what was checked and what is ignored · this dialog stays">Review…</button>
       </div>
     {/if}
     {#if view.changesTitle}<h3>{view.changesTitle}</h3>{/if}

@@ -19,6 +19,8 @@
   let { field, value, control, problem, hint, onchange, quiet }: Props = $props();
 
   const id = $props.id();
+  // The number the user typed here: the well-known-CC hint is about that, not about a value a suggestion put there (decision 35).
+  let typedNumber = $state<number | null>(null);
   let draftError = $state<string | null>(null);
   // The refused entry's message, shown under the field only after the field is left (nothing moves while typing).
   let leftNote = $state<string | null>(null);
@@ -29,7 +31,7 @@
   const unused = $derived(((field.key === 'lower' || field.key === 'upper') && (control.type === 'CCr1' || control.type === 'CCr2')) || (field.key === 'number' && NUMBER_UNUSED_TYPES.includes(control.type)));
   // The range sits inside the field; the line below says something more (a problem, or a note) or is not there.
   const range = $derived(field.input === 'number' ? `${field.min}–${max}` : '');
-  const note = $derived(problem ?? (leftNote !== null ? `${leftNote}; kept ${value}` : null) ?? (field.input === 'number' && unused ? (field.key === 'number' ? 'Not sent by this type' : 'Not used by relative types') : (quiet ?? '')));
+  const note = $derived(problem ?? (leftNote !== null ? `${leftNote}; kept ${value}` : null) ?? (field.input === 'number' && unused ? (field.key === 'number' ? 'Not sent by this type' : 'Not used by relative types') : (typedNumber !== null && typedNumber === value ? (quiet ?? '') : '')));
   // Red on the field only while its draft is refused or the saved value has a problem; after a refusal the field shows the kept, valid number and only the line stays red.
   const invalid = $derived(draftError !== null || problem !== undefined);
   const alarm = $derived(invalid || leftNote !== null);
@@ -54,7 +56,7 @@
     // Enter on a refused entry does what leaving the field does (decision 45): the kept number comes back, the red goes, the line stays.
     if (n === null) { leftNote = draftError; draftError = null; e.currentTarget.value = String(value); return; }
     leftNote = null;
-    if (n !== value) onchange(n);
+    if (n !== value) { typedNumber = n; onchange(n); }
   }
   function leave(e: KeyboardEvent & { currentTarget: HTMLInputElement }): void {
     // Escape is the way out that does not save: the saved number comes back.

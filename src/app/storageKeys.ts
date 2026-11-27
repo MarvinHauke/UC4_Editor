@@ -8,6 +8,8 @@ export const FOLLOW_KEY = 'uc4-editor-follow';
 export const INPUT_KEY = 'uc4-editor-monitor-input';
 export const SESSION_STATE_KEY = 'uc4-editor-live-session';
 export const FOLD_KEY = 'uc4-editor-connections-folds';
+/** sessionStorage: the Factory layout block of the warnings dialog, kept while the tab lives (plan 0008 decision 36). */
+export const FACTORY_FOLD_KEY = 'uc4-editor-factory-fold';
 
 export const ALL_STORAGE_KEYS: readonly string[] = [
   LIST_WIDTH_KEY,
@@ -18,4 +20,5 @@ export const ALL_STORAGE_KEYS: readonly string[] = [
   INPUT_KEY,
   SESSION_STATE_KEY,
   FOLD_KEY,
+  FACTORY_FOLD_KEY,
 ];

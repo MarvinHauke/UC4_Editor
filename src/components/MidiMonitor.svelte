@@ -51,9 +51,9 @@
   .monitor > :global(*) { flex: none; }
   .monitor > .list { flex: 1 1 0; min-height: 0; }
   .bar { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); }
-  select { flex: 1; min-width: 0; min-height: var(--target); padding: 3px var(--space-2); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
+  select { flex: 1; min-width: 0; min-height: var(--target); padding: var(--space-1) var(--space-2); font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
   select:focus-visible, .clear:focus-visible, .list:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
-  .clear { flex: none; box-sizing: border-box; width: 72px; min-height: var(--target); padding: 3px var(--space-3); font: inherit; font-size: var(--text-md); font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .clear { flex: none; box-sizing: border-box; width: 72px; min-height: var(--target); padding: var(--space-1) var(--space-3); font: inherit; font-size: var(--text-md); font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .clear:hover:not(:disabled) { background: var(--accent-soft); }
   .clear:disabled { color: var(--text-muted); cursor: default; opacity: 0.6; }
   .status { margin: 0 0 var(--space-1); overflow-wrap: anywhere; color: var(--text-muted); font-size: var(--text-sm); }
