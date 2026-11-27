@@ -7,6 +7,7 @@
   import { warningsOf } from '../app/warningMarks.ts';
   import { keepChannel, otherName } from '../app/warningList.ts';
   import { wellKnownCc } from '../model/index.ts';
+  import { useResolvePlan } from '../app/resolvePlanState.svelte.ts';
   import { useWarningsDialog } from '../app/warningsDialog.svelte.ts';
   import { NOTICE_SHORT } from '../app/links.ts';
   import PropertyField from './PropertyField.svelte';
@@ -22,6 +23,7 @@
   /** The quiet note under a typed CC number that other gear reads as something (decision 35). */
   const ccHint = (n: number): string | undefined => { const name = wellKnownCc(n); return name ? `CC ${n} is often ${name}: fine for a DAW, may clash with an instrument` : undefined; };
   const warningsDialog = useWarningsDialog();
+  const resolvePlan = useResolvePlan();
   const panel = $derived.by(() => {
     const state = store.state;
     const sel = state.selection.control;
@@ -59,7 +61,7 @@
     {#if warned.length > 0}
       <ul class="warned" aria-label="Warnings">
         {#each warned as w (w.message)}
-          {@const free = store.suggest(w).choices.find((c) => c.path === path)?.suggestion?.text}
+          {@const free = store.suggest(w, resolvePlan.entries).choices.find((c) => c.path === path)?.suggestion?.text}
           <li>
             <span class="alsoby" data-help="Warning: {w.message} · allowed, but check it is intended"><span aria-hidden="true">▲</span> Also sent by {keepChannel(otherName(w, path))}</span>
             <span class="fix">{#if free}<span class="free">Free: {keepChannel(free)}</span>{/if}

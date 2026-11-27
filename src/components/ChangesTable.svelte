@@ -6,29 +6,42 @@
   import type { ResolvePlanState } from '../app/resolvePlanState.svelte.ts';
   import { checkPlanValue } from '../model/index.ts';
   import { nameOfPath } from '../live/mapping.ts';
-  import { flashTargets, PROPERTY_WORD } from '../app/resolvePlan.ts';
+  import { flashTargets, keepRefused, lineKey, propertyName } from '../app/resolvePlan.ts';
   import { useCopyHold } from '../app/copyHold.svelte.ts';
 
   let { store, plan }: { store: Store; plan: ResolvePlanState } = $props();
   const copy = useCopyHold();
-  /** What the last Apply or edit said (a refused entry's reason); gone when the plan changes. */
+  /** What the last Apply or edit said. */
   let note = $state('');
+  /** Why Apply refused a line, by line; it stays until that line is edited or taken out. */
+  let reasons = $state.raw<ReadonlyMap<string, string>>(new Map());
+  const forget = (key: string): void => { if (reasons.has(key)) { const m = new Map(reasons); m.delete(key); reasons = m; } };
   const checks = $derived(plan.plan.map((i) => checkPlanValue(store.state.configuration, plan.entries, { path: i.entry.path, property: i.entry.property, after: i.entry.after })));
   const blocked = $derived(checks.some((c) => !c.valid));
+  const nameOf = (path: string): string => nameOfPath(path) ?? path;
 
-  function edit(index: number, input: HTMLInputElement): void {
+  /** Checked as it is typed (a collision is marked at once); only a whole number reaches the plan. */
+  function typed(index: number, input: HTMLInputElement): void {
     const n = Number(input.value);
-    if (input.value.trim() === '' || !Number.isInteger(n)) { note = 'The new value must be a whole number.'; input.value = String(plan.plan[index]!.entry.after); return; }
+    if (input.value.trim() === '' || !Number.isInteger(n)) return;
     note = '';
+    forget(lineKey(plan.plan[index]!.entry));
     plan.setAfter(index, n);
+  }
+  /** On leaving the field: a value that is no whole number goes back to the planned one, and says so. */
+  function left(index: number, input: HTMLInputElement): void {
+    const n = Number(input.value);
+    if (input.value.trim() === '' || !Number.isInteger(n)) { note = 'The new value must be a whole number.'; input.value = String(plan.plan[index]!.entry.after); }
   }
   function apply(): void {
     const r = store.applyPlan(plan.entries);
-    plan.discard();
-    note = r.refused.length > 0 ? `${r.message ?? ''} ${r.refused.length} not applied: ${r.refused.map((x) => x.reason).join(' ')}`.trim() : (r.message ?? '');
+    const kept = keepRefused(plan.plan, r.refused);
+    plan.replace(kept.plan);
+    reasons = kept.reasons;
+    note = r.message ?? '';
     if (r.changed) copy.pulse(flashTargets(r.changed, store.state.selection));
   }
-  function discard(): void { plan.discard(); note = ''; }
+  function discard(): void { plan.discard(); note = ''; reasons = new Map(); }
 </script>
 
 <section class="changes" aria-label="Changes">
@@ -38,17 +51,19 @@
       <p class="empty">{note || 'Pick a solution in a row to plan a change. Nothing changes until you press Apply.'}</p>
     {:else}
       <ul>
-        {#each plan.plan as item, i (`${item.entry.path}|${item.entry.property}`)}
+        {#each plan.plan as item, i (lineKey(item.entry))}
           {@const c = checks[i]}
+          {@const why = reasons.get(lineKey(item.entry))}
           <li class="line">
-            <span class="ctl">{nameOfPath(item.entry.path) ?? item.entry.path}</span>
-            <span class="prop">{PROPERTY_WORD[item.entry.property]}</span>
+            <span class="ctl">{nameOf(item.entry.path)}</span>
+            <span class="prop">{propertyName(item.entry.path, item.entry.property)}</span>
             <span class="before" aria-label="before">{item.entry.before}</span>
             <span class="arrow" aria-hidden="true">→</span>
-            <input class="after" class:bad={c && !c.valid} class:warn={c?.valid && c.collidesWith.length > 0} inputmode="numeric" aria-label="After: {PROPERTY_WORD[item.entry.property]} of {nameOfPath(item.entry.path) ?? item.entry.path}"
-              value={item.entry.after} onchange={(e) => { edit(i, e.currentTarget); }} data-help="After: the new value; edit it to plan another one · a value another control sends is marked" />
-            <button type="button" class="x" aria-label="Take {nameOfPath(item.entry.path) ?? item.entry.path} out of the changes" title="Take out" data-help="Take out: drops this line from the plan; nothing was changed" onclick={() => { plan.remove(i); note = ''; }}>✕</button>
-            {#if c && !c.valid}<span class="note bad">{c.reason}</span>
+            <input class="after" class:bad={c && !c.valid} class:warn={c?.valid && c.collidesWith.length > 0} inputmode="numeric" aria-label="After: {propertyName(item.entry.path, item.entry.property)} of {nameOf(item.entry.path)}"
+              value={item.entry.after} oninput={(e) => { typed(i, e.currentTarget); }} onchange={(e) => { left(i, e.currentTarget); }} data-help="After: the new value; edit it to plan another one · a value another control sends is marked" />
+            <button type="button" class="x" aria-label="Take {nameOf(item.entry.path)} out of the changes" title="Take out" data-help="Take out: drops this line from the plan; nothing was changed" onclick={() => { forget(lineKey(item.entry)); plan.remove(i); note = ''; }}>✕</button>
+            {#if why}<span class="note bad">Not applied: {why}</span>
+            {:else if c && !c.valid}<span class="note bad">{c.reason}</span>
             {:else if c && c.collidesWith.length > 0}<span class="note warn">▲ Also sent by {c.collidesWith.map((x) => x.name).join(', ')}</span>{/if}
           </li>
         {/each}
@@ -59,7 +74,7 @@
     <span class="says" role="status">{plan.plan.length > 0 ? note : ''}</span>
     <button type="button" onclick={discard} disabled={plan.plan.length === 0} data-help="Discard: drops the planned changes; nothing was changed">Discard</button>
     <button type="button" class="apply" onclick={apply} disabled={plan.plan.length === 0 || blocked}
-      data-help={blocked ? 'Apply: a value is not valid; fix or take it out first' : 'Apply: makes all planned changes as one undo step · this list stays open'}>Apply {plan.plan.length === 1 ? '1 change' : `${plan.plan.length} changes`}</button>
+      data-help={blocked ? 'Apply: a value is not valid; fix or take it out first' : 'Apply: makes all planned changes as one undo step · this list stays open'}>{plan.plan.length === 0 ? 'Apply' : plan.plan.length === 1 ? 'Apply 1 change' : `Apply ${plan.plan.length} changes`}</button>
   </div>
 </section>
 

@@ -1,6 +1,7 @@
 // The Resolve plan's pure part (plan 0008 decision 35): which row picked which choice, the Changes table's lines, and which controls
 // to flash after Apply. The plan itself is the model's `PlanEntry` list; here each line also knows its row.
 import type { PlanEntry } from '../model/index.ts';
+import { FIELDS } from './profile/uc4Properties.ts';
 import type { ControlAddress, ControlProperty, Selection } from '../storage/index.ts';
 
 export interface PlanItem { rowId: string; choice: number; entry: PlanEntry }
@@ -26,7 +27,22 @@ export function pickRow(plan: Plan, rowId: string, choice: number, entries: read
 export const removeAt = (plan: Plan, index: number): Plan => plan.filter((_, i) => i !== index);
 export const setAfter = (plan: Plan, index: number, after: number): Plan => plan.map((it, i) => (i === index ? { ...it, entry: { ...it.entry, after } } : it));
 
-export const PROPERTY_WORD: Record<PlanEntry['property'], string> = { channel: 'Channel', number: 'Number', lower: 'Lower', upper: 'Upper' };
+/** The line a plan entry occupies: a control's property is planned once. */
+export const lineKey = (e: Pick<PlanEntry, 'path' | 'property'>): string => `${e.path}|${e.property}`;
+
+/** What Apply refused stays in the plan, each with its reason by line; what applied goes. */
+export function keepRefused(plan: Plan, refused: readonly { entry: Pick<PlanEntry, 'path' | 'property'>; reason: string }[]): { plan: Plan; reasons: Map<string, string> } {
+  const reasons = new Map(refused.map((r) => [lineKey(r.entry), r.reason] as const));
+  return { plan: plan.filter((i) => reasons.has(lineKey(i.entry))), reasons };
+}
+
+const WORD: Record<PlanEntry['property'], string> = { channel: 'Channel', number: 'Number', lower: 'Lower', upper: 'Upper' };
+const AREA = /\.(encoders|pushButtons|faders|buttons)\[/;
+/** The property's name as the panel shows it for that kind of control ("MIDI channel", "Upper value"). */
+export function propertyName(path: string, property: PlanEntry['property']): string {
+  const area = AREA.exec(path)?.[1] as keyof typeof FIELDS | undefined;
+  return (area && FIELDS[area].find((f) => f.key === property)?.friendly) || WORD[property];
+}
 
 export interface ChangedControl { address: ControlAddress; properties: ControlProperty[] }
 /** The device view's flash targets (`control:<area>:<index>`) for what Apply changed: only controls of the open setup in the groups on show. */

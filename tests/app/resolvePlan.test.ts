@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flashTargets, pickedChoice, pickRow, planEntries, removeAt, setAfter, withoutRow, PROPERTY_WORD, type PlanItem } from '../../src/app/resolvePlan.ts';
+import { flashTargets, keepRefused, propertyName, pickedChoice, pickRow, planEntries, removeAt, setAfter, withoutRow, type PlanItem } from '../../src/app/resolvePlan.ts';
 
 const e = (path: string, property: 'number' | 'channel' = 'number', after = 70) => ({ path, property, before: 36, after });
 const item = (rowId: string, choice: number, path: string, after = 70): PlanItem => ({ rowId, choice, entry: e(path, 'number', after) });
@@ -46,4 +46,21 @@ describe('flashTargets', () => {
   });
 });
 
-describe('PROPERTY_WORD', () => { it('words the plan properties', () => { expect(PROPERTY_WORD.number).toBe('Number'); }); });
+
+describe('keepRefused (decision 35)', () => {
+  const plan = [item('r1', 0, 'a'), item('r2', 0, 'b', 71)];
+  it('keeps only the entries Apply refused, with their reasons by line', () => {
+    const left = keepRefused(plan, [{ entry: { ...plan[1]!.entry }, reason: 'stale' }]);
+    expect(left.plan).toEqual([plan[1]]);
+    expect(left.reasons.get('b|number')).toBe('stale');
+  });
+  it('keeps nothing when nothing was refused', () => { expect(keepRefused(plan, []).plan).toEqual([]); });
+});
+
+describe('propertyName', () => {
+  it('uses the panel\'s own word for the control kind', () => {
+    expect(propertyName('setups[0].faderButtonGroups[1].faders[8]', 'channel')).toBe('MIDI channel');
+    expect(propertyName('setups[0].faderButtonGroups[1].faders[8]', 'upper')).toBe('Upper value');
+    expect(propertyName('nonsense', 'number')).toBe('Number');
+  });
+});

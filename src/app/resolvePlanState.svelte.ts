@@ -14,6 +14,8 @@ export function createResolvePlan() {
     remove(index: number): void { plan = removeAt(plan, index); },
     setAfter(index: number, after: number): void { plan = setAfter(plan, index, after); },
     discard(): void { plan = []; },
+    /** Replaces the plan (what Apply refused stays). */
+    replace(next: Plan): void { plan = next; },
   };
 }
 export type ResolvePlanState = ReturnType<typeof createResolvePlan>;
