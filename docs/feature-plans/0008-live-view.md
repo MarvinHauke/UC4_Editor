@@ -464,6 +464,16 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    bands (a line above, even padding) so they never read as part of a row; the Factory layout block folds, folded
    by default, its state kept for the session (architect, after the user's "factory layout · 7 looks off"). Why:
    the columns had no names, and three button columns and eight factory rows read as clutter.
+37. **Kept from the build, written down** (architect, 2026-11-27, from the user's /code-review): four things the
+   builders added without a decision stay, because each answers a question the decisions left open:
+   - **[Map] also on the next-to-map row** (beside decision 34's hover and last-moved row): after a mapping the next
+     row is marked (step 7), and its Map button is where the eye already is.
+   - **The dialog narrowed to one control**, from the property panel's line, with "Show all of this setup": the panel
+     asks about one control, so the dialog answers about that one.
+   - **"Not sent by this type"** under a number field the chosen type ignores (and "Not used by relative types"):
+     the field stays editable, so it says why changing it does nothing.
+   - **Relative spotting needs 3 messages** (`spotRelativeType`): one button press sends one value and says nothing
+     about `CCr1` or `CCr2`.
 
 ## Open questions
 
@@ -602,6 +612,18 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    well-known-CC hint. Checks: tests, browser list.
 19. **Dialog headings and Actions column** (decision 36) — done 2026-11-27: uc4-ui (`530b1c1` follow-ups `c503716`, `5ff76d5`; reviewed) — uc4-ui · blocked by: 18 · Checks: browser at 1024 px,
    dark and light, columns and heading aligned, heading stays on scroll.
+
+20. **Review fixes: UI** (user's /code-review, 2026-11-27) — uc4-ui · blocked by: none · Review… always on the Send
+   check line (decision 30); the factory fold's state in sessionStorage through the storage-key module (36); the
+   This setup / All setups switch in the soft pressed style, not solid accent (36); the well-known-CC hint only on a
+   value the user typed, not on a suggestion (35); a Changes line is dropped with a "Remove" text button, not ✕ (✕ clears a mapping, glossary); raw px
+   spacing in ConnectionsColumn, MidiMonitor, FollowSwitch, MonitorRow onto the spacing tokens. Checks: tests,
+   browser list at 1024 px, dark and light.
+21. **Review fixes: model** (user's /code-review, 2026-11-27) — uc4-model · blocked by: none · remove
+   `library.resolve` (35); `showAgain` renamed `unignore` (the glossary avoids "Show again"); one helper for the encoder-side areas
+   (replaces the `area === 'encoders' || area === 'pushButtons'` copies) and one control-path parse/format (replaces
+   three regexes); a one-end edit of a planned `PrGC` range moves the block (keeps its width, never reverses).
+   Checks: model and storage tests, `npm run build`, lint.
 
 ## Out of scope
 

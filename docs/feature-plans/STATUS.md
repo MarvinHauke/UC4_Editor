@@ -5,7 +5,7 @@ The order of features is in the [plan index](README.md#next-in-dependency-order)
 plans; protocol facts in `docs/protocol/uc4-sysex.md`. Finished work is in the git history, not here: when an item is
 done, delete it (pruned 2026-11-26, retro).
 
-_Last updated: 2026-11-27 (0008 steps 13–19 done; code review queued). Before: 2026-11-26 (0008 live view built, code-review fixes done; Split removal and the retro's checks in work)._
+_Last updated: 2026-11-27 (0008 steps 20–21, the review fixes, in work). Before: 2026-11-27 (0008 steps 13–19 done; code review queued). Before: 2026-11-26 (0008 live view built, code-review fixes done; Split removal and the retro's checks in work)._
 
 ## In work
 
@@ -33,24 +33,14 @@ _Last updated: 2026-11-27 (0008 steps 13–19 done; code review queued). Before:
   run of the dialog (long "change … instead" lines, a long panel label); "ch 1" wraps before the 1 in dialog rows
   (keep it together in the UI, not in the model text the tests read).
 - **0008 steps 17–18 done** (`ceca4c7`, `530b1c1`, decision 35); step 19 (headings, Actions column, factory fold) done (`5ff76d5`).
-  Open: editing one end of a planned `PrGC` range in Changes can reverse it ("programs 20–17"); should a one-end
-  edit move the block? (uc4-model). Later: remove the unused `library.resolve` (uc4-model). Later: idea C, ghost labels on the device view and a docked side panel.
+  Later: idea C, ghost labels on the device view and a docked side panel.
 - **Later, own plan:** a warning level setting ("hard" turns warnings into errors; user, 2026-11-27).
 
-- **Fixes from the user's /code-review of `feat/live-view` vs `main`** (2026-11-27, next session), then a retro, then
-  the PR on the user's word:
-  - uc4-ui: Review… always on the Send check line (0008 decision 30); factory fold kept in sessionStorage (36, 15);
-    This setup / All setups switch not solid accent (36); well-known-CC hint only on a typed value (35); no ✕ for
-    "take out" in Changes (glossary); raw px spacing in ConnectionsColumn, MidiMonitor, FollowSwitch, MonitorRow
-    (uc4-ui-design); [Map] on the next-to-map row: keep and write into decision 34, or drop.
-  - uc4-model: remove `library.resolve` (35); `showAgain` → a glossary name (31); one model helper for
-    encoder-side areas (about 20 copies of `area === 'encoders' || area === 'pushButtons'`) and one control-path
-    parse/format (three regexes); a one-end edit of a planned `PrGC` range moves the block (see above).
-  - Architect: `src/live/` into CLAUDE.md's "Where things are" and the layer chain (midi imports live/messages);
-    record the unasked-for bits in 0008 or drop them (narrowing the dialog to one control, "Not sent by this type",
-    3 messages for relative spotting).
-  - Judgement calls for later: `live/session.ts` (579-line closure) and `storage/library.ts` (1547 lines) splits;
-    `FakeInput` duplicated in devMidi and tests; shared button CSS.
+- **Fixes from the user's /code-review of `feat/live-view`** (2026-11-27) as 0008 steps 20 (uc4-ui) and 21
+  (uc4-model), in work; then a retro, then the PR on the user's word. Architect part done: `src/live/` in CLAUDE.md
+  and the layer chain; the unasked-for bits kept as 0008 decision 37 ([Map] on the next-to-map row too).
+  Judgement calls for later: `live/session.ts` (579-line closure) and `storage/library.ts` (1547 lines) splits;
+  `FakeInput` duplicated in devMidi and tests; shared button CSS.
 
 ## Waiting for the user
 

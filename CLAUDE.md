@@ -10,6 +10,8 @@ JSON is the master format; the device's SysEx dump is generated from it by a sep
   `src/model/types.ts` is the contract every other area builds on.
 - `src/protocol/` — the **protocol engine**: SysEx parser, decoder (bytes → model), encoder
   (model → bytes), raw dump layer, dump diff. Pure TypeScript: no Svelte, no DOM, no Web MIDI.
+- `src/live/` — the **live view** logic (plan 0008): incoming channel messages, matching them to controls,
+  Map. Pure TypeScript on top of `src/model/`, like the protocol engine.
 - `src/midi/` — Web MIDI access, device detection, SysEx transfer (receive and send).
 - `src/storage/` — JSON import/export, `.syx` files, `.zip` archives, local persistence.
 - `src/app/`, `src/components/` — the Svelte app (editor, setup library, device page).
@@ -33,7 +35,7 @@ JSON is the master format; the device's SysEx dump is generated from it by a sep
 - **Three versions, never mixed:** `schemaVersion` (the JSON shape), `engineVersion` (the protocol
   engine) and the device's firmware version. Every generated `.syx` and backup records the engine
   version that made it.
-- **Layers point one way:** UI → storage/midi → protocol → model. The UI never touches bytes; the
+- **Layers point one way:** UI → storage/midi → protocol/live → model. The UI never touches bytes; the
   protocol engine never touches Web MIDI, the DOM or Svelte. Everything below the UI is unit-tested.
 - **Never guess the protocol.** A byte's meaning is *confirmed* by a fixture pair: two dumps that
   differ by one change made on the device (plan 0003). Faderfox's own documentation (private, never
