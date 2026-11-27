@@ -3,7 +3,6 @@
   import type { Field } from '../app/profile/uc4Properties.ts';
   import { isEmptyEntry } from '../app/numberEntry.ts';
   import { NUMBER_UNUSED_TYPES } from '../app/glyphText.ts';
-  import { flashOn, type Flash } from '../app/flash.ts';
   import { VALUE_WORDS, commandTypeLine, maxFor } from '../app/profile/uc4Properties.ts';
 
   interface Props {
@@ -14,10 +13,10 @@
     /** How to set this on the UC4 by hand (the help line). */
     hint?: string;
     onchange: (value: string | number) => void;
-    /** Resolve's event: the field flashes when it is one of the changed properties. */
-    flash?: Flash | null;
+    /** A quiet note under the field when nothing else needs saying (the well-known CC hint). */
+    quiet?: string;
   }
-  let { field, value, control, problem, hint, onchange, flash = null }: Props = $props();
+  let { field, value, control, problem, hint, onchange, quiet }: Props = $props();
 
   const id = $props.id();
   let draftError = $state<string | null>(null);
@@ -30,7 +29,7 @@
   const unused = $derived(((field.key === 'lower' || field.key === 'upper') && (control.type === 'CCr1' || control.type === 'CCr2')) || (field.key === 'number' && NUMBER_UNUSED_TYPES.includes(control.type)));
   // The range sits inside the field; the line below says something more (a problem, or a note) or is not there.
   const range = $derived(field.input === 'number' ? `${field.min}–${max}` : '');
-  const note = $derived(problem ?? (leftNote !== null ? `${leftNote}; kept ${value}` : null) ?? (field.input === 'number' && unused ? (field.key === 'number' ? 'Not sent by this type' : 'Not used by relative types') : ''));
+  const note = $derived(problem ?? (leftNote !== null ? `${leftNote}; kept ${value}` : null) ?? (field.input === 'number' && unused ? (field.key === 'number' ? 'Not sent by this type' : 'Not used by relative types') : (quiet ?? '')));
   // Red on the field only while its draft is refused or the saved value has a problem; after a refusal the field shows the kept, valid number and only the line stays red.
   const invalid = $derived(draftError !== null || problem !== undefined);
   const alarm = $derived(invalid || leftNote !== null);
@@ -72,7 +71,7 @@
   }
 </script>
 
-<div class="field" use:flashOn={{ flash, target: field.key, ring: true }} data-property={field.key} data-help="{field.friendly}: {field.input === 'choice' ? `one of ${field.choices.join(' ')}` : `${field.min}–${max}${unused ? (field.key === 'number' ? `; the UC4 does not send it for ${control.type}` : '; not used by relative types (CCr1, CCr2)') : ''}`}{typeLine ? ` · ${typeLine}` : ''} · UC4: {hint ?? field.device}">
+<div class="field" data-property={field.key} data-help="{field.friendly}: {field.input === 'choice' ? `one of ${field.choices.join(' ')}` : `${field.min}–${max}${unused ? (field.key === 'number' ? `; the UC4 does not send it for ${control.type}` : '; not used by relative types (CCr1, CCr2)') : ''}`}{typeLine ? ` · ${typeLine}` : ''} · UC4: {hint ?? field.device}">
   <label for={id}><span class="friendly">{field.friendly}</span><span class="device">{field.device}</span></label>
   {#if field.input === 'choice'}
     <select {id} class:invalid value={String(value)} aria-invalid={invalid} onchange={(e) => onchange(e.currentTarget.value)}>

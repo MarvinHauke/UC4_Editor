@@ -34,6 +34,7 @@
   import { createSender } from './sender.svelte.ts';
   import WarningsDialog from '../components/WarningsDialog.svelte';
   import { createWarningsDialog, WARNINGS_CONTEXT } from './warningsDialog.svelte.ts';
+  import { createResolvePlan, RESOLVE_PLAN_CONTEXT } from './resolvePlanState.svelte.ts';
   import SendDialog from '../components/SendDialog.svelte';
   import DumpGuide from '../components/DumpGuide.svelte';
   import TourOverlay from '../components/TourOverlay.svelte';
@@ -68,6 +69,7 @@
   const live = createLive(createMidiInputs({ portName: faderfoxUc4.portName, env: midiEnv, connectLabel: `Connect ${faderfoxUc4.deviceName}` }));
   setContext(LIVE_CONTEXT, live);
   setContext(GUIDE_CONTEXT, createGuide());
+  setContext(RESOLVE_PLAN_CONTEXT, createResolvePlan());
   const warningsDialog = createWarningsDialog();
   /** Ignored and factory-layout warnings of the open setup: the status bar's "✓ No warnings · n ignored" (decision 30). */
   const ignoredHere = $derived.by(() => { const s = store; return s ? s.allWarnings.filter((w) => w.setupId === s.state.selection.setupId && w.state !== 'open').length : 0; });

@@ -1,13 +1,16 @@
 <script lang="ts">
-  // The Warnings dialog (plan 0008 decision 25): problems first, then warnings. Show selects the control and closes the dialog;
-  // Four blocks (decision 31): problems, open warnings, ignored, the factory layout's. Ignore is a toggle; Resolve applies a suggestion
-  // (decision 32) as one undo step, selects the control and closes the list, like Show.
+  // The Warnings dialog (plan 0008 decisions 25, 31, 35): four blocks (problems, open warnings, ignored, the factory layout's).
+  // Show selects the control and closes the dialog; Ignore is a toggle; a Solution pick only plans a change, and the Changes table
+  // at the bottom applies the plan (one undo step; the dialog stays open).
   import { onMount, tick } from 'svelte';
   import type { Store } from '../app/libraryStore.svelte.ts';
   import type { WarningsDialog } from '../app/warningsDialog.svelte.ts';
-  import type { Problem, Warning } from '../model/index.ts';
+  import { entriesOf, type Problem, type Warning } from '../model/index.ts';
   import type { ListedWarning } from '../storage/index.ts';
   import WarningRow from './WarningRow.svelte';
+  import ChangesTable from './ChangesTable.svelte';
+  import { useResolvePlan } from '../app/resolvePlanState.svelte.ts';
+  import { entriesWithout, pickedChoice } from '../app/resolvePlan.ts';
   import { resolveOptions } from '../app/resolveView.ts';
   import { problemText } from '../app/controlProblems.ts';
   import { slotName } from '../app/format.ts';
@@ -15,6 +18,7 @@
   import { selectedSetup } from '../app/selectors.ts';
 
   let { store, warnings: ui }: { store: Store; warnings: WarningsDialog } = $props();
+  const resolvePlan = useResolvePlan();
   let dialog = $state<HTMLDialogElement | null>(null);
   let closeButton = $state<HTMLButtonElement | null>(null);
   const lib = $derived(store.state);
@@ -44,11 +48,18 @@
   function ignoreWarning(w: ListedWarning): void { store.ignore([w]); void kept(); }
   function showAgain(w: ListedWarning): void { store.showAgain(w); void kept(); }
   function showProblem(index: number): void { ui.close(); store.showProblem(index); }
-  function resolveItem(item: Warning | Problem, choice: number): void { if (store.resolve(item, choice).changed) ui.close(); }
+  const warningId = (w: ListedWarning): string => `${w.setupId}|${w.controls[0]}|${w.controls[1]}|${w.key.kind}|${w.key.channel}|${w.key.number ?? ''}`;
+  const problemId = (p: Problem): string => `problem|${p.path}|${p.message}`;
+  /** What the row would plan: its own earlier pick doesn't reserve numbers against itself. */
+  const suggestFor = (item: Warning | Problem, rowId: string) => store.suggest(item, entriesWithout(resolvePlan.plan, rowId));
+  function pick(item: Warning | Problem, rowId: string, choice: number): void {
+    const c = suggestFor(item, rowId).choices[choice];
+    if (c) resolvePlan.pick(rowId, choice, entriesOf(lib.configuration, c));
+  }
 </script>
 
 <dialog bind:this={dialog} oncancel={(e) => { e.preventDefault(); ui.close(); }} onclose={() => { if (ui.open) ui.close(); }} aria-labelledby="warnings-title"
-  data-help="Problems and warnings: Show selects the control · Resolve suggests a value · Ignore accepts a warning · Esc closes">
+  data-help="Problems and warnings: Show selects the control · a Solution plans a change, Apply makes it · Ignore accepts a warning · Esc closes">
   <header>
     <h2 id="warnings-title">Problems and warnings</h2>
     <button type="button" class="close" bind:this={closeButton} aria-label="Close the list" title="Close" onclick={() => { ui.close(); }}>✕</button>
@@ -70,8 +81,9 @@
       <h3 class="block">Problems · {entries.problems.length}</h3>
       <ul>
         {#each entries.problems as e (e.index)}
-          <WarningRow problem where={ui.scope === 'all' ? problemSetupName(e.problem.path) : undefined} message={problemText(e.problem)} options={resolveOptions(store.suggest(e.problem))}
-            showHelp="Show: selects the control with this problem and closes the list" onshow={() => { showProblem(e.index); }} onresolve={(c) => { resolveItem(e.problem, c); }} />
+          {@const id = problemId(e.problem)}
+          <WarningRow problem where={ui.scope === 'all' ? problemSetupName(e.problem.path) : undefined} message={problemText(e.problem)} options={resolveOptions(suggestFor(e.problem, id))}
+            picked={pickedChoice(resolvePlan.plan, id)} showHelp="Show: selects the control with this problem and closes the list" onshow={() => { showProblem(e.index); }} onpick={(c) => { pick(e.problem, id, c); }} />
         {/each}
       </ul>
     {/if}
@@ -79,23 +91,24 @@
       {#if b.list.length > 0}
         <h3 class="block">{b.title} · {b.list.length}</h3>
         <ul>
-          {#each b.list as w (`${w.setupId}|${w.controls[0]}|${w.controls[1]}|${w.key.kind}|${w.key.channel}|${w.key.number ?? ''}`)}
-            {@const r = store.suggest(w)}
-            <WarningRow where={ui.scope === 'all' ? setupName(w.setupId) : undefined} message={w.message} options={resolveOptions(r)} sideBySide={r.sideBySide} quiet={w.state !== 'open'}
-              ignore={w.state === 'open' ? 'open' : w.state === 'ignored' ? 'ignored' : 'none'}
+          {#each b.list as w (warningId(w))}
+            {@const id = warningId(w)}
+            <WarningRow where={ui.scope === 'all' ? setupName(w.setupId) : undefined} message={w.message} options={resolveOptions(suggestFor(w, id))} picked={pickedChoice(resolvePlan.plan, id)} quiet={w.state !== 'open'}
+              ignore={w.state === 'open' ? 'open' : 'ignored'}
               showHelp="Show: selects {w.controls[0] === w.controls[1] ? '' : 'the first of the two '}controls and closes the list{w.setupId === here.setup.id ? '' : ', opening that setup'}"
-              onshow={() => { show(w); }} onresolve={(c) => { resolveItem(w, c); }} onignore={() => { if (w.state === 'open') ignoreWarning(w); else showAgain(w); }} />
+              onshow={() => { show(w); }} onpick={(c) => { pick(w, id, c); }} onignore={() => { if (w.state === 'open') ignoreWarning(w); else showAgain(w); }} />
           {/each}
         </ul>
       {/if}
     {/each}
   </div>
+  <ChangesTable {store} plan={resolvePlan} />
   <p class="note">A warning blocks nothing: sending one CC from two controls can be what you want. Ignored warnings are kept in this browser only, never in an export.</p>
 </dialog>
 
 <style>
   dialog {
-    width: min(640px, calc(100vw - 2 * var(--space-4))); max-height: calc(100vh - 2 * var(--space-4)); padding: var(--space-4);
+    width: min(760px, calc(100vw - 2 * var(--space-4))); max-height: calc(100vh - 2 * var(--space-4)); padding: var(--space-4);
     color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   }
   dialog[open] { display: flex; flex-direction: column; }

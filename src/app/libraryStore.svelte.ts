@@ -1,10 +1,9 @@
 // The library as Svelte state: components read `state` and call commands. No editing logic here.
-import type { Problem, Resolution, Warning } from '../model/index.ts';
-import type { Library, LibraryState, ResolveResult, ListedWarning, AnyControl, SelectionChange, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
+import type { Problem, Resolution, ResolvePlan, Warning } from '../model/index.ts';
+import type { Library, LibraryState, ApplyPlanResult, ListedWarning, AnyControl, SelectionChange, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
 import type { FlowLibrary } from './importFlow.ts';
 import type { SyxLibrary } from './syxFlow.ts';
 import { showSelection } from './warningList.ts';
-import type { Flash } from './flash.ts';
 
 export function createStore(library: Library, openMessage?: string) {
   let state = $state.raw<LibraryState>(library.getState());
@@ -22,11 +21,6 @@ export function createStore(library: Library, openMessage?: string) {
     state = s;
     openOf(s);
   });
-  // Resolve (decision 32): the changed fields flash in the property panel. Set after the panel has drawn the selected control (it is
-  // made anew when the selection moves), so the new nodes see the event: set in a timeout, after that redraw. It borrows the
-  // 'paste' flash (a ring on the field): the same look as a pasted value, no new kind.
-  let resolved = $state.raw<Flash | null>(null);
-  let resolvedN = 0;
   let exportNote = $state.raw<{ count: number; scope: string } | null>(null);
   const openCountOf = (s: LibraryState, scope: string): number => s.warnings.filter((w) => w.state === 'open' && (scope === 'all' || w.setupId === scope)).length;
   const done = <T>(r: T): T => { startMessage = undefined; exportNote = null; return r; };
@@ -67,16 +61,10 @@ export function createStore(library: Library, openMessage?: string) {
     /** Ignore (one undo step; "Send anyway" and the dialog's Ignore) and show again. */
     ignore: (list: readonly Warning[]) => done(library.ignore(list)),
     showAgain: (w: Warning) => done(library.showAgain(w)),
-    /** What Resolve would do for a warning or problem as listed; changes nothing. */
-    suggest: (item: Warning | Problem): Resolution => library.suggest(item),
-    /** Applies choice `choice` of the suggestion: one undo step, selects the control; its changed fields flash (`resolved`). */
-    resolve: (item: Warning | Problem, choice = 0): ResolveResult => {
-      const r = done(library.resolve(item, choice));
-      if (r.changed) { const targets: string[] = [...r.changed.properties]; setTimeout(() => { resolved = { kind: 'paste', targets, n: ++resolvedN }; }, 0); }
-      return r;
-    },
-    /** The last Resolve's changed properties, as a flash event for the property panel's fields. */
-    get resolved() { return resolved; },
+    /** What Resolve would offer for a warning or problem as listed; the numbers a `plan` holds count as taken. Changes nothing. */
+    suggest: (item: Warning | Problem, plan?: ResolvePlan): Resolution => library.suggest(item, plan),
+    /** Applies a Resolve plan (decision 35) as one undo step; the selection stays, `changed` says what to flash. */
+    applyPlan: (plan: ResolvePlan): ApplyPlanResult => done(library.applyPlan(plan)),
     /** The dialog's Show: the warning's setup, groups and a control as ordinary selections (no undo step). */
     showWarning: (w: Warning, path?: string) => done(library.select(showSelection(w, path))),
     showProblem: (index: number) => done(library.selectProblem(index)),
