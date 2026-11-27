@@ -60,7 +60,7 @@ export function createStore(library: Library, openMessage?: string) {
     openCount: (scope: string): number => openCountOf(state, scope),
     /** Ignore (one undo step; "Send anyway" and the dialog's Ignore) and show again. */
     ignore: (list: readonly Warning[]) => done(library.ignore(list)),
-    showAgain: (w: Warning) => done(library.showAgain(w)),
+    unignore: (w: Warning) => done(library.unignore(w)),
     /** What Resolve would offer for a warning or problem as listed; the numbers a `plan` holds count as taken. Changes nothing. */
     suggest: (item: Warning | Problem, plan?: ResolvePlan): Resolution => library.suggest(item, plan),
     /** Applies a Resolve plan (decision 35) as one undo step; the selection stays, `changed` says what to flash. */

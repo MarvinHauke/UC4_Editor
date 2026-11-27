@@ -5,10 +5,11 @@
 // Step 4 added the switch offer (`offer`, `acceptOffer`, `dismissOffer`, `silenceOffers`). Step 3 added pairs (a `CCAh` pair or a note's on and off as one row, always joined: decision 28) and `valueText`; the rows never
 // leave memory (decision 11), only the silenced offers are session state the UI saves (`getState`).
 import { rowKey, type ChannelEvent, type MessageKind } from './messages.ts';
+import { isEncoderArea } from '../model/index.ts';
 import { planMap, refusalFor, type MapOptions, type MapPlan } from './mapping.ts';
 import {
   buildIndex, matchesFor, nextState, relativeDelta, signatureOf,
-  type ControlRef, type ControlState, type LiveContext, type Match, type MatchIndex,
+  type ControlArea, type ControlRef, type ControlState, type LiveContext, type Match, type MatchIndex,
 } from './matching.ts';
 
 /** One monitor row: the latest value of one message key from one input. */
@@ -346,7 +347,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
     if (found.length === 0) return;
     if (found.some((m) => m.tier === 1)) { streak = []; offer = null; return; }
     // Never guess (decision 6): the message counts only when all its matches point at one target (setup, half, group), or the user pinned one.
-    const half = (area: string) => (area === 'encoders' || area === 'pushButtons' ? 'enc' : 'fad');
+    const half = (area: ControlArea) => (isEncoderArea(area) ? 'enc' : 'fad');
     const pinned = pins.get(row.key);
     const chosen = pinned === undefined ? undefined : found.find((m) => m.control.id === pinned);
     const targets = new Set(found.map((m) => `${m.control.setupId}|${half(m.control.area)}|${m.control.group}`));
@@ -419,7 +420,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
           const c = best.control;
           const sw: TouchTarget['switch'] = {};
           if (c.setupId !== context.setupId) sw.setupId = c.setupId;
-          const encHalf = c.area === 'encoders' || c.area === 'pushButtons';
+          const encHalf = isEncoderArea(c.area);
           if (encHalf && c.group !== context.encoderGroup) sw.encoderGroup = c.group;
           if (!encHalf && c.group !== context.faderButtonGroup) sw.faderButtonGroup = c.group;
           // another setup shows its own groups: keep the selection of the half that wasn't touched
@@ -512,7 +513,7 @@ export function createLiveSession(options: { maxRows?: number } = {}): LiveSessi
       const order: Record<string, number> = { encoders: 0, pushButtons: 1, faders: 2, buttons: 3 };
       return [...index.controls.values()]
         .map((c) => c.ref)
-        .filter((r) => r.setupId === context!.setupId && r.group === (r.area === 'encoders' || r.area === 'pushButtons' ? context!.encoderGroup : context!.faderButtonGroup))
+        .filter((r) => r.setupId === context!.setupId && r.group === (isEncoderArea(r.area) ? context!.encoderGroup : context!.faderButtonGroup))
         .sort((a, b) => order[a.area]! - order[b.area]! || a.index - b.index)
         .map((control) => { const reason = refusalFor(control.area, row.kind); return { control, ok: reason === null, reason }; });
     },

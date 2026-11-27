@@ -9,10 +9,11 @@
 //   Pbnd, AFtt                  pitch bend / channel aftertouch at its channel (no number)
 //   OFF                         nothing
 import { programsOf } from '../model/index.ts';
+import type { ControlArea } from '../model/index.ts';
 import type { Setup, Uc4Config } from '../model/types.ts';
 import type { ChannelMessage, MessageKind } from './messages.ts';
 
-export type ControlArea = 'encoders' | 'pushButtons' | 'faders' | 'buttons';
+export type { ControlArea };
 
 /** A control of a configuration, named in the device's words. Groups and indexes are 0-based, as in `Selection` and the model arrays. */
 export interface ControlRef {

@@ -1,7 +1,7 @@
 // The storage module's public interface: the library and where it is kept.
 export { openLibrary, HISTORY_LIMIT } from './library.ts';
 export type {
-  CommandResult, ResolveResult, ApplyPlanResult, DumpExportResult, DumpFile, SyxExportResult, KeepResult, KeptDumpInfo, ExportFile, ExportResult, ImportInspection, ImportPlacement, ImportResult, ControlAddress, ControlArea, Clip, CopyResult, CopySource, GroupAddress, ControlProperty, Library, LibraryState, OpenOptions, Opened, AnyControl, SaveStatus, Selection, SelectionChange,
+  CommandResult, ApplyPlanResult, DumpExportResult, DumpFile, SyxExportResult, KeepResult, KeptDumpInfo, ExportFile, ExportResult, ImportInspection, ImportPlacement, ImportResult, ControlAddress, ControlArea, Clip, CopyResult, CopySource, GroupAddress, ControlProperty, Library, LibraryState, OpenOptions, Opened, AnyControl, SaveStatus, Selection, SelectionChange,
 } from './library.ts';
 export type { LibraryStorage, StoredDump } from './storage.ts';
 export { StorageBusyError } from './storage.ts';

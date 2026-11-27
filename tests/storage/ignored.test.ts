@@ -69,7 +69,7 @@ test('labelling a factory control keeps its factory collision "factory"', async 
   assert.equal(w.state, 'factory');
 });
 
-test('ignore: the warning is ignored, one undo step; showAgain reopens it, one undo step', async () => {
+test('ignore: the warning is ignored, one undo step; unignore reopens it, one undo step', async () => {
   const { lib } = await open();
   collide(lib);
   const [w] = open_(lib);
@@ -81,7 +81,7 @@ test('ignore: the warning is ignored, one undo step; showAgain reopens it, one u
   assert.equal(open_(lib).length, 1);
   lib.redo();
   assert.equal(open_(lib).length, 0);
-  lib.showAgain(lib.getState().warnings.find((x) => x.state === 'ignored')!);
+  lib.unignore(lib.getState().warnings.find((x) => x.state === 'ignored')!);
   assert.equal(open_(lib).length, 1);
   lib.undo();
   assert.equal(open_(lib).length, 0);
@@ -114,15 +114,15 @@ test('ignoring a factory warning is no step; ignoring an ignored one again is no
   assert.equal(open_(lib).length, 1); // that undo was the first ignore, not a second one
 });
 
-test('showAgain of a factory warning counts it again, one undo step; ignore puts it back to factory', async () => {
+test('unignore of a factory warning counts it again, one undo step; ignore puts it back to factory', async () => {
   const { lib } = await open();
   const w = lib.getState().warnings[0]!;
-  const r = lib.showAgain(w);
+  const r = lib.unignore(w);
   assert.equal(r.message, 'Warning is open again.');
   assert.equal(lib.getState().warnings[0]!.state, 'open');
   assert.equal(open_(lib).length, 1);
   assert.equal(lib.getState().canUndo, true);
-  lib.showAgain(lib.getState().warnings[0]!); // already counted: no step
+  lib.unignore(lib.getState().warnings[0]!); // already counted: no step
   lib.undo();
   assert.equal(lib.getState().warnings[0]!.state, 'factory');
   assert.equal(lib.getState().canUndo, false);
@@ -136,7 +136,7 @@ test('showAgain of a factory warning counts it again, one undo step; ignore puts
 
 test('a factory warning counted again survives a reload and lapses when a control changes', async () => {
   const { lib, storage } = await open();
-  lib.showAgain(lib.getState().warnings[0]!);
+  lib.unignore(lib.getState().warnings[0]!);
   await lib.whenSaved();
   const again = (await openLibrary(storage, { now: clock })).library;
   assert.equal(open_(again).length, 1);

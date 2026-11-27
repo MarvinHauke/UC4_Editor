@@ -1,7 +1,7 @@
 // What the library derives from the configuration: per-setup summaries (problem count, differs from
 // factory), the export state, file names. Pure functions; no state of their own.
-import { factorySetup } from '../model/index.ts';
-import type { Problem, Setup, Uc4Config } from '../model/index.ts';
+import { factorySetup, parseControlPath } from '../model/index.ts';
+import type { ControlArea, Problem, Setup, Uc4Config } from '../model/index.ts';
 
 export interface SetupSummary {
   id: string;
@@ -102,15 +102,14 @@ export function fileDate(d: Date): string {
 
 /** Where a problem path points: the setup, and as far as it goes the group and the control. */
 export function locate(path: string): {
-  setupIndex: number; encoderGroup?: number; faderButtonGroup?: number; control?: { area: 'encoders' | 'pushButtons' | 'faders' | 'buttons'; index: number };
+  setupIndex: number; encoderGroup?: number; faderButtonGroup?: number; control?: { area: ControlArea; index: number };
 } | null {
-  const m = /^setups\[(\d+)\](?:\.(encoderGroups|faderButtonGroups)\[(\d+)\](?:\.(encoders|pushButtons|faders|buttons)\[(\d+)\])?)?/.exec(path);
-  if (!m) return null;
-  const group = m[3] === undefined ? undefined : Number(m[3]);
+  const p = parseControlPath(path);
+  if (!p) return null;
   return {
-    setupIndex: Number(m[1]),
-    ...(m[2] === 'encoderGroups' && group !== undefined ? { encoderGroup: group } : {}),
-    ...(m[2] === 'faderButtonGroups' && group !== undefined ? { faderButtonGroup: group } : {}),
-    ...(m[4] ? { control: { area: m[4] as 'encoders', index: Number(m[5]) } } : {}),
+    setupIndex: p.setupIndex,
+    ...(p.groupKey === 'encoderGroups' ? { encoderGroup: p.group! } : {}),
+    ...(p.groupKey === 'faderButtonGroups' ? { faderButtonGroup: p.group! } : {}),
+    ...(p.area ? { control: { area: p.area, index: p.index! } } : {}),
   };
 }

@@ -2,6 +2,8 @@
 // nearest valid value. Decision 35: a suggestion respects the plan (numbers already planned are reserved) and skips the
 // well-known CCs; the plan is a list of entries that `applyPlan` applies to a configuration. Pure; never throws;
 // changes nothing (the library applies a plan as one edit).
+import { controlPathOf, groupKeyOf, isEncoderArea, parseControlPath } from './controlPath.ts';
+import type { ControlArea } from './controlPath.ts';
 import { factorySetup } from './factory.ts';
 import { controlName, keysOf, programsOf, warnings } from './warnings.ts';
 import type { Sender } from './warnings.ts';
@@ -46,16 +48,16 @@ export interface ResolveChoice {
  */
 export interface Resolution { choices: ResolveChoice[]; sideBySide: boolean }
 
-type Area = 'encoders' | 'pushButtons' | 'faders' | 'buttons';
+type Area = ControlArea;
 type Control = Sender & { label?: string };
 interface Ref { si: number; group: number; area: Area; index: number; property?: string }
 
-const PATH = /^setups\[(\d+)\]\.(?:encoderGroups|faderButtonGroups)\[(\d+)\]\.(encoders|pushButtons|faders|buttons)\[(\d+)\](?:\.(\w+))?$/;
 const parse = (path: string): Ref | null => {
-  const m = PATH.exec(path);
-  return m ? { si: Number(m[1]), group: Number(m[2]), area: m[3] as Area, index: Number(m[4]), ...(m[5] ? { property: m[5] } : {}) } : null;
+  const p = parseControlPath(path);
+  if (!p || p.area === undefined || controlPathOf(p.setupIndex, p.area, p.group!, p.index!, p.property) !== path) return null;
+  return { si: p.setupIndex, group: p.group!, area: p.area, index: p.index!, ...(p.property ? { property: p.property } : {}) };
 };
-const groupsOf = (s: Setup, area: Area) => (area === 'encoders' || area === 'pushButtons' ? s.encoderGroups : s.faderButtonGroups) as unknown as Record<string, Control[]>[];
+const groupsOf = (s: Setup, area: Area) => (isEncoderArea(area) ? s.encoderGroups : s.faderButtonGroups) as unknown as Record<string, Control[]>[];
 const controlAt = (s: Setup | undefined, r: Ref): Control | undefined => groupsOf(s ?? ({} as Setup), r.area)?.[r.group]?.[r.area]?.[r.index];
 const isButton = (a: Area): boolean => a === 'pushButtons' || a === 'buttons';
 
@@ -230,6 +232,23 @@ export function entriesOf(config: Uc4Config, choice: ResolveChoice): PlanEntry[]
   return out;
 }
 
+/**
+ * Sets the After value of the plan entry (`path`, `property`). Editing one end of a planned `PrGC` range (its `lower`
+ * and `upper` both planned) moves the block: the other end keeps its distance (same width, a reversed range stays
+ * reversed, never "programs 20–17"), and the block is held inside 0–127. A value that is no whole number is set as typed
+ * (`checkPlanValue` says why it is no good). The same plan comes back when it has no such entry.
+ */
+export function setPlanAfter(plan: ResolvePlan, path: string, property: PlanProperty, after: number): ResolvePlan {
+  const at = plan.findIndex((e) => e.path === path && e.property === property);
+  if (at < 0) return plan;
+  const partnerProperty = property === 'lower' ? 'upper' : property === 'upper' ? 'lower' : null;
+  const partner = partnerProperty ? plan.findIndex((e) => e.path === path && e.property === partnerProperty) : -1;
+  if (partner < 0 || !Number.isInteger(after)) return plan.map((e, i) => (i === at ? { ...e, after } : e));
+  const gap = plan[partner]!.after - plan[at]!.after;
+  const moved = Math.min(Math.max(after, Math.max(0, -gap)), Math.min(127, 127 - gap));
+  return plan.map((e, i) => (i === at ? { ...e, after: moved } : i === partner ? { ...e, after: moved + gap } : e));
+}
+
 /** Why `value` is no good for `property` of this control, or undefined. */
 function invalidValue(c: Control, property: string, value: unknown): string | undefined {
   const range = RANGE[property];
@@ -261,7 +280,7 @@ export function applyPlan(config: Uc4Config, plan: ResolvePlan): { config: Uc4Co
     const bad = invalidValue(c as unknown as Control, entry.property, entry.after);
     if (bad) { no(`${names(ref).short}: ${bad}`); continue; }
     const groups = groupsOf(setup, ref.area);
-    const key = isGroupOfEncoders(ref.area) ? 'encoderGroups' : 'faderButtonGroups';
+    const key = groupKeyOf(ref.area);
     const nextSetup = {
       ...setup,
       [key]: groups.map((g, gi) => (gi !== ref.group ? g : {
@@ -273,7 +292,6 @@ export function applyPlan(config: Uc4Config, plan: ResolvePlan): { config: Uc4Co
   }
   return { config: next, applied, refused };
 }
-const isGroupOfEncoders = (a: Area): boolean => a === 'encoders' || a === 'pushButtons';
 
 /** What a typed After value comes to: `valid` false with a `reason`, or the controls it would collide with. */
 export interface PlanCheck { valid: boolean; reason?: string; collidesWith: { path: string; name: string }[] }
@@ -290,10 +308,12 @@ export function checkPlanValue(config: Uc4Config, plan: ResolvePlan, entry: { pa
   if (!ref || !c) return { valid: false, reason: 'That control is no longer there.', collidesWith: [] };
   const bad = invalidValue(c, entry.property, entry.after);
   if (bad) return { valid: false, reason: bad, collidesWith: [] };
-  const rest = (plan ?? []).filter((e) => !(e.path === entry.path && e.property === entry.property));
+  const moved = setPlanAfter(plan ?? [], entry.path, entry.property, entry.after); // a range moves as a block
+  const rest = moved.filter((e) => !(e.path === entry.path && e.property === entry.property));
+  const after = moved.find((e) => e.path === entry.path && e.property === entry.property)?.after ?? entry.after;
   const base = applyPlan(config, rest).config;
   const before = (controlAt(base.setups[ref.si], ref) as unknown as Record<string, unknown>)[entry.property];
-  const { config: candidate, refused } = applyPlan(base, [{ path: entry.path, property: entry.property, before: before as number, after: entry.after }]);
+  const { config: candidate, refused } = applyPlan(base, [{ path: entry.path, property: entry.property, before: before as number, after }]);
   if (refused.length > 0) return { valid: false, reason: refused[0]!.reason, collidesWith: [] };
   const out: PlanCheck['collidesWith'] = [];
   const seen = new Set<string>();

@@ -4,7 +4,7 @@
 // Rule: channel, number and the kind of message come from the row; mode, lower, upper and display scale stay; the control's
 // current type stays when it already sends that kind of message, otherwise the table (CC → encoder/fader `CCAb`, button `CC`;
 // note → `notE`; program → `PrGC`; pitch bend → `Pbnd`; aftertouch → `AFtt`); `CCAh` is never chosen by itself.
-import { changeType, describeKey, warnings } from '../model/index.ts';
+import { changeType, controlPathOf, describeKey, isEncoderArea, parseControlPath, warnings } from '../model/index.ts';
 import type { Encoder, Fader, GreenButton, MessageKey, PushButton, Setup, Uc4Config } from '../model/types.ts';
 import type { ControlArea, ControlRef } from './matching.ts';
 import type { MessageKind } from './messages.ts';
@@ -77,7 +77,7 @@ export function spotRelativeType(seen: MapSource['seen']): 'CCr1' | 'CCr2' | nul
 export function readControl(configuration: Uc4Config, ref: Pick<ControlRef, 'setupId' | 'area' | 'group' | 'index'>): AnyControl | null {
   const setup = configuration.setups.find((s) => s.id === ref.setupId);
   if (!setup) return null;
-  const group = ref.area === 'encoders' || ref.area === 'pushButtons' ? setup.encoderGroups[ref.group] : setup.faderButtonGroups[ref.group];
+  const group = isEncoderArea(ref.area) ? setup.encoderGroups[ref.group] : setup.faderButtonGroups[ref.group];
   const list = (group as unknown as Record<string, AnyControl[] | undefined> | undefined)?.[ref.area];
   return list?.[ref.index] ?? null;
 }
@@ -87,7 +87,7 @@ export function withEdit(configuration: Uc4Config, edit: MapEdit): Uc4Config {
   const replace = <T>(list: T[], i: number, value: T) => list.map((x, k) => (k === i ? value : x));
   const setups = configuration.setups.map((setup): Setup => {
     if (setup.id !== edit.setupId) return setup;
-    if (edit.area === 'encoders' || edit.area === 'pushButtons') {
+    if (isEncoderArea(edit.area)) {
       return { ...setup, encoderGroups: replace(setup.encoderGroups, edit.group, { ...setup.encoderGroups[edit.group]!, [edit.area]: replace((setup.encoderGroups[edit.group]!)[edit.area] as AnyControl[], edit.index, edit.control) }) };
     }
     return { ...setup, faderButtonGroups: replace(setup.faderButtonGroups, edit.group, { ...setup.faderButtonGroups[edit.group]!, [edit.area]: replace((setup.faderButtonGroups[edit.group]!)[edit.area] as AnyControl[], edit.index, edit.control) }) };
@@ -95,16 +95,14 @@ export function withEdit(configuration: Uc4Config, edit: MapEdit): Uc4Config {
   return { ...configuration, setups };
 }
 
-const PATH = /(encoderGroups|faderButtonGroups)\[(\d+)\]\.(encoders|pushButtons|faders|buttons)\[(\d+)\]$/;
 const SHORT: Record<string, string> = { encoders: 'Enc', pushButtons: 'Pbt', faders: 'FAd', buttons: 'btn' };
 /** "Enc3 · EG1" from a path the model's warnings use. */
 export function nameOfPath(path: string): string | null {
-  const m = PATH.exec(path);
-  if (!m) return null;
-  return `${SHORT[m[3]!]}${Number(m[4]) + 1} · ${m[1] === 'encoderGroups' ? 'EG' : 'FG'}${Number(m[2]) + 1}`;
+  const p = parseControlPath(path);
+  if (!p || p.area === undefined || p.property !== undefined) return null;
+  return `${SHORT[p.area]}${p.index! + 1} · ${p.groupKey === 'encoderGroups' ? 'EG' : 'FG'}${p.group! + 1}`;
 }
-const pathOf = (setupIndex: number, e: Pick<MapEdit, 'area' | 'group' | 'index'>) =>
-  `setups[${setupIndex}].${e.area === 'encoders' || e.area === 'pushButtons' ? 'encoderGroups' : 'faderButtonGroups'}[${e.group}].${e.area}[${e.index}]`;
+const pathOf = (setupIndex: number, e: Pick<MapEdit, 'area' | 'group' | 'index'>) => controlPathOf(setupIndex, e.area, e.group, e.index);
 
 export function planMap(configuration: Uc4Config, target: ControlRef, row: MapSource, options: MapOptions = {}): MapPlan {
   const refusal = refusalFor(target.area, row.kind);

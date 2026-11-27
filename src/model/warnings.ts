@@ -1,5 +1,6 @@
 // Warnings (plan 0008 decision 7): controls of one setup that can play together and send the same message.
 // Beside `validate`, which keeps returning problems only. Pure; never throws.
+import { isEncoderArea } from './controlPath.ts';
 import type { MessageKey, Uc4Config, Warning } from './types.ts';
 
 interface Entry {
@@ -59,7 +60,7 @@ const NAME_PREFIX = { encoders: 'Enc', pushButtons: 'Pbt', faders: 'FAd', button
 /** A control as the warnings and Resolve name it: short "Enc3", full "Enc3 · EG1" (group and index are 0-based). */
 export function controlName(area: keyof typeof NAME_PREFIX, group: number, index: number): { short: string; name: string } {
   const short = `${NAME_PREFIX[area]}${index + 1}`;
-  return { short, name: `${short} · ${area === 'encoders' || area === 'pushButtons' ? 'EG' : 'FG'}${group + 1}` };
+  return { short, name: `${short} · ${isEncoderArea(area) ? 'EG' : 'FG'}${group + 1}` };
 }
 
 const canPlayTogether = (a: Entry, b: Entry): boolean => a.half !== b.half || a.group === b.group;

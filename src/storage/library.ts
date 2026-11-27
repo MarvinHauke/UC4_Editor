@@ -11,8 +11,8 @@ import {
   FORMAT, GREEN_DISPLAYS, GREEN_TYPES, PUSH_TYPES, SCHEMA_VERSION,
   changeType, factorySetup, load, normalizeGroupName, resolveProblem, resolveWarning, save, validate,
 } from '../model/index.ts';
-import { applyPlan as applyResolvePlan, warnings as collisions } from '../model/index.ts';
-import type { PlanEntry, RefusedEntry, Resolution, ResolvePlan, Warning, Encoder, EncoderGroup, Fader, FaderButtonGroup, GreenButton, Problem, PushButton, Setup, Uc4Config } from '../model/index.ts';
+import { applyPlan as applyResolvePlan, groupKeyOf, controlPathOf, warnings as collisions } from '../model/index.ts';
+import type { ControlArea, PlanEntry, RefusedEntry, Resolution, ResolvePlan, Warning, Encoder, EncoderGroup, Fader, FaderButtonGroup, GreenButton, Problem, PushButton, Setup, Uc4Config } from '../model/index.ts';
 import { IMPORT_READS, describeSlots, looksLikeDump, readDump, slotName } from './dumpImport.ts';
 import { markPath, pastedMarks, PASTED, dropMarkPaths, dropMarks, hasMarkPaths, hasMarks, markProblems, marksFromProblems, parseMarks } from './marks.ts';
 import type { Marks } from './marks.ts';
@@ -32,7 +32,7 @@ import type { ExportBaseline, ExportState, SetupSummary } from './libraryInfo.ts
 import { dumpNeeds, hasWorkToClear, newestBackupId, planClearOldDumps, type BackupCandidate } from './keptDumpPlan.ts';
 import type { ClearPlan, DumpNeed } from './keptDumpPlan.ts';
 
-export type ControlArea = 'encoders' | 'pushButtons' | 'faders' | 'buttons';
+export type { ControlArea };
 export type ControlProperty = 'label' | 'display' | 'type' | 'mode' | 'channel' | 'number' | 'lower' | 'upper';
 
 /** A control: which setup, which kind, which group (0–7) and which control in it (0-based). */
@@ -143,9 +143,6 @@ export interface LibraryState {
 
 export interface CommandResult { state: LibraryState; message?: string }
 
-/** What Resolve changed: the control and the properties set (flash those fields). Absent when it was refused. */
-export type ResolveResult = CommandResult & { changed?: { address: ControlAddress; properties: ControlProperty[] } };
-
 /**
  * What applying a Resolve plan did (decision 35). `changed` has one entry per control that changed, with the properties
  * set (flash those fields); absent when nothing was applied. `refused` lists the entries that were not applied, each with
@@ -220,7 +217,7 @@ export interface Library {
    * Counts an ignored warning again (the pressed "Ignored" button, decision 31): one undo step. A `factory` warning counts
    * again too (decision 35; it starts ignored); `ignore` puts it back. Both lapse as soon as either control's message changes.
    */
-  showAgain(warning: Warning): CommandResult;
+  unignore(warning: Warning): CommandResult;
   /**
    * What Resolve would offer for a warning (as `state.warnings` lists it, its state decides side by side) or a problem
    * (as `state.problems` lists it), plan 0008 decision 32. With a `plan` (decision 35) the numbers it plans count as taken
@@ -235,12 +232,6 @@ export interface Library {
    * no step (the message gives the first reason). Never throws.
    */
   applyPlan(plan: ResolvePlan): ApplyPlanResult;
-  /**
-   * Applies at once (the dialog now plans and uses `applyPlan`) choice `choice` (default 0) of `suggest(item)`: its control gets the suggested value, one undo step, and the
-   * selection goes to that control in the same step (setup, its group, the control) so the editor can flash it. Refused,
-   * with the reason, when the item is no longer current or the choice has no suggestion. `changed` names what changed.
-   */
-  resolve(item: Warning | Problem, choice?: number): ResolveResult;
   undo(): CommandResult;
   redo(): CommandResult;
   /** Selects what problem number `index` of `state.problems` points at (setup, group, control). */
@@ -358,7 +349,6 @@ const CHOICES: Record<ControlArea, Partial<Record<ControlProperty, readonly stri
 const NUMBERS: readonly ControlProperty[] = ['channel', 'number', 'lower', 'upper'];
 const AREA_COUNT: Record<ControlArea, number> = { encoders: 8, pushButtons: 8, faders: 9, buttons: 8 };
 const AREA_NAME: Record<ControlArea, string> = { encoders: 'encoder', pushButtons: 'push button', faders: 'fader', buttons: 'green button' };
-const isEncoderArea = (a: ControlArea): boolean => a === 'encoders' || a === 'pushButtons';
 const isGroup = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) < 8;
 
 const KIND_NAME = { setup: 'setup', encoderGroup: 'encoder group', faderButtonGroup: 'fader/button group', control: 'control' } as const;
@@ -832,7 +822,7 @@ function createLibrary(
     return pasteResult(next, (m) => copyMarks(m, clip, b.id, `${key}[${to.group}].`),
       `${label} ${from.group + 1} of "${clip.sourceName}" is pasted onto group ${to.group + 1} of "${b.name}".`);
   }
-  const ctrlPrefix = (a: ControlAddress): string => `${groupKey(a.area)}[${a.group}].${a.area}[${a.index}].`;
+  const ctrlPrefix = (a: ControlAddress): string => `${groupKeyOf(a.area)}[${a.group}].${a.area}[${a.index}].`;
 
   // --- .syx export (plan 0007 step 3.2) ---
   const stamp = (): string => now().toISOString();
@@ -968,7 +958,7 @@ function createLibrary(
       }
       // The edited property's mark goes (even for the same value: "I checked it"), and so does the mark of
       // any other property the command changed (a type change can lower `number`). Other marks stay.
-      const base = `${groupKey(area)}[${group}].${area}[${index}].`;
+      const base = `${groupKeyOf(area)}[${group}].${area}[${index}].`;
       const touched = [...new Set([property, ...Object.keys({ ...old, ...control }).filter((k) =>
         JSON.stringify((old as unknown as Record<string, unknown>)[k]) !== JSON.stringify((control as unknown as Record<string, unknown>)[k]))])].map((k) => base + k);
       if (JSON.stringify(control) === JSON.stringify(old) && !hasMarkPaths(marks, setupId, touched)) {
@@ -988,13 +978,13 @@ function createLibrary(
       const old = readControl(state.configuration, address);
       if (!old) return refuse('There is no such control.');
       const candidate = writeControl(state.configuration, address, control);
-      const path = `setups[${setupIndex(setupId)}].${groupKey(area)}[${group}].${area}[${index}]`;
+      const path = controlPathOf(setupIndex(setupId), area, group, index);
       const under = (p: { path: string }) => p.path === path || p.path.startsWith(path + '.') || p.path.startsWith(path + '[');
       // Refuse only what the edit introduces: a problem already there (a bad file) must not block Map or the reset.
       const before = new Set(validate(state.configuration).filter(under).map((p) => `${p.path}|${p.message}`));
       const problem = validate(candidate).find((p) => under(p) && !before.has(`${p.path}|${p.message}`));
       if (problem) return refuse(`This control cannot be set: ${problem.message}`);
-      const base = `${groupKey(area)}[${group}].${area}[${index}].`;
+      const base = `${groupKeyOf(area)}[${group}].${area}[${index}].`;
       const touched = Object.keys({ ...old, ...control }).filter((k) =>
         JSON.stringify((old as unknown as Record<string, unknown>)[k]) !== JSON.stringify((control as unknown as Record<string, unknown>)[k])).map((k) => base + k);
       if (touched.length === 0) return nextSelection ? selectStep(nextSelection) : result();
@@ -1399,7 +1389,7 @@ function createLibrary(
       if (n === 0) return result();
       return ignoreStep(next, n === 1 ? 'Warning ignored.' : `${n} warnings ignored.`);
     },
-    showAgain(warning) {
+    unignore(warning) {
       const id = warningId(warning);
       const listed = state.warnings.find((w) => warningId(w) === id);
       if (!listed) return result();
@@ -1449,35 +1439,10 @@ function createLibrary(
       let nextMarks = marks;
       for (const id of new Set(changed.map((c) => c.address.setupId))) {
         const own = changed.filter((c) => c.address.setupId === id)
-          .flatMap((c) => c.properties.map((p) => `${groupKey(c.address.area)}[${c.address.group}].${c.address.area}[${c.address.index}].${p}`));
+          .flatMap((c) => c.properties.map((p) => `${groupKeyOf(c.address.area)}[${c.address.group}].${c.address.area}[${c.address.index}].${p}`));
         nextMarks = dropMarkPaths(nextMarks, id, own);
       }
       return { ...commit(next, message, nextMarks), changed, refused };
-    },
-    resolve(item, choice = 0) {
-      const { resolution: r, current } = resolution(item);
-      if (!current) return refuse('That is no longer a warning or problem: nothing to resolve.');
-      const picked = r.choices[choice];
-      if (!picked) return refuse('There is nothing to resolve here.');
-      if (!picked.suggestion) return refuse(`${picked.name}: ${picked.reason ?? 'no suggestion'}.`);
-      const ref = locate(picked.path);
-      const setup = ref && state.configuration.setups[ref.setupIndex];
-      if (!ref || !setup || !ref.control) return refuse('There is no such control.');
-      const group = ref.encoderGroup ?? ref.faderButtonGroup ?? 0;
-      const address: ControlAddress = { setupId: setup.id, area: ref.control.area, group, index: ref.control.index };
-      const old = readControl(state.configuration, address);
-      if (!old) return refuse('There is no such control.');
-      const properties = Object.keys(picked.suggestion.change) as ControlProperty[];
-      const selection: SelectionChange = {
-        setupId: setup.id, control: ref.control,
-        ...(isEncoderArea(ref.control.area) ? { encoderGroup: group } : { faderButtonGroup: group }),
-      };
-      const done = library.setControl(address, { ...old, ...picked.suggestion.change } as AnyControl, { selection });
-      if (done.message) return done; // refused: setControl said why and changed nothing
-      const text = picked.suggestion.text;
-      const message = 'controls' in item ? `${picked.name} now sends ${text}.` : `${picked.name}: ${text}.`;
-      publish({ ...state, message });
-      return { ...result(message), changed: { address, properties } };
     },
 
     undo() {
@@ -1518,18 +1483,15 @@ function createLibrary(
 }
 
 // --- reading and writing one control without touching the rest ---
-function groupKey(area: ControlArea): 'encoderGroups' | 'faderButtonGroups' {
-  return isEncoderArea(area) ? 'encoderGroups' : 'faderButtonGroups';
-}
 
 function readControl(c: Uc4Config, a: ControlAddress): AnyControl | undefined {
   const setup = c.setups.find((s) => s.id === a.setupId);
-  const group = setup?.[groupKey(a.area)][a.group] as (Record<string, unknown> | undefined);
+  const group = setup?.[groupKeyOf(a.area)][a.group] as (Record<string, unknown> | undefined);
   return (group?.[a.area] as AnyControl[] | undefined)?.[a.index];
 }
 
 function writeControl(c: Uc4Config, a: ControlAddress, control: AnyControl): Uc4Config {
-  const key = groupKey(a.area);
+  const key = groupKeyOf(a.area);
   const swap = <T>(list: T[], i: number, item: T): T[] => list.map((x, k) => (k === i ? item : x));
   return {
     ...c,

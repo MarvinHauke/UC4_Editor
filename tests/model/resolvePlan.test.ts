@@ -2,7 +2,7 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import {
-  WELL_KNOWN_CC, applyPlan, checkPlanValue, entriesOf, factorySetup, resolveWarning, wellKnownCc, warnings,
+  WELL_KNOWN_CC, applyPlan, checkPlanValue, entriesOf, factorySetup, resolveWarning, setPlanAfter, wellKnownCc, warnings,
 } from '../../src/model/index.ts';
 import type { PlanEntry, Setup, Uc4Config } from '../../src/model/index.ts';
 
@@ -157,4 +157,57 @@ test('applyPlan refuses an entry that is out of range, and an entry for a proper
 test('applyPlan with nothing to apply returns the same config', () => {
   const cfg = se01();
   assert.equal(applyPlan(cfg, []).config, cfg);
+});
+
+// --- a one-end edit of a planned PrGC range moves the block (step 21) ---
+const range = (): PlanEntry[] => [
+  { path: E(0, 0), property: 'lower', before: 17, after: 20 },
+  { path: E(0, 0), property: 'upper', before: 20, after: 23 },
+];
+const afters = (plan: readonly PlanEntry[]) => plan.map((e) => [e.property, e.after]);
+
+test('setPlanAfter: editing one end of a planned range moves the block, same width', () => {
+  assert.deepEqual(afters(setPlanAfter(range(), E(0, 0), 'lower', 40)), [['lower', 40], ['upper', 43]]);
+  assert.deepEqual(afters(setPlanAfter(range(), E(0, 0), 'upper', 40)), [['lower', 37], ['upper', 40]]);
+});
+
+test('setPlanAfter: never reverses a range ("programs 20–17"), a reversed range stays reversed', () => {
+  assert.deepEqual(afters(setPlanAfter(range(), E(0, 0), 'upper', 18)), [['lower', 15], ['upper', 18]]);
+  const rev = range().map((e) => ({ ...e, after: e.property === 'lower' ? 23 : 20 }));
+  assert.deepEqual(afters(setPlanAfter(rev, E(0, 0), 'lower', 50)), [['lower', 50], ['upper', 47]]);
+});
+
+test('setPlanAfter: the block stays inside 0–127', () => {
+  assert.deepEqual(afters(setPlanAfter(range(), E(0, 0), 'lower', 126)), [['lower', 124], ['upper', 127]]);
+  assert.deepEqual(afters(setPlanAfter(range(), E(0, 0), 'upper', 1)), [['lower', 0], ['upper', 3]]);
+});
+
+test('setPlanAfter: a single entry, another control or a property without a partner just changes that entry', () => {
+  const plan: PlanEntry[] = [...range(), { path: E(0, 1), property: 'number', before: 1, after: 70 }, { path: E(0, 2), property: 'upper', before: 3, after: 9 }];
+  assert.deepEqual(afters(setPlanAfter(plan, E(0, 1), 'number', 80).slice(2, 3)), [['number', 80]]);
+  assert.equal(setPlanAfter(plan, E(0, 2), 'upper', 12)[3]!.after, 12);
+  assert.deepEqual(afters(setPlanAfter(plan, E(0, 0), 'lower', 40).slice(0, 2)), [['lower', 40], ['upper', 43]]);
+  assert.equal(setPlanAfter(plan, E(0, 0), 'lower', 40)[2]!.after, 70); // other controls untouched
+  assert.equal(setPlanAfter(plan, 'nope', 'lower', 1), plan); // no such entry: the same plan
+});
+
+test('setPlanAfter: a value that is no number is set as typed (checkPlanValue says why not)', () => {
+  assert.deepEqual(afters(setPlanAfter(range(), E(0, 0), 'lower', 2.5)), [['lower', 2.5], ['upper', 23]]);
+});
+
+test('checkPlanValue: a one-end edit of a planned range checks the moved block', () => {
+  const s = factorySetup(1); s.id = 'a';
+  Object.assign(s.encoderGroups[0]!.encoders[0]!, { type: 'PrGC', channel: 1, lower: 17, upper: 20 });
+  Object.assign(s.encoderGroups[0]!.encoders[1]!, { type: 'PrGC', channel: 1, lower: 40, upper: 43 });
+  const cfg = cfgOf(s);
+  const plan: PlanEntry[] = [
+    { path: E(0, 0), property: 'lower', before: 17, after: 20 },
+    { path: E(0, 0), property: 'upper', before: 20, after: 23 },
+  ];
+  // lower 38 moves the block to 38–41: it meets the other range at 40–43
+  const hit = checkPlanValue(cfg, plan, { path: E(0, 0), property: 'lower', after: 38 });
+  assert.equal(hit.valid, true);
+  assert.deepEqual(hit.collidesWith.map((c) => c.path), [E(0, 1)]);
+  // lower 30 moves it to 30–33: free
+  assert.deepEqual(checkPlanValue(cfg, plan, { path: E(0, 0), property: 'lower', after: 30 }).collidesWith, []);
 });
