@@ -1,6 +1,6 @@
 // What the MIDI monitor shows for a row, and the remembered input choice (plan 0008 step 1, decisions 3 and 19).
 // Pure: no Svelte, no DOM. Raw values only; pairs, "+1/−1" and matches come with later steps.
-import type { LiveRow, MessageKind } from '../live/index.ts';
+import type { LiveRow, Match, MessageKind } from '../live/index.ts';
 import type { InputInfo, InputSelection } from '../midi/inputs.ts';
 
 import { INPUT_KEY } from './storageKeys.ts';
@@ -21,8 +21,9 @@ export function rowText(row: Pick<LiveRow, 'kind' | 'channel' | 'number'>): RowT
 /** One sentence for screen readers and the tooltip; `source` is the input's name. */
 export function rowLabel(row: LiveRow, source: string): string {
   const t = rowText(row);
+  const mapped = row.mappedTo ? `, mapped to ${row.mappedTo.name}` : '';
   const match = row.best ? `, ${row.best.control.name}${row.pinned ? ' (pinned)' : ''}${row.more > 0 ? `, ${row.more} more` : ''}` : '';
-  return `${t.message} ch ${t.channel}, ${row.valueText}, from ${source}${row.isUc4 ? ' (the UC4)' : ''}${match}`;
+  return `${t.message} ch ${t.channel}, ${row.valueText}, from ${source}${row.isUc4 ? ' (the UC4)' : ''}${match}${mapped}`;
 }
 
 /** The input's name for a row: the plugged-in input's name, else a plain note (the row outlives its input). */
@@ -64,8 +65,7 @@ export function statusLine(message: string, listening: boolean, clockIgnored: bo
   return listening && clockIgnored ? `${message.replace(/…$/, '')} · clock ignored` : message;
 }
 
-/** The one-line match text: "FAd7 · FG1 +1", or "→ Enc1 · EG1" once the row is mapped. */
-export function matchText(row: Pick<LiveRow, 'best' | 'more' | 'mappedTo'>): string {
-  if (row.mappedTo) return `→ ${row.mappedTo.name}`;
-  return row.best ? `${row.best.control.name}${row.more > 0 ? ` +${row.more}` : ''}` : '';
+/** Decision 34: a click that opens a UC4 row selects its pinned or first match when Follow is on; closing or Follow off only toggles. */
+export function clickTarget(row: Pick<LiveRow, 'isUc4' | 'best'>, opening: boolean, followOn: boolean): Match | null {
+  return opening && followOn && row.isUc4 ? row.best : null;
 }

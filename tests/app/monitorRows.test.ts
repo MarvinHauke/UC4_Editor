@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INPUT_KEY, loadSelection, pickerOptions, rowLabel, rowText, saveSelection, sourceName, statusLine, matchText } from '../../src/app/monitorRows.ts';
+import { INPUT_KEY, loadSelection, pickerOptions, rowLabel, rowText, saveSelection, sourceName, statusLine, clickTarget } from '../../src/app/monitorRows.ts';
 import type { LiveRow } from '../../src/live/index.ts';
 
 const row = (p: Partial<LiveRow>): LiveRow => ({
@@ -53,16 +53,27 @@ describe('pickerOptions', () => {
   });
 });
 
-describe('statusLine and matchText', () => {
+describe('statusLine and the mapped label', () => {
   it('folds the clock note into the status line', () => {
     expect(statusLine('Listening to 6 inputs…', true, true)).toBe('Listening to 6 inputs · clock ignored');
     expect(statusLine('Listening to 6 inputs…', true, false)).toBe('Listening to 6 inputs…');
     expect(statusLine('No MIDI input found.', false, true)).toBe('No MIDI input found.');
   });
-  it('shows the best match with its count, or the mapped control', () => {
-    const control = { name: 'FAd7 · FG1' } as never;
-    expect(matchText({ best: { control, tier: 1, via: 'message' }, more: 1, mappedTo: null })).toBe('FAd7 · FG1 +1');
-    expect(matchText({ best: { control, tier: 1, via: 'message' }, more: 0, mappedTo: { name: 'Enc1 · EG1' } as never })).toBe('→ Enc1 · EG1');
-    expect(matchText({ best: null, more: 0, mappedTo: null })).toBe('');
+  it('says a mapped row is mapped', () => {
+    expect(rowLabel(row({ isUc4: true, mappedTo: { name: 'Enc1 · EG1' } as never }), 'UC4')).toBe('CC 74 ch 2, 64, from UC4 (the UC4), mapped to Enc1 · EG1');
+  });
+});
+
+describe('clickTarget (decision 34)', () => {
+  const best = { control: { name: 'FAd7 · FG1' }, tier: 1, via: 'message' } as never;
+  const uc4 = row({ isUc4: true, best });
+  it('opening a UC4 row with Follow on goes to its best match (pinned or first)', () => {
+    expect(clickTarget(uc4, true, true)).toBe(best);
+  });
+  it('Follow off, closing, a foreign row or no match go nowhere', () => {
+    expect(clickTarget(uc4, true, false)).toBeNull();
+    expect(clickTarget(uc4, false, true)).toBeNull();
+    expect(clickTarget(row({ best }), true, true)).toBeNull();
+    expect(clickTarget(row({ isUc4: true }), true, true)).toBeNull();
   });
 });

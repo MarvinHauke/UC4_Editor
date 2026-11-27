@@ -1,11 +1,9 @@
 <script lang="ts">
-  // One monitor row (plan 0008 decisions 3, 8, 12, 24, 25). One line: U mark · message · channel · value · the best match in
-  // muted text ("FAd7 · FG1 +1", or "→ Enc1 · EG1" once mapped) · the Map arrow (shown on the hovered, focused or open row).
-  // Click on the row, or Enter on its message button, opens the details: the other matches with Pin, the input, a pair's parts.
-  // Click on the match text itself shows that control in the editor, so the two clicks never clash.
+  // One monitor row (plan 0008 decision 34). Closed: UC4 chip · message · channel · value · "→" once mapped · [Map] (hover, focus, last moved).
+  // Click on the row, or Enter on its message button, opens it: the control name(s) with Show and Pin, the input, a pair's parts, ✕.
   import type { LiveRow, Match } from '../live/index.ts';
-  import { matchLabel, whereWord } from '../app/liveView.ts';
-  import { matchText, rowLabel, rowText } from '../app/monitorRows.ts';
+  import { whereWord } from '../app/liveView.ts';
+  import { rowLabel, rowText } from '../app/monitorRows.ts';
 
   interface Props {
     row: LiveRow; source: string; open?: boolean;
@@ -17,9 +15,7 @@
   }
   let { row, source, open = false, ontoggle, onselect, onpin, armed = false, next = false, onmap, onreset }: Props = $props();
   const t = $derived(rowText(row));
-  const label = $derived(row.isUc4 ? matchLabel(row) : null);
-  const text = $derived(matchText(row));
-  const full = $derived(row.mappedTo ? `Mapped: sent by ${row.mappedTo.name}` : label ? `${label.name}${label.more > 0 ? ` and ${label.more} more` : ''}${label.where ? ` · ${label.where}` : ''}` : '');
+  const full = $derived(row.mappedTo ? `Mapped: sent by ${row.mappedTo.name}` : '');
   /** The open row's parts as plain text: "MSB 64 · LSB 0" for a CCAh pair, "last on 127 · last off 0" for a note; a part never seen is left out. */
   const partsText = $derived.by(() => {
     const parts = row.pair?.parts;
@@ -30,7 +26,7 @@
     return items.filter((x) => x !== false).join(' · ');
   });
 
-  // A click anywhere on the row opens it; the buttons inside (match, Map) do their own thing.
+  // A click anywhere on the row opens it; the buttons inside (Map, Show, Pin, ✕) do their own thing.
   function rowClick(e: MouseEvent): void {
     if ((e.target as Element).closest('button, a, select, .details')) return;
     ontoggle?.();
@@ -38,7 +34,7 @@
 </script>
 
 {#snippet cells()}
-  <span class="mark" title={row.isUc4 ? 'From the UC4' : undefined} aria-hidden="true">{row.isUc4 ? 'U' : ''}</span>
+  <span class="mark" title={row.isUc4 ? 'From the UC4' : undefined} aria-hidden="true">{row.isUc4 ? 'UC4' : ''}</span>
   <span class="msg">{t.message}</span>
   <span class="ch">ch{t.channel}</span>
   <span class="val">{row.valueText}</span>
@@ -46,10 +42,8 @@
 
 {#snippet mapBtn()}
   {#if onmap}
-    <button type="button" class="icon map" class:on={armed} aria-pressed={armed} aria-label={armed ? 'Cancel Map' : 'Map to a control'} title={armed ? 'Cancel Map' : 'Map'}
-      data-help={armed ? 'Map is armed: click a control, or move one on the UC4 · Esc or this button cancels' : 'Map: then click a control, or move one on the UC4, and it sends this message'} onclick={onmap}>
-      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" /></svg>
-    </button>
+    <button type="button" class="map" class:on={armed} aria-pressed={armed} aria-label={armed ? 'Cancel Map' : 'Map to a control'}
+      data-help={armed ? 'Map is armed: click a control, or move one on the UC4 · Esc or this button cancels' : 'Map: then click a control, or move one on the UC4, and it sends this message'} onclick={onmap}>{armed ? 'Cancel' : 'Map'}</button>
   {/if}
 {/snippet}
 
@@ -59,19 +53,7 @@
   data-help={`${rowLabel(row, source)}${row.lastMoved ? ' · moved last' : ''}`} onclick={rowClick}>
   <button type="button" class="pick" aria-expanded={open} data-help={open ? 'Close the details of this row' : 'Details: the other matches, Pin and the input'}
     onclick={() => { ontoggle?.(); }}>{@render cells()}</button>
-  {#if row.best && !row.mappedTo}
-    <button type="button" class="match" title={full} data-help={`Show ${row.best.control.name} in the editor`} onclick={() => { onselect(row.best!); }}>
-      <span class="mtext">{row.best.control.name}</span>{#if row.more > 0}<span class="more">+{row.more}</span>{/if}{#if row.pinned}<span class="pin" title="Pinned" aria-hidden="true">◆</span><span class="sr">pinned</span>{/if}
-    </button>
-  {:else}
-    <span class="mrow">
-      <span class="match plain" class:mapped={row.mappedTo !== null} title={full || undefined}>{text || (row.isUc4 ? 'no match' : '')}</span>
-      {#if open && row.mappedTo && onreset}
-        <button type="button" class="act reset" aria-label={`Reset ${row.mappedTo.name} to factory`}
-          data-help={`Reset ${row.mappedTo.name} to factory: the whole control goes back to its factory settings, one undo step · it collides with another control`} onclick={onreset}>✕</button>
-      {/if}
-    </span>
-  {/if}
+  {#if row.mappedTo}<span class="mapped" title={full} aria-hidden="true">→</span>{/if}
   {#if !open}{@render mapBtn()}{/if}
 
   {#if open}
@@ -83,6 +65,15 @@
             data-help={armed ? 'Map is armed: click a control, or move one on the UC4 · Esc or this button cancels' : 'Map: then click a control, or move one on the UC4, and it sends this message'} onclick={onmap}>{armed ? 'Cancel' : 'Map'}</button>
         {/if}
       </p>
+      {#if row.mappedTo}
+        <p class="mapline">
+          <span class="altname"><span class="where">Mapped:</span>&#32;<span class="nm">{row.mappedTo.name}</span></span>
+          {#if onreset}
+            <button type="button" class="act reset" aria-label={`Reset ${row.mappedTo.name} to factory`}
+              data-help={`Reset ${row.mappedTo.name} to factory: the whole control goes back to its factory settings, one undo step · it collides with another control`} onclick={onreset}>✕</button>
+          {/if}
+        </p>
+      {/if}
       {#if partsText}<p class="parts where">{partsText}</p>{/if}
       {#if row.matches.length > 0}
         <ul class="alts" class:single={row.matches.length === 1} aria-label="Controls that send this message">
@@ -109,41 +100,33 @@
 </div>
 
 <style>
-  /* One line: message cells, the match, the Map arrow. The row is one target (a click anywhere opens it); the band of the row
-     that moved last spans the whole row, behind the arrow too. The message column gives way first, never the match. */
-  .row { position: relative; display: grid; grid-template-columns: calc(14px + 18ch + 3 * var(--space-1)) minmax(0, auto); column-gap: var(--space-2); align-items: center; padding: 0 var(--space-1); border-left: 3px solid transparent; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: var(--text-sm); cursor: pointer; }
+  /* One line: chip and message cells, the "→" once mapped, [Map] over the right end. The row is one target (a click anywhere opens it);
+     the band of the row that moved last spans the whole row, behind [Map] too. The 30px chip column fits "UC4" at --text-sm. */
+  .row { position: relative; display: grid; grid-template-columns: calc(30px + 18ch + 3 * var(--space-1)) minmax(0, auto); column-gap: var(--space-2); align-items: center; padding: 0 var(--space-1); border-left: 3px solid transparent; border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: var(--text-sm); cursor: pointer; }
   .row.moved { background-color: var(--accent-soft); border-left-color: var(--accent); }
   .row.open:not(.moved) { background-color: var(--surface); }
   .row:hover { background-image: linear-gradient(color-mix(in srgb, var(--text) 8%, transparent), color-mix(in srgb, var(--text) 8%, transparent)); }
   .row.armed { outline: 2px solid var(--accent); outline-offset: -2px; }
   .row.next:not(.armed) { border-left: 3px dashed var(--accent); }
-  .pick { display: grid; grid-template-columns: 14px minmax(0, 8ch) 4ch 6ch; column-gap: var(--space-1); align-items: center; min-width: 0; min-height: 28px; margin: 0; padding: 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; cursor: pointer; }
+  .pick { display: grid; grid-template-columns: 30px minmax(0, 8ch) 4ch 6ch; column-gap: var(--space-1); align-items: center; min-width: 0; min-height: 28px; margin: 0; padding: 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; cursor: pointer; }
   button.pick:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   .mark { display: grid; place-items: center; height: var(--space-4); font-size: var(--text-sm); font-weight: 600; line-height: 1; color: var(--on-accent); background: var(--accent); border-radius: 3px; }
   .mark:empty { background: none; }
   .msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ch { color: var(--text-muted); white-space: nowrap; }
   .val { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  /* The match: muted text; a button of its own that shows the control (a click on it does not open the row). Underlined on hover. */
-  .match { display: flex; align-items: center; gap: var(--space-1); min-height: 24px; margin: 0; padding: 0 2px; font: inherit; font-family: var(--font); white-space: nowrap; text-align: left; color: var(--text-muted); background: none; border: 0; border-radius: var(--radius); }
-  button.match { cursor: pointer; }
-  button.match:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
-  button.match:focus-visible { outline: none; color: var(--text); box-shadow: var(--focus-ring); }
-  .match.mapped { color: var(--text); }
-  .mtext { white-space: nowrap; }
-  .pin, .more { flex: none; }
-  .mrow { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+  .mapped { color: var(--text); font-family: var(--font); }
+  .mapline { display: grid; grid-template-columns: minmax(0, 1fr) 46px; align-items: center; gap: var(--space-2); min-height: 28px; margin: 0; }
   .reset { flex: none; min-width: 24px; padding: 0 var(--space-1); font-family: var(--font); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .icon { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
-  .icon:hover { background: var(--accent-soft); }
-  .icon.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
-  .icon:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
-  /* The arrow sits over the right end of the row (the band runs behind it); it shows only where the pointer or focus is. */
-  .map { position: absolute; top: 2px; right: 1px; opacity: 0; }
-  .row:hover .map, .row:focus-within .map, .row.open .map, .row.armed .map, .row.next .map, .map:focus-visible { opacity: 1; }
+  /* [Map] is a text button over the right end of the row (the band runs behind it); on the hovered, focused, armed and last-moved row. */
+  .map { position: absolute; top: 2px; right: var(--space-1); box-sizing: border-box; height: 24px; min-width: 46px; padding: 0 var(--space-1); font: inherit; font-family: var(--font); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; opacity: 0; }
+  .map:hover { background: var(--accent-soft); }
+  .map.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+  .map:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+  .row:hover .map, .row:has(:focus-visible) .map, .row.moved .map, .row.armed .map, .row.next .map, .map:focus-visible { opacity: 1; }
   @media (prefers-reduced-motion: no-preference) { .map { transition: opacity 120ms; } }
-  .details { grid-column: 1 / -1; padding: var(--space-1) 0 var(--space-2) calc(14px + var(--space-1)); font-family: var(--font); cursor: default; }
+  .details { grid-column: 1 / -1; padding: var(--space-1) 0 var(--space-2) var(--space-1); font-family: var(--font); cursor: default; }
   .src { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: 28px; margin: 0; overflow: hidden; white-space: nowrap; }
   .src .mapbtn { flex: none; width: 46px; padding: 0 var(--space-1); }
   .src .mapbtn.on { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }

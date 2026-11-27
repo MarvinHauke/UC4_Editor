@@ -3,15 +3,17 @@
   // place, the row that moved last marked. Bottom of the Connections column, it fills the height left there and only its list
   // scrolls; it folds from its heading in the column. Listening only.
   import type { Live } from '../app/liveStore.svelte.ts';
-  import { pickerOptions, sourceName, statusLine } from '../app/monitorRows.ts';
+  import { clickTarget, pickerOptions, sourceName, statusLine } from '../app/monitorRows.ts';
   import type { Match } from '../live/index.ts';
   import MonitorRow from './MonitorRow.svelte';
   import { useMap } from '../app/mapFlow.svelte.ts';
+  import { useFollow } from '../app/followState.svelte.ts';
 
   let { live, onselectmatch }: { live: Live; onselectmatch: (match: Match) => void } = $props();
   /** The row whose other matches are listed ("+2"). */
   let openKey = $state<string | null>(null);
   const mapUi = useMap();
+  const follow = useFollow();
   const map = mapUi.flow;
   const options = $derived(pickerOptions(live.inputs, live.selection));
   const listening = $derived(live.status.kind === 'listening');
@@ -33,7 +35,7 @@
   <div class="list" role="list" aria-label="Messages" tabindex="0">
     {#each live.rows as row (row.key)}
       <MonitorRow {row} source={sourceName(row, live.inputs)} open={openKey === row.key}
-        ontoggle={() => { openKey = openKey === row.key ? null : row.key; }}
+        ontoggle={() => { const opening = openKey !== row.key; openKey = opening ? row.key : null; const m = clickTarget(row, opening, follow.on); if (m) onselectmatch(m); }}
         onreset={row.mappedTo && mapUi.canReset(row.mappedTo) ? () => { map.resetToFactory(row.key, row.mappedTo!); } : undefined}
         armed={map.armed === row.key} next={map.nextKey === row.key} onmap={() => { map.toggle(row.key); }}
         onselect={onselectmatch} onpin={(id) => { live.pin(row.key, id); }} />
