@@ -29,8 +29,9 @@ _Last updated: 2026-11-26 (0008 live view built, code-review fixes done; Split r
 - **Review judgement calls** (user's /code-review of `feat/live-view`, 2026-11-27): one model helper for the message
   key, "what a control sends", the encoder half and slot names. Done from that review: `d26800d`, `c760681`, `809ab0e`
   (Ignore rename, 0008 decision 29); 0008 step 13, the check always reachable (`7766162`, decision 30).
-- **0008 steps 14–16** (grill 2026-11-27, decisions 31–34): Resolve suggestions (uc4-model), then the dialog and
-  panel (Ignore toggle, four blocks, ↺ Resolve, Review… on the check line), the monitor row cleanup done first (`e15f082`).
+- **0008 steps 14–16 done** (`a1b9589`, `edcc82a`, `e15f082`; decisions 31–34). Left from step 15: a 1024 px browser
+  run of the dialog (long "change … instead" lines, a long panel label); "ch 1" wraps before the 1 in dialog rows
+  (keep it together in the UI, not in the model text the tests read); factory rows have no Ignore toggle (asked).
 - **Later, own plan:** a warning level setting ("hard" turns warnings into errors; user, 2026-11-27).
 
 ## Waiting for the user
