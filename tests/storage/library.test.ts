@@ -1,7 +1,7 @@
 // The library module through its public commands (plan 0006 step 1), with the in-memory storage.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { openLibrary, memoryStorage } from '../../src/storage/index.ts';
+import { openLibrary, memoryStorage, HISTORY_LIMIT } from '../../src/storage/index.ts';
 import type { ControlAddress, Library } from '../../src/storage/index.ts';
 import { changeType, factorySetup, load, save, validate } from '../../src/model/index.ts';
 import type { Uc4Config } from '../../src/model/index.ts';
@@ -259,15 +259,19 @@ test('the selection survives undo; undo does not select a setup that is gone', a
   assert.equal(lib.getState().selection.encoderGroup, 4);
 });
 
-// 15 s: for runs under load, while several agents test at once.
 test('the history is capped, the oldest step falls away', async () => {
-  const { lib } = await open();
+  const lib = (await openLibrary(memoryStorage(), { now: clock, historyLimit: 5 })).library;
   const id = firstId(lib);
-  for (let i = 0; i < 300; i++) lib.setProperty(enc(id), 'number', i % 100);
+  for (let i = 0; i < 12; i++) lib.setProperty(enc(id), 'number', i);
   let steps = 0;
   while (lib.getState().canUndo) { lib.undo(); steps++; }
-  assert.equal(steps, 200);
-}, 15_000);
+  assert.equal(steps, 5);
+  assert.equal(lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!.number, 6, 'the oldest steps fell away: undo stops after edit 6');
+});
+
+test('the default history holds 200 steps', () => {
+  assert.equal(HISTORY_LIMIT, 200);
+});
 
 // --- subscribe and saving ---
 test('subscribers get every new state, and stop after unsubscribe', async () => {

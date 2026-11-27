@@ -334,7 +334,11 @@ export interface Library {
   whenSaved(): Promise<void>;
 }
 
-export interface OpenOptions { now?: () => Date }
+export interface OpenOptions {
+  now?: () => Date;
+  /** How many steps undo remembers (default `HISTORY_LIMIT`); tests use a small one. */
+  historyLimit?: number;
+}
 export interface Opened { library: Library; message?: string }
 
 /** How many steps undo remembers. */
@@ -378,6 +382,7 @@ function freshConfiguration(now: Date): Uc4Config {
  */
 export async function openLibrary(storage: LibraryStorage, options: OpenOptions = {}): Promise<Opened> {
   const now = options.now ?? (() => new Date());
+  const historyLimit = Math.max(1, options.historyLimit ?? HISTORY_LIMIT);
   let configuration: Uc4Config | undefined;
   let message: string | undefined;
   let needsSave = false;
@@ -424,7 +429,7 @@ export async function openLibrary(storage: LibraryStorage, options: OpenOptions 
   let ignoredText: string | null = null;
   let ignored: Ignored = [];
   try { ignoredText = await storage.readIgnored(); ignored = pruneIgnored(parseIgnored(ignoredText, config), collisions(config)); } catch { /* no ignored: the warnings are open again */ }
-  const library = createLibrary(storage, config, now, baseline, blocked, { ignored, ignoredText, marks, marksText, links, linksText, sends: parseSends(sendsText), sendsText, dumps });
+  const library = createLibrary(storage, config, now, baseline, blocked, { ignored, ignoredText, marks, marksText, links, linksText, sends: parseSends(sendsText), sendsText, dumps }, historyLimit);
   if (needsSave) library.saveNow();
   return { library, ...(message ? { message } : {}) };
 }
@@ -509,7 +514,7 @@ const infoOf = (d: StoredDump, keptFor?: KeptDumpInfo['keptFor']): KeptDumpInfo 
 
 function createLibrary(
   storage: LibraryStorage, initial: Uc4Config, now: () => Date, initialBaseline: ExportBaseline, blocked: string | undefined,
-  side: Side,
+  side: Side, historyLimit: number,
 ): Internal {
   let baseline = initialBaseline;
   /** Kept dumps with their bytes, newest first (plan 0005 decision 6). */
@@ -613,7 +618,7 @@ function createLibrary(
 
   // --- committing a changed configuration ---
   const commit = (configuration: Uc4Config, message?: string, nextMarks?: Marks, nextLinks?: Links, nextSelection?: Selection): CommandResult => {
-    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored, ...(nextSelection ? { selection: state.selection } : {}) }].slice(-HISTORY_LIMIT);
+    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored, ...(nextSelection ? { selection: state.selection } : {}) }].slice(-historyLimit);
     redoStack = [];
     if (nextMarks) marks = nextMarks;
     if (nextLinks) links = nextLinks;
@@ -671,7 +676,7 @@ function createLibrary(
 
   /** A change of the ignored entries alone as one undo step. */
   const ignoreStep = (next: Ignored, message: string): CommandResult => {
-    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored }].slice(-HISTORY_LIMIT);
+    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored }].slice(-historyLimit);
     redoStack = [];
     ignored = next;
     publish({ ...state, ...derived(state.configuration), canUndo: true, canRedo: false, message });
@@ -682,7 +687,7 @@ function createLibrary(
   /** A selection change as its own undo step (a no-change is none). */
   const selectStep = (next: Selection): CommandResult => {
     if (JSON.stringify(next) === JSON.stringify(state.selection)) return result();
-    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored, selection: state.selection }].slice(-HISTORY_LIMIT);
+    undoStack = [...undoStack, { configuration: state.configuration, marks, links, ignored, selection: state.selection }].slice(-historyLimit);
     redoStack = [];
     publish({ ...state, selection: next, canUndo: true, canRedo: false, message: undefined });
     return result();
