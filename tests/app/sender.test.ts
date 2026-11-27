@@ -23,6 +23,13 @@ describe('sender', () => {
     expect(record).toHaveBeenCalledTimes(2);
     expect(record.mock.calls[1]![1].backup).toEqual(backup);
   });
+  it('runs onsent only when the port accepted the send', () => {
+    const onsent = vi.fn();
+    createSender({ sendDump: () => ({ ok: false, reason: 'not-connected', message: 'No.' }) }, 'UC4').send(5, { bytes: bytes(1), backup: null }, 'send', onsent);
+    expect(onsent).not.toHaveBeenCalled();
+    createSender({ sendDump: () => ({ ok: true, bytes: 1 }) }, 'UC4').send(5, { bytes: bytes(1), backup: null }, 'send', onsent);
+    expect(onsent).toHaveBeenCalledTimes(1);
+  });
   it('records nothing when the send failed', () => {
     const record = vi.fn();
     createSender({ sendDump: () => ({ ok: false, reason: 'not-connected', message: 'No.' }) }, 'UC4', record).send(5, { bytes: bytes(1), backup: null });

@@ -24,8 +24,13 @@ without reading help.
 loudest thing in its row.
 
 **Rhythm.** Spacing comes from `tokens.css` (`--space-1` 4 px … `--space-4` 16 px), never raw pixels. Text and a
-control beside it keep at least `--space-3` between them; rows of the same kind keep one height; aligned edges
-line up across the area.
+control beside it keep at least `--space-3` between them; rows of the same kind keep one height.
+
+**One right edge.** In an area, buttons, fields and lists end on one right edge, and the buttons of a list stand in
+fixed columns: the same action sits at the same x in every row, and a row without it leaves its column empty. A
+heading's button ends where the list under it ends. The user caught this three times by eye on 2026-11-26 (Follow
+vs Clear, Show and Pin in the monitor, Show and Waive in the dialog); measure it instead
+(`docs/agents/browser-checks.md`, "Measure, don't eyeball").
 
 **Density.** Compact, not cramped: a list row is one or two lines; actions sit on the row's first line at the
 right; a row grows a line only for a note the user needs (an unreadable reason, "sent again").
@@ -47,13 +52,14 @@ Nothing opens, moves or takes focus by itself while the user edits.
 - Short menu entries ("Configuration", "Dump") with the format as a hint; ornate labels were rejected.
 - Icons where the words live in the tooltip (download icon beside `×` on kept dumps); text buttons where the user
   is asked to act (Review / Export .syx / Dismiss on a new dump).
-- Room between text and icon buttons (the Connections column went from 240 to 280 px for it).
+- Room between text and icon buttons (the Connections column went from 240 to 280 px for it, and to 320 px for the one-line monitor rows, 2026-11-26).
 - The user changes their mind on placement after seeing it: show it, then ask.
 
 ## Reviewing a UI change
 
 1. Get the screenshots: uc4-ui saves them from its browser check (dark and light; a wide window and 1024 px) and
    names their paths in the review request. Without them, ask uc4-ui for them before judging the look.
-2. Go through every principle above on each screenshot, then the UX checklist. Name the principle in each finding,
+2. Ask for the right edges of every list or button group in the change (measured, in pixels) next to the
+   screenshots. Go through every principle above on each screenshot, then the UX checklist. Name the principle in each finding,
    with the element and the concrete fix (token, colour variable, wording).
 3. A finding that is a new kind of problem goes to uc4-architect as a proposed principle or checklist item.

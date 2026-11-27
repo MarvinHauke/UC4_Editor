@@ -57,10 +57,12 @@ draft ─▶ grill ─▶ spec ─▶ steps ─▶ build ─▶ review ─▶ te
    plan, the glossary and the device facts, and works as `implement` does: `tdd` at the agreed seams,
    type-check and single test files often, the full suite at the end. `diagnosing-bugs` for hard
    failures, `codebase-design` for interfaces.
-6. **Review** — `uc4-reviewer` runs `code-review`: **Standards** = `CLAUDE.md` and the plans'
+6. **Review** — `uc4-reviewer` runs `mattpocock-skills:code-review`: **Standards** = `CLAUDE.md` and the plans'
    decisions; **Spec** = the step and its plan. It adds device facts and hardware-safety checks, and
    for a visible change `uc4-ui-design` on uc4-ui's screenshots. The
    builder fixes, commits by path and sends the architect a short overview with a test list.
+   Every few steps of a long plan, and always before the PR, the architect asks the reviewer for a
+   **branch review** (since the branch base, against the whole plan).
 7. **Test** — the architect runs the browser test list; you get a short "try it yourself" list and
    whatever only you can check (the device).
 8. **Ship** — when you ask, the architect writes the PR body with `pr` and opens the PR. The plan's

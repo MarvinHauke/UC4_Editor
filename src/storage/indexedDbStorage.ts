@@ -9,6 +9,7 @@ const BASELINE_KEY = 'export-baseline';
 const MARKS_KEY = 'dump-marks';
 const LINKS_KEY = 'dump-links';
 const SENDS_KEY = 'last-sends';
+const IGNORED_KEY = 'waived-warnings'; // keeps its old name so warnings ignored before the rename stay ignored
 // Kept dumps: one entry each, `dump:<id>`; ';' is the character after ':' so the range holds exactly them.
 const DUMP_PREFIX = 'dump:';
 const QUARANTINE_PREFIX = 'library-unreadable-';
@@ -81,6 +82,8 @@ export function indexedDbStorage(factory: IDBFactory = indexedDB, options: Index
     writeLinks: (text) => put(LINKS_KEY, text),
     readSends: () => get(SENDS_KEY),
     writeSends: (text) => put(SENDS_KEY, text),
+    readIgnored: () => get(IGNORED_KEY),
+    writeIgnored: (text) => put(IGNORED_KEY, text),
     readDumps: async () => {
       const store = (await connection()).transaction(STORE).objectStore(STORE);
       const all: unknown[] = await done(store.getAll(IDBKeyRange.bound(DUMP_PREFIX, 'dump;', false, true)));

@@ -1,26 +1,29 @@
 // The library as Svelte state: components read `state` and call commands. No editing logic here.
-import type { Library, LibraryState, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
+import type { Problem, Resolution, ResolvePlan, Warning } from '../model/index.ts';
+import type { Library, LibraryState, ApplyPlanResult, ListedWarning, AnyControl, SelectionChange, ControlArea, ControlProperty, ControlAddress, GroupAddress, Clip, CopySource } from '../storage/index.ts';
 import type { FlowLibrary } from './importFlow.ts';
 import type { SyxLibrary } from './syxFlow.ts';
-import { problemText } from './controlProblems.ts';
-import { problemKey, relocate } from './problemCursor.ts';
+import { showSelection } from './warningList.ts';
 
 export function createStore(library: Library, openMessage?: string) {
   let state = $state.raw<LibraryState>(library.getState());
   let startMessage = $state<string | undefined>(openMessage);
-  // The problem stepper's place lives here, so it survives anything the page does around it.
-  let problemAt = $state(-1);
-  let problemId: string | null = null;
-  const remember = (at: number): void => {
-    problemAt = at;
-    const p = state.problems[at];
-    problemId = p ? problemKey(p) : null;
+  // Warnings (plan 0008 step 6): the library lists every one with its state; the counts, marks and the property panel's line use the open ones of the open setup.
+  let openWarnings = $state.raw<Warning[]>([]);
+  let warningCache: { list: readonly ListedWarning[]; setupId: string } | null = null;
+  const openOf = (s: LibraryState): void => {
+    if (warningCache?.list === s.warnings && warningCache.setupId === s.selection.setupId) return;
+    warningCache = { list: s.warnings, setupId: s.selection.setupId };
+    openWarnings = s.warnings.filter((w) => w.setupId === s.selection.setupId && w.state === 'open');
   };
+  openOf(library.getState());
   library.subscribe((s) => {
     state = s;
-    remember(relocate(s.problems, problemAt, problemId));
+    openOf(s);
   });
-  const done = <T>(r: T): T => { startMessage = undefined; return r; };
+  let exportNote = $state.raw<{ count: number; scope: string } | null>(null);
+  const openCountOf = (s: LibraryState, scope: string): number => s.warnings.filter((w) => w.state === 'open' && (scope === 'all' || w.setupId === scope)).length;
+  const done = <T>(r: T): T => { startMessage = undefined; exportNote = null; return r; };
   /** The commands the import and export flow needs. */
   const flow: FlowLibrary = {
     getState: () => state,
@@ -38,6 +41,7 @@ export function createStore(library: Library, openMessage?: string) {
     exportAllSyx: () => done(library.exportAllSyx()),
   };
   // Dumps the UC4 sent again that were kept before: the list says so.
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- $state.raw: replaced as a whole, never mutated
   let again = $state.raw<ReadonlySet<string>>(new Set());
   return {
     flow,
@@ -45,21 +49,35 @@ export function createStore(library: Library, openMessage?: string) {
     /** Ids of kept dumps the UC4 sent again this session (nothing new was kept). */
     get sentAgain() { return again; },
     /** A line for the help line that stays until the next command (what a file action did). */
-    say: (text: string) => { startMessage = text; },
-    /** Which problem the stepper is on (0-based), or -1 before the first step. */
-    get problemAt() { return problemAt; },
-    /** Steps to the next or previous problem (wrapping), selects it and says what it is. */
-    stepProblem(delta: 1 | -1): void {
-      const problems = state.problems;
-      if (problems.length === 0) return;
-      remember(problemAt < 0 ? (delta === 1 ? 0 : problems.length - 1) : (problemAt + delta + problems.length) % problems.length);
-      done(library.selectProblem(problemAt));
-      startMessage = `Problem ${problemAt + 1} of ${problems.length}: ${problemText(problems[problemAt]!)}`;
-    },
+    say: (text: string, warnFor?: string) => { startMessage = text; exportNote = warnFor === undefined ? null : { count: openCountOf(state, warnFor), scope: warnFor }; },
+    /** The export line's "n warnings" link: the open warnings of what was exported, when there are any. Goes with the line. */
+    get exportNote() { return exportNote; },
+    /** The open setup's OPEN warnings (not ignored, not the factory layout): counts, control marks, the property panel's line. */
+    get warnings() { return openWarnings; },
+    /** Every warning of every setup with its state, for the Warnings dialog and `isWarned` (ignored and factory still count there). */
+    get allWarnings(): readonly ListedWarning[] { return state.warnings; },
+    /** How many warnings of `scope` ('all' or a setup id) are open, for the export line. */
+    openCount: (scope: string): number => openCountOf(state, scope),
+    /** Ignore (one undo step; "Send anyway" and the dialog's Ignore) and show again. */
+    ignore: (list: readonly Warning[]) => done(library.ignore(list)),
+    unignore: (w: Warning) => done(library.unignore(w)),
+    /** What Resolve would offer for a warning or problem as listed; the numbers a `plan` holds count as taken. Changes nothing. */
+    suggest: (item: Warning | Problem, plan?: ResolvePlan): Resolution => library.suggest(item, plan),
+    /** Applies a Resolve plan (decision 35) as one undo step; the selection stays, `changed` says what to flash. */
+    applyPlan: (plan: ResolvePlan): ApplyPlanResult => done(library.applyPlan(plan)),
+    /** The dialog's Show: the warning's setup, groups and a control as ordinary selections (no undo step). */
+    showWarning: (w: Warning, path?: string) => done(library.select(showSelection(w, path))),
+    showProblem: (index: number) => done(library.selectProblem(index)),
     get state() { return state; },
     /** What `openLibrary` said on start; gone after the first command. */
     get startMessage() { return startMessage; },
     selectSetup: (setupId: string) => done(library.select({ setupId, control: null })),
+    /** The switch offer's yes: setup and both groups as ONE undo step (decision 19); Back is `undo`. */
+    switchTo: (target: { setupId: string; encoderGroup: number; faderButtonGroup: number }) =>
+      done(library.select({ setupId: target.setupId, encoderGroup: target.encoderGroup, faderButtonGroup: target.faderButtonGroup }, { asStep: true })),
+    /** Map: replaces a whole control in ONE undo entry, together with a selection change (the touched group, the control). */
+    setControl: (address: ControlAddress, control: AnyControl, selection?: SelectionChange) =>
+      done(library.setControl(address, control, selection ? { selection } : undefined)),
     selectGroup: (kind: 'encoder' | 'faderButton', group: number) =>
       done(library.select(kind === 'encoder' ? { encoderGroup: group } : { faderButtonGroup: group })),
     setGroupName: (encoderGroup: number, input: string) => done(library.setGroupName(state.selection.setupId, encoderGroup, input)),
@@ -67,6 +85,7 @@ export function createStore(library: Library, openMessage?: string) {
     /** A dump the UC4 sent: kept as it came, nothing else changes (the notice asks what to do). */
     keepReceived: (bytes: Uint8Array) => {
       const r = library.keepDump(bytes, 'received');
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- replaces the raw state, never mutates
       if (r.status === 'kept' && r.duplicateOf) again = new Set([...again, r.duplicateOf.id]);
       return r;
     },

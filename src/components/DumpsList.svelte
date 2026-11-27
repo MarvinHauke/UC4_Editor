@@ -35,7 +35,6 @@
 </script>
 
 <section class="dumps" aria-label="Kept dumps" data-help="Kept dumps: every .syx dump imported or received, exactly as it came, newest first">
-  <h3>Kept dumps</h3>
   {#if dumps.length === 0}
     <p class="empty">No dumps yet. A .syx file you import, or a dump you send from the UC4, is kept here.</p>
   {:else}
@@ -72,8 +71,6 @@
 </section>
 
 <style>
-  .dumps { margin-top: var(--space-3); }
-  h3 { margin: 0 0 var(--space-1); font-size: var(--text-md); }
   .empty { margin: 0; font-size: var(--text-sm); color: var(--text-muted); }
   ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   /* Name and meta in the left column; the buttons sit in the right one, centred against those two lines. */

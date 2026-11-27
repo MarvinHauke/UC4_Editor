@@ -107,3 +107,31 @@ export interface Problem {
 export type LoadResult =
   | { status: 'refused'; reason: string; whatToDo: string }
   | { status: 'loaded'; configuration: Uc4Config; problems: Problem[] };
+
+/** The kinds of channel message the editor names; the live module uses the same names. */
+export type MessageKind = 'cc' | 'note' | 'program' | 'pitchBend' | 'aftertouch' | 'polyAftertouch';
+
+/** One message a control can send: kind, channel and number. `pitchBend` and `aftertouch` have no number
+ *  (they collide by channel); for `program` the number is the program. A control may send several keys
+ *  (`CCAh` sends CC n and n + 32; a `PrGC` range sends every program from lower to upper). */
+export interface MessageKey {
+  kind: MessageKind;
+  channel: Ch;
+  number?: V;
+}
+
+/** Something that may be a mistake but is allowed (glossary: Warning): two controls of one setup that can play
+ *  together and send the same message. Never blocks a send. */
+export interface Warning {
+  setupId: string;
+  /** The setup's slot (1–18), when it has one. */
+  slot?: number;
+  /** The two controls, as the paths `validate` uses (`setups[2].encoderGroups[0].encoders[3]`). */
+  controls: [string, string];
+  key: MessageKey;
+  /** Every message either control sends (the whole set, not only the shared one). Storage keeps it with an ignored warning,
+   *  which lapses when it changes. Compare it, don't read it. */
+  signature: string;
+  /** E.g. "Enc3 · EG1 and FAd5 · FG2 both send CC 10 ch 1". */
+  message: string;
+}

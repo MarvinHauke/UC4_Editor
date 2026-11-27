@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { factorySetup } from '../../src/model/index.ts';
+import { controlPathOf, factorySetup } from '../../src/model/index.ts';
 import { GEOMETRY } from '../../src/app/profile/uc4Geometry.ts';
 import { COMMAND_TYPES, FIELDS, VALUE_WORDS, commandTypeLine } from '../../src/app/profile/uc4Properties.ts';
-import { controlPath, problemsOf } from '../../src/app/controlProblems.ts';
+import { problemsOf } from '../../src/app/controlProblems.ts';
 import type { ControlArea } from '../../src/storage/index.ts';
 
 const COUNTS: Record<ControlArea, number> = { encoders: 8, pushButtons: 8, faders: 9, buttons: 8 };
@@ -33,7 +33,7 @@ describe('device profile data', () => {
 
 describe('problemsOf', () => {
   it('finds the problems of one control by path', () => {
-    const path = controlPath(0, 'encoders', 2, 3);
+    const path = controlPathOf(0, 'encoders', 2, 3);
     expect(path).toBe('setups[0].encoderGroups[2].encoders[3]');
     const found = problemsOf([
       { path: `${path}.number`, message: 'bad' },

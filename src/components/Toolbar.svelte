@@ -8,7 +8,7 @@
 
   let { store, confirm }: { store: Store; confirm: Confirm } = $props();
   let picker = $state<HTMLInputElement | null>(null);
-  const ui: FlowUi = { ask: (spec) => { confirm.ask(spec); }, download, say: (text) => { store.say(text); } };
+  const ui: FlowUi = { ask: (spec) => { confirm.ask(spec); }, download, say: (text, warnFor) => { store.say(text, warnFor); } };
 
   async function picked(e: Event & { currentTarget: HTMLInputElement }): Promise<void> {
     const input = e.currentTarget;

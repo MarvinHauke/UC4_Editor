@@ -2,6 +2,7 @@
   // One property of the selected control: a choice (device names with friendly words) or a number.
   import type { Field } from '../app/profile/uc4Properties.ts';
   import { isEmptyEntry } from '../app/numberEntry.ts';
+  import { NUMBER_UNUSED_TYPES } from '../app/glyphText.ts';
   import { VALUE_WORDS, commandTypeLine, maxFor } from '../app/profile/uc4Properties.ts';
 
   interface Props {
@@ -12,10 +13,14 @@
     /** How to set this on the UC4 by hand (the help line). */
     hint?: string;
     onchange: (value: string | number) => void;
+    /** A quiet note under the field when nothing else needs saying (the well-known CC hint). */
+    quiet?: string;
   }
-  let { field, value, control, problem, hint, onchange }: Props = $props();
+  let { field, value, control, problem, hint, onchange, quiet }: Props = $props();
 
   const id = $props.id();
+  // The number the user typed here: the well-known-CC hint is about that, not about a value a suggestion put there (decision 35).
+  let typedNumber = $state<number | null>(null);
   let draftError = $state<string | null>(null);
   // The refused entry's message, shown under the field only after the field is left (nothing moves while typing).
   let leftNote = $state<string | null>(null);
@@ -23,10 +28,10 @@
   // A saved number or a changed range (undo, paste, another command type) makes an old refusal stale.
   $effect(() => { void value; void max; leftNote = null; });
   const known = $derived(field.input === 'choice' && typeof value === 'string' && field.choices.includes(value));
-  const unused = $derived((field.key === 'lower' || field.key === 'upper') && (control.type === 'CCr1' || control.type === 'CCr2'));
+  const unused = $derived(((field.key === 'lower' || field.key === 'upper') && (control.type === 'CCr1' || control.type === 'CCr2')) || (field.key === 'number' && NUMBER_UNUSED_TYPES.includes(control.type)));
   // The range sits inside the field; the line below says something more (a problem, or a note) or is not there.
   const range = $derived(field.input === 'number' ? `${field.min}–${max}` : '');
-  const note = $derived(problem ?? (leftNote !== null ? `${leftNote}; kept ${value}` : null) ?? (field.input === 'number' && unused ? 'Not used by relative types' : ''));
+  const note = $derived(problem ?? (leftNote !== null ? `${leftNote}; kept ${value}` : null) ?? (field.input === 'number' && unused ? (field.key === 'number' ? 'Not sent by this type' : 'Not used by relative types') : (typedNumber !== null && typedNumber === value ? (quiet ?? '') : '')));
   // Red on the field only while its draft is refused or the saved value has a problem; after a refusal the field shows the kept, valid number and only the line stays red.
   const invalid = $derived(draftError !== null || problem !== undefined);
   const alarm = $derived(invalid || leftNote !== null);
@@ -51,7 +56,7 @@
     // Enter on a refused entry does what leaving the field does (decision 45): the kept number comes back, the red goes, the line stays.
     if (n === null) { leftNote = draftError; draftError = null; e.currentTarget.value = String(value); return; }
     leftNote = null;
-    if (n !== value) onchange(n);
+    if (n !== value) { typedNumber = n; onchange(n); }
   }
   function leave(e: KeyboardEvent & { currentTarget: HTMLInputElement }): void {
     // Escape is the way out that does not save: the saved number comes back.
@@ -68,7 +73,7 @@
   }
 </script>
 
-<div class="field" data-property={field.key} data-help="{field.friendly}: {field.input === 'choice' ? `one of ${field.choices.join(' ')}` : `${field.min}–${max}${unused ? '; not used by relative types (CCr1, CCr2)' : ''}`}{typeLine ? ` · ${typeLine}` : ''} · UC4: {hint ?? field.device}">
+<div class="field" data-property={field.key} data-help="{field.friendly}: {field.input === 'choice' ? `one of ${field.choices.join(' ')}` : `${field.min}–${max}${unused ? (field.key === 'number' ? `; the UC4 does not send it for ${control.type}` : '; not used by relative types (CCr1, CCr2)') : ''}`}{typeLine ? ` · ${typeLine}` : ''} · UC4: {hint ?? field.device}">
   <label for={id}><span class="friendly">{field.friendly}</span><span class="device">{field.device}</span></label>
   {#if field.input === 'choice'}
     <select {id} class:invalid value={String(value)} aria-invalid={invalid} onchange={(e) => onchange(e.currentTarget.value)}>

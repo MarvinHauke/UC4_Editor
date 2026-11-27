@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SendPlan } from '../../src/storage/index.ts';
-import { restoreView, whenOf, failedLine, matchLine, sameBytes, sendView, sentLine } from '../../src/app/sendFlow.ts';
+import { sendCheck, restoreView, whenOf, failedLine, matchLine, sameBytes, sendView, sentLine } from '../../src/app/sendFlow.ts';
 
 const ok = (lines: string[], more = 0, total = lines.length + more, over: Partial<Extract<SendPlan, { ok: true }>> = {}): SendPlan => ({
   ok: true, bytes: new Uint8Array([0xf0, 0xf7]), changes: { lines, items: lines.map((text) => text.startsWith('Encoder group 1: name') ? { text, name: { group: 1, from: 'grp1', to: 'send' } } : { text }), more, total },
@@ -91,5 +91,13 @@ describe('whenOf', () => {
     const now = new Date(2026, 10, 18, 12, 0);
     expect(whenOf(new Date(2026, 10, 18, 4, 29).toISOString(), now)).toBe('04:29');
     expect(whenOf(new Date(2026, 10, 17, 4, 29).toISOString(), now)).toBe('2026-11-17 04:29');
+  });
+});
+
+describe('the check line of the Send dialog (decision 30)', () => {
+  it('names the open warnings', () => { expect(sendCheck(2, 1)).toEqual({ clear: false, text: '2 warnings in this setup' }); });
+  it('says what was checked when none are open', () => {
+    expect(sendCheck(0, 3)).toEqual({ clear: true, text: 'No open warnings · 3 ignored' });
+    expect(sendCheck(0, 0)).toEqual({ clear: true, text: 'No open warnings' });
   });
 });

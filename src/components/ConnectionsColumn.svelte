@@ -5,19 +5,26 @@
   import type { Store } from '../app/libraryStore.svelte.ts';
   import type { Confirm } from '../app/confirm.svelte.ts';
   import type { Device } from '../app/deviceStore.svelte.ts';
+  import type { Live } from '../app/liveStore.svelte.ts';
   import type { DumpNotice as Notice } from '../app/dumpNotices.ts';
   import type { DeviceProfile } from '../protocol/profile.ts';
   import { stripInfo } from '../app/connections.ts';
   import ConnectionSection from './ConnectionSection.svelte';
+  import FoldSection from './FoldSection.svelte';
   import DumpNotice from './DumpNotice.svelte';
   import DumpsList from './DumpsList.svelte';
+  import type { Match } from '../live/index.ts';
+  import SwitchOffer from './SwitchOffer.svelte';
+  import FollowSwitch from './FollowSwitch.svelte';
+  import MidiMonitor from './MidiMonitor.svelte';
+  import { useMap } from '../app/mapFlow.svelte.ts';
 
   interface Props {
-    device: Device; profile: Pick<DeviceProfile, 'deviceName'>; store: Store | null; confirm: Confirm;
+    device: Device; live: Live; profile: Pick<DeviceProfile, 'deviceName'>; store: Store | null; confirm: Confirm;
     queue: readonly Notice[]; arrivals: number; open: boolean; onopen: (open: boolean) => void;
-    onsenddump: () => void; onreview: (n: Notice) => void; onexport: (n: Notice) => void; ondismiss: (n: Notice) => void;
+    onsenddump: () => void; onselectmatch: (match: Match) => void; onreview: (n: Notice) => void; onexport: (n: Notice) => void; ondismiss: (n: Notice) => void;
   }
-  let { device, profile, store, confirm, queue, arrivals, open, onopen, onreview, onexport, ondismiss, onsenddump }: Props = $props();
+  let { device, live, profile, store, confirm, queue, arrivals, open, onopen, onreview, onexport, ondismiss, onsenddump, onselectmatch }: Props = $props();
   let strip = $state<HTMLButtonElement | null>(null);
   let panel = $state<HTMLElement | null>(null);
   const info = $derived(stripInfo(profile.deviceName, device.state, queue.length));
@@ -26,7 +33,10 @@
   // Opened by the user (strip or the status bar line): focus moves into the column. A dump never does this.
   export function focusPanel(): void { queueMicrotask(() => { panel?.focus(); }); }
   function toggle(): void { const next = !open; onopen(next); if (next) focusPanel(); }
+  const map = useMap().flow;
   function key(e: KeyboardEvent): void {
+    // An armed Map is cancelled first: Esc does not also close the column.
+    if (e.key === 'Escape' && map.armed) { e.preventDefault(); e.stopPropagation(); map.cancel(); return; }
     if (e.key === 'Escape' && open) { e.preventDefault(); e.stopPropagation(); onopen(false); strip?.focus(); }
   }
 </script>
@@ -44,12 +54,23 @@
   {#if open}
     <div class="panel" role="region" tabindex="-1" aria-label="Connections" bind:this={panel}>
       <h2><span class="dot {info.tone}" aria-hidden="true"></span>Connections</h2>
-      <ConnectionSection {device} {profile} />
+      <FoldSection id="connection" title="Connection" summary={info.text} attention={['denied', 'unsupported', 'choose-port'].includes(device.state.kind)}>
+        <ConnectionSection {device} {profile} onconnect={() => { void live.connect(); }} />
+      </FoldSection>
       {#if queue.length > 0}
         <section aria-label="Received"><h3>Received</h3><DumpNotice {queue} {onreview} {onexport} {ondismiss} /></section>
       {/if}
-      {#if store}<DumpsList {store} {confirm} />{/if}
+      {#if store}
+        <FoldSection id="dumps" title="Kept dumps" summary={store.state.dumps.length === 0 ? 'none yet' : String(store.state.dumps.length)}>
+          <DumpsList {store} {confirm} />
+        </FoldSection>
+      {/if}
       <button type="button" class="how" data-help="How to send a dump · UC4: shows the steps on the device view; the editor only listens" onclick={() => { onsenddump(); }}>How to send a dump from the {profile.deviceName}</button>
+      <FoldSection id="monitor" title="MIDI monitor" defaultOpen fill>
+        {#snippet extra()}<FollowSwitch />{/snippet}
+        {#snippet below()}<SwitchOffer />{/snippet}
+        <MidiMonitor {live} {onselectmatch} />
+      </FoldSection>
     </div>
   {/if}
 </aside>
@@ -61,26 +82,28 @@
     display: flex; flex-direction: column; align-items: center; gap: var(--space-2); width: 100%; height: 100%; padding: var(--space-3) 0; font: inherit; font-size: var(--text-sm);
     color: var(--text); background: transparent; border: 0; border-radius: 0; cursor: pointer; position: relative; overflow: hidden;
   }
-  .conn.open .strip { width: var(--target); height: var(--target); flex-direction: row; justify-content: center; padding: 0; position: absolute; top: 6px; left: 246px; z-index: 1; overflow: visible; }
+  .conn.open .strip { width: var(--target); height: var(--target); flex-direction: row; justify-content: center; padding: 0; position: absolute; top: var(--space-2); left: 286px; z-index: 1; overflow: visible; }
   .conn.open .word { display: none; }
   .strip:hover { background: var(--accent-soft); }
   .strip:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   .word { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; color: var(--text-muted); }
   .arrow { font-size: 20px; font-weight: 600; line-height: 1; color: var(--text); }
-  .conn.open .badge { position: absolute; top: -2px; right: -2px; min-width: 16px; font-size: 11px; line-height: 16px; padding: 0 3px; box-sizing: border-box; }
+  .conn.open .badge { position: absolute; top: -2px; right: -2px; min-width: 16px; font-size: 11px; line-height: 16px; padding: 0 var(--space-1); box-sizing: border-box; }
   .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--led-off); border: 1px solid var(--border); }
   .dot.on { background: var(--led); border-color: var(--led-edge); }
   .dot.warn { background: var(--accent); border-color: var(--accent); }
-  .badge { min-width: 18px; padding: 0 4px; text-align: center; font-size: var(--text-sm); color: var(--on-accent); background: var(--accent); border-radius: 9px; animation: pulse 700ms ease-out 1; }
+  .badge { min-width: 18px; padding: 0 var(--space-1); text-align: center; font-size: var(--text-sm); color: var(--on-accent); background: var(--accent); border-radius: 9px; animation: pulse 700ms ease-out 1; }
   @keyframes pulse { 0% { transform: scale(1.7); } 100% { transform: scale(1); } }
   @media (prefers-reduced-motion: reduce) { .badge { animation: none; } }
-  .panel { position: absolute; top: 0; left: 0; width: 280px; height: 100%; overflow-y: auto; box-sizing: border-box; padding: var(--space-3); background: var(--surface); border-right: 1px solid var(--border); scrollbar-width: thin; }
+  .panel { display: flex; flex-direction: column; position: absolute; top: 0; left: 0; width: 320px; height: 100%; overflow-y: auto; box-sizing: border-box; padding: var(--space-3); background: var(--surface); border-right: 1px solid var(--border); scrollbar-width: thin; }
+  .panel > :global(*) { flex: none; }
   .panel:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
   /* 1320 = WIDE_PX in connections.ts */
-  @media (min-width: 1320px) { .panel { position: static; width: auto; } .conn.open .strip { left: auto; right: 6px; } }
-  h2 { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); padding-right: 36px; font-size: var(--text-lg); line-height: 24px; }
+  @media (min-width: 1320px) { .panel { position: static; width: auto; } .conn.open .strip { left: auto; right: var(--space-2); } }
+  /* Sticky: when the panel scrolls, content passes beneath the heading and never under the close arrow ‹ that sits on its line. */
+  h2 { position: sticky; top: calc(-1 * var(--space-3)); z-index: 0; display: flex; align-items: center; gap: var(--space-2); margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-3)) var(--space-2); padding: var(--space-3) 36px var(--space-1) var(--space-3); background: var(--surface); font-size: var(--text-lg); line-height: 24px; }
   section :global(h3), .panel :global(h3) { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-md); }
-  .how { margin-top: var(--space-3); min-height: var(--target); width: 100%; padding: 3px var(--space-3); font: inherit; text-align: left; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .how { margin-top: var(--space-3); min-height: var(--target); width: 100%; padding: var(--space-1) var(--space-3); font: inherit; text-align: left; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
   .how:hover { background: var(--accent-soft); }
   .how:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
 </style>

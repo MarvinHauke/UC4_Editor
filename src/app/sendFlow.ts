@@ -83,3 +83,9 @@ export function restoreView(plan: RestorePlan, slot: number, name: string, devic
 export const restoredLine = (slot: number, device: string): string =>
   `Restored ${slotName(slot)} from the backup. The ${device} shows ${slotName(slot)} when it's stored. If it shows Err, ${slotName(slot)} may be half written: restore again.`;
 export const restoreMatchLine = (slot: number, device: string): string => `${slotName(slot)} on the ${device} matches the backup`;
+
+/** Decision 30: the check line above the steps. Open warnings are listed by the dialog; with none open it says what was checked. */
+export function sendCheck(open: number, ignored: number): { clear: boolean; text: string } {
+  if (open > 0) return { clear: false, text: `${open} warning${open === 1 ? '' : 's'} in this setup` };
+  return { clear: true, text: ignored > 0 ? `No open warnings · ${ignored} ignored` : 'No open warnings' };
+}

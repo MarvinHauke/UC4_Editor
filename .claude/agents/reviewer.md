@@ -21,12 +21,17 @@ You run in two ways. As an in-process subagent, you return your report. As the p
 
 1. Get the plan step and the fixed point (the branch base, or the commit before the builder's
    work; builders commit after your OK, so review the working tree with `git diff` against it).
-2. Run the `code-review` skill: **Standards** = `CLAUDE.md` ("Rules that hold everywhere", "Hardware
+2. Run `mattpocock-skills:code-review` (not the built-in `code-review`): **Standards** = `CLAUDE.md` ("Rules that hold everywhere", "Hardware
    safety"), the plans' decisions, `docs/feature-plans/GLOSSARY.md` and the checks below; **Spec** =
    the step and its plan. You only report; you never apply fixes.
 3. Add what the skill can't know: device facts from `docs/reference/uc4-device.md`, and the
    hardware-safety checks below.
 4. Run `npm test` and `npm run build`. Report failures, but don't stop at them.
+
+**Branch review.** Before a PR, and every few steps of a long plan, the architect asks for a review of
+the whole branch: fixed point = the branch base, Spec = the whole plan. Look for what a step diff
+can't show: the same helper or style built twice, a module that grew across steps, steps that
+contradict each other, names that drifted from the glossary.
 
 ## What to check
 

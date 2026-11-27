@@ -10,6 +10,13 @@ export interface MidiInputLike {
   name: string | null;
   state: 'connected' | 'disconnected';
   onmidimessage: ((event: { data: Uint8Array | null }) => void) | null;
+  /**
+   * The listener API of the browser's `MIDIInput`. The monitor (`inputs.ts`) listens with these so it never replaces the
+   * dump connection's `onmidimessage`; `open()` is needed because only setting `onmidimessage` opens a port by itself.
+   */
+  addEventListener?(type: 'midimessage', listener: (event: { data: Uint8Array | null }) => void): void;
+  removeEventListener?(type: 'midimessage', listener: (event: { data: Uint8Array | null }) => void): void;
+  open?(): Promise<unknown>;
 }
 
 /** The part of a Web MIDI output this module uses: `sendDump` is the only caller of `send`. */

@@ -10,7 +10,8 @@
   --accent: #2563eb;
   --on-accent: #ffffff;
   --accent-soft: #dbe6fd;
-  --encoder: #2563eb;
+  /* Encoders' own muted steel blue (plan 0008 decision 25): the accent means selection only. Set it equal to --accent to go back to one look. */
+  --encoder: #4a6c8f;
   --fader: #15803d;
   --danger: #b42318;
   --on-danger: #ffffff;
@@ -19,6 +20,8 @@
   --led-edge: #15803d;
   /* The fader/button group shown by an LED above green button n: a colour of its own, not the LED green. */
   --group: #d97706;
+  /* A warning (plan 0008 decision 7): orange, apart from the problem red and from the group LED's amber (--group); the shape (a triangle) is the second cue. */
+  --warn: #c2410c;
   --led-off: #cfcfc9;
   --display-bg: #161616;
   --display-fg: #ef4444;
@@ -53,7 +56,7 @@
     --accent: #6ea0ff;
     --on-accent: #0b1020;
     --accent-soft: #1f2f52;
-    --encoder: #60a5fa;
+    --encoder: #7f9fc4;
     --fader: #4ade80;
     --danger: #ff7b72;
     --on-danger: #0b1020;
@@ -61,6 +64,7 @@
     --led: #4ade80;
     --led-edge: #4ade80;
     --group: #fbbf24;
+    --warn: #fb923c;
     --led-off: #34343a;
   }
 }
@@ -75,7 +79,7 @@
     --accent: #6ea0ff;
     --on-accent: #0b1020;
     --accent-soft: #1f2f52;
-    --encoder: #60a5fa;
+    --encoder: #7f9fc4;
     --fader: #4ade80;
     --danger: #ff7b72;
     --on-danger: #0b1020;
@@ -83,6 +87,7 @@
     --led: #4ade80;
     --led-edge: #4ade80;
     --group: #fbbf24;
+    --warn: #fb923c;
     --led-off: #34343a;
 }
 :root[data-theme='light'] { color-scheme: light; }

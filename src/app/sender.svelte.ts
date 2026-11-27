@@ -18,14 +18,15 @@ export function createSender(device: Pick<Device, 'sendDump'>, deviceName: strin
     get line() { return line; },
     open(slot: number, name: string, kind: SendKind = 'send'): void { dialog = { slot, name, kind }; },
     close(): void { dialog = null; },
-    /** The Send button: one `Sndc` out. The dialog closes either way; a failure's message takes the place of the "Sent" line. */
-    send(slot: number, plan: { bytes: Uint8Array; backup: { dumpId: string; receivedAt: string } | null }, kind: SendKind = 'send'): void {
+    /** The Send button: one `Sndc` out; `onsent` runs only when the port accepted it ("Send anyway" ignores then, not before). The dialog closes either way; a failure's message takes the place of the "Sent" line. */
+    send(slot: number, plan: { bytes: Uint8Array; backup: { dumpId: string; receivedAt: string } | null }, kind: SendKind = 'send', onsent?: () => void): void {
       const r = device.sendDump(plan.bytes);
       dialog = null;
       if (r.ok) {
         sent = { slot, bytes: plan.bytes.slice(), kind };
         line = { text: kind === 'restore' ? restoredLine(slot, deviceName) : sentLine(slot, deviceName), tone: 'ok' };
         record?.(slot, plan);
+        onsent?.();
       }
       else { sent = null; line = { text: failedLine(r.message), tone: 'error' }; }
     },

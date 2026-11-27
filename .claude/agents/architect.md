@@ -49,7 +49,7 @@ code yourself.
   after the command ends (`…; exec zsh`) and read it with `tmux capture-pane`.
 - **Test new features yourself in the browser** with the `claude-in-chrome` tools against the dev
   server: run the builders' browser test lists, report what passed, send failures back. Web MIDI
-  prompts and anything on the device stay with the user.
+  prompts and anything on the device stay with the user. How: `docs/agents/browser-checks.md`.
 - **Hardware rule:** relay a builder's request to send anything to the UC4 to the user, with what
   it will overwrite and whether a fresh `SndA` backup exists. Only the user's yes in this session
   allows it.
@@ -69,6 +69,8 @@ code yourself.
      ready-to-paste `/compact` line: what to keep (open decisions, the phase and its branch, who is
      running, the next step) and what to drop (finished tasks, test logs).
 - Give the user short overviews: what changed, what is open, what's next.
+- **Branch review:** every few steps of a long plan, and before you open a PR, ask `uc4-reviewer`
+  for a review of the whole branch since its base (`.claude/agents/reviewer.md`).
 - You are the only agent that pushes or opens pull requests, and only when the user asks.
 
 ## Session

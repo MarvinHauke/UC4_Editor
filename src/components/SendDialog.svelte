@@ -6,10 +6,12 @@
   import type { Device } from '../app/deviceStore.svelte.ts';
   import type { Sender } from '../app/sender.svelte.ts';
   import type { DeviceProfile } from '../protocol/profile.ts';
-  import { restoreView, sendView } from '../app/sendFlow.ts';
+  import { keepValues } from '../app/warningList.ts';
+  import { restoreView, sendCheck, sendView } from '../app/sendFlow.ts';
   import { useGuide } from '../app/guide.svelte.ts';
   import { RECEIVE_GUIDE } from '../app/profile/uc4Guides.ts';
   import { formatExported } from '../app/format.ts';
+  import { useWarningsDialog } from '../app/warningsDialog.svelte.ts';
 
   let { store, device, sender, profile }: { store: Store; device: Device; sender: Sender; profile: Pick<DeviceProfile, 'deviceName' | 'sendSteps'> } = $props();
   let dialog = $state<HTMLDialogElement | null>(null);
@@ -38,6 +40,11 @@
   // Beside the device view, not over it (decision 33): the dialog is not modal and sits over the properties column, so the
   // drawn UC4 stays in sight with what the guide lights on it.
   const guide = useGuide();
+  const warningsDialog = useWarningsDialog();
+  // Open warnings of the setup that goes out (plan 0008 decision 7): listed here; "Send anyway" ignores them and sends. A restore sends a backup, not this setup.
+  const pending = $derived(target && target.kind === 'send' ? store.allWarnings.filter((w) => w.state === 'open' && w.slot === target.slot) : []);
+  const ignoredCount = $derived(target && target.kind === 'send' ? store.allWarnings.filter((w) => w.state !== 'open' && w.slot === target.slot).length : 0);
+  const check = $derived(sendCheck(pending.length, ignoredCount));
   let dock = $state({ left: 0, top: 0, width: 288, height: 400 });
   function place(): void {
     const r = document.querySelector('[data-area="properties"]')?.getBoundingClientRect();
@@ -56,14 +63,19 @@
       const restoring = target.kind === 'restore';
       const card = {
         text: `Put the ${profile.deviceName} in receive mode (rc00), then ${restoring ? 'Restore' : 'Send'}.`,
-        confirmLabel: restoring ? 'Restore' : 'Send', canConfirm, onconfirm: send, oncancel: () => { sender.close(); },
+        confirmLabel: restoring ? 'Restore' : pending.length > 0 ? 'Send anyway' : 'Send', canConfirm, onconfirm: send, oncancel: () => { sender.close(); },
       };
       mine = card;
       guide.show(RECEIVE_GUIDE, card);
     } else if (mine) { guide.clear(mine); mine = null; }
   });
   onMount(() => { window.addEventListener('resize', place); return () => { window.removeEventListener('resize', place); if (mine) guide.clear(mine); if (dialog?.open) dialog.close(); }; });
-  function send(): void { if (target && plan?.ok && device.connected) sender.send(target.slot, plan, target.kind); }
+  function send(): void {
+    if (!target || !plan?.ok || !device.connected) return;
+    const p = plan, t = target, accepted = pending;
+    // "Send anyway": the warnings are ignored (one undo step) only once the UC4's port took the send.
+    sender.send(t.slot, p, t.kind, accepted.length > 0 ? () => { store.ignore(accepted); } : undefined);
+  }
   // A non-modal dialog has no Esc of its own.
   function key(e: KeyboardEvent): void {
     // Not when another question (a modal confirm) is on top: its Esc is its own.
@@ -82,6 +94,22 @@
   {:else if view?.kind === 'confirm'}
     <h2 id="send-title">{view.title}</h2>
     <p>{view.replaces}</p>
+    {#if pending.length > 0}
+      <div class="checkline">
+        <h3 class="warn"><span aria-hidden="true">▲</span> {check.text}</h3>
+        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to show, resolve or ignore them one by one · this dialog stays">Review…</button>
+      </div>
+      <ul class="changes" aria-label="Warnings">
+        {#each pending.slice(0, 5) as w, i (i)}<li>{keepValues(w.message)}</li>{/each}
+        {#if pending.length > 5}<li class="more">+ {pending.length - 5} more</li>{/if}
+      </ul>
+      <p class="muted">A warning blocks nothing. “Send anyway” ignores these, so they stop counting; Undo brings them back.</p>
+    {:else if target?.kind === 'send'}
+      <div class="checkline">
+        <p class="muted check"><span aria-hidden="true">✓</span> <span class="nowrap">{check.text}</span></p>
+        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to see what was checked and what is ignored · this dialog stays">Review…</button>
+      </div>
+    {/if}
     {#if view.changesTitle}<h3>{view.changesTitle}</h3>{/if}
     {#if view.noChanges}
       <p class="muted">{view.noChanges}</p>
@@ -103,6 +131,12 @@
 </dialog>
 
 <style>
+  .warn { color: var(--warn); }
+  /* The check line: its words left, Review… at the right edge (decision 33). */
+  .checkline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+  .checkline > :global(h3), .checkline > :global(p) { margin: 0; }
+  .review { flex: none; }
+  .nowrap { white-space: nowrap; }
   h3 { margin: var(--space-2) 0 var(--space-1); font-size: var(--text-md); }
   dialog { position: fixed; margin: 0; z-index: 20; box-sizing: border-box; overflow-y: auto; padding: var(--space-3); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
   h2 { margin: 0 0 var(--space-2); font-size: var(--text-lg); overflow-wrap: anywhere; }

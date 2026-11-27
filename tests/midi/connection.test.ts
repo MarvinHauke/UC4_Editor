@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createDeviceConnection, type ConnectionState } from '../../src/midi/connection.ts';
 import { uc4Engine } from '../../src/protocol/engine.ts';
 import { faderfoxUc4 } from '../../src/protocol/profiles/uc4.ts';
-import { FakeAccess, FakeInput, fakeEnv } from './fakeMidi.ts';
+import { FakeInput, fakeEnv } from './fakeMidi.ts';
 
 const portName = faderfoxUc4.portName;
 /** The port logic is tested with a permissive guard (the dumps used are not UC4 dumps); the real guard has its own test in `sending`. */

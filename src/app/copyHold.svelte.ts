@@ -32,6 +32,8 @@ export function createCopyHold(getStore: () => Store | null, section: () => 'enc
     get held() { return clip?.from ?? null; },
     /** The last Copy or Paste with the targets it names (`setup:<id>`, `group:<section>:<n>`, `area:<section>`, `control:<area>:<index>`). */
     get flash() { return flash; },
+    /** The device view's controls named (`control:<area>:<index>`) flash once: what a Resolve plan changed. */
+    pulse(targets: readonly string[]): void { if (targets.length > 0) ping('paste', ...targets); },
     stop(): void { clip = null; },
     /** Copy the selected setup, the group on show in the active section, or the selected control. */
     copy(level: Level): void {

@@ -1,9 +1,9 @@
 // The library module through its public commands (plan 0006 step 1), with the in-memory storage.
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { openLibrary, memoryStorage } from '../../src/storage/index.ts';
+import { openLibrary, memoryStorage, HISTORY_LIMIT } from '../../src/storage/index.ts';
 import type { ControlAddress, Library } from '../../src/storage/index.ts';
-import { factorySetup, load, save, validate } from '../../src/model/index.ts';
+import { changeType, factorySetup, load, save, validate } from '../../src/model/index.ts';
 import type { Uc4Config } from '../../src/model/index.ts';
 
 const clock = () => new Date('2026-11-14T10:00:00.000Z');
@@ -259,15 +259,19 @@ test('the selection survives undo; undo does not select a setup that is gone', a
   assert.equal(lib.getState().selection.encoderGroup, 4);
 });
 
-// 15 s: for runs under load, while several agents test at once.
 test('the history is capped, the oldest step falls away', async () => {
-  const { lib } = await open();
+  const lib = (await openLibrary(memoryStorage(), { now: clock, historyLimit: 5 })).library;
   const id = firstId(lib);
-  for (let i = 0; i < 300; i++) lib.setProperty(enc(id), 'number', i % 100);
+  for (let i = 0; i < 12; i++) lib.setProperty(enc(id), 'number', i);
   let steps = 0;
   while (lib.getState().canUndo) { lib.undo(); steps++; }
-  assert.equal(steps, 200);
-}, 15_000);
+  assert.equal(steps, 5);
+  assert.equal(lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!.number, 6, 'the oldest steps fell away: undo stops after edit 6');
+});
+
+test('the default history holds 200 steps', () => {
+  assert.equal(HISTORY_LIMIT, 200);
+});
 
 // --- subscribe and saving ---
 test('subscribers get every new state, and stop after unsubscribe', async () => {
@@ -801,4 +805,146 @@ test('paste a clip: refusals; copy refuses bad sources', async () => {
   assert.match(lib.copy({ kind: 'encoderGroup', setupId: a, group: 9 }).message!, /no such group/);
   assert.match(lib.copy({ kind: 'control', ...enc(a, 9) }).message!, /no such control/);
   assert.equal(lib.getState().canUndo, false);
+});
+
+// --- selection steps (plan 0008 decision 19) ---
+test('select asStep is one undo step holding the previous selection; undo and redo restore it', async () => {
+  const { lib } = await open();
+  const before = lib.getState().selection;
+  const config = lib.getState().configuration;
+  lib.select({ setupId: 'factory-se05', encoderGroup: 3, faderButtonGroup: 2 }, { asStep: true });
+  const after = lib.getState().selection;
+  assert.equal(after.setupId, 'factory-se05');
+  assert.equal(lib.getState().canUndo, true);
+  lib.undo();
+  assert.deepEqual(lib.getState().selection, before);
+  assert.equal(lib.getState().configuration, config);
+  assert.equal(lib.getState().canRedo, true);
+  lib.redo();
+  assert.deepEqual(lib.getState().selection, after);
+});
+
+test('select asStep with no change, or a refusal, is no step; plain select stays out of the history', async () => {
+  const { lib } = await open();
+  lib.select({ encoderGroup: 0 }, { asStep: true });
+  assert.equal(lib.getState().canUndo, false);
+  assert.ok(lib.select({ setupId: 'nope' }, { asStep: true }).message);
+  assert.equal(lib.getState().canUndo, false);
+  lib.select({ encoderGroup: 4 });
+  assert.equal(lib.getState().canUndo, false);
+});
+
+test('a selection step clears redo, and sits in order with edits', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  lib.setProperty(enc(id), 'channel', 2);
+  lib.select({ encoderGroup: 5 }, { asStep: true });
+  lib.setProperty(enc(id, 0, 5), 'channel', 4);
+  lib.undo();
+  assert.equal(lib.getState().selection.encoderGroup, 5, 'the edit step does not hold a selection');
+  lib.undo();
+  assert.equal(lib.getState().selection.encoderGroup, 0);
+  assert.equal(lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!.channel, 2);
+  lib.select({ faderButtonGroup: 1 }, { asStep: true });
+  assert.equal(lib.getState().canRedo, false);
+});
+
+test('setProperty with a selection: one undo step reverts the edit and the selection, redo brings both', async () => {
+  const { lib } = await open();
+  const target = 'factory-se05';
+  const before = lib.getState().selection;
+  lib.setProperty(enc(target, 2, 6), 'channel', 9, { selection: { setupId: target, encoderGroup: 6 } });
+  const s = lib.getState();
+  assert.deepEqual([s.selection.setupId, s.selection.encoderGroup], [target, 6]);
+  assert.equal(s.configuration.setups.find((x) => x.id === target)!.encoderGroups[6]!.encoders[2]!.channel, 9);
+  lib.undo();
+  assert.deepEqual(lib.getState().selection, before);
+  assert.notEqual(lib.getState().configuration.setups.find((x) => x.id === target)!.encoderGroups[6]!.encoders[2]!.channel, 9);
+  lib.redo();
+  assert.equal(lib.getState().selection.encoderGroup, 6);
+  assert.equal(lib.getState().configuration.setups.find((x) => x.id === target)!.encoderGroups[6]!.encoders[2]!.channel, 9);
+});
+
+test('setProperty with a refused selection changes nothing; an edit that changes nothing still takes the selection as a step', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const r = lib.setProperty(enc(id), 'channel', 9, { selection: { setupId: 'nope' } });
+  assert.ok(r.message);
+  assert.equal(lib.getState().canUndo, false);
+  const same = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!.channel;
+  lib.setProperty(enc(id), 'channel', same, { selection: { encoderGroup: 2 } });
+  assert.equal(lib.getState().selection.encoderGroup, 2);
+  lib.undo();
+  assert.equal(lib.getState().selection.encoderGroup, 0);
+});
+
+// --- setControl ---
+test('setControl replaces a whole control in one undo step, with the selection if given', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[2]!.encoders[1]!;
+  const control = { ...(changeType(old, 'CCr1') as { control: object }).control, channel: 7, number: 12 };
+  const before = lib.getState().selection;
+  const r = lib.setControl(enc(id, 1, 2), control as never, { selection: { encoderGroup: 2, control: { area: 'encoders', index: 1 } } });
+  assert.equal(r.message, undefined);
+  const now = lib.getState().configuration.setups[0]!.encoderGroups[2]!.encoders[1]!;
+  assert.deepEqual([now.type, now.channel, now.number], ['CCr1', 7, 12]);
+  assert.equal(lib.getState().selection.encoderGroup, 2);
+  lib.undo();
+  assert.deepEqual(lib.getState().configuration.setups[0]!.encoderGroups[2]!.encoders[1], old);
+  assert.deepEqual(lib.getState().selection, before);
+  assert.equal(lib.getState().canUndo, false);
+  lib.redo();
+  assert.equal(lib.getState().configuration.setups[0]!.encoderGroups[2]!.encoders[1]!.channel, 7);
+  assert.equal(lib.getState().selection.encoderGroup, 2);
+});
+
+test('setControl refuses a control the device cannot hold, an unknown target or selection, and changes nothing', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!;
+  const config = lib.getState().configuration;
+  assert.ok(lib.setControl(enc(id), { ...old, type: 'CCr1x' } as never).message);
+  assert.ok(lib.setControl(enc(id), { ...old, channel: 99 } as never).message);
+  assert.ok(lib.setControl(enc('nope'), old).message);
+  assert.ok(lib.setControl(enc(id, 99), old).message);
+  assert.ok(lib.setControl(enc(id), old, { selection: { setupId: 'nope' } }).message);
+  assert.equal(lib.getState().configuration, config);
+  assert.equal(lib.getState().canUndo, false);
+});
+
+test('setControl with the same control is no step, unless a selection comes with it', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!;
+  lib.setControl(enc(id), { ...old });
+  assert.equal(lib.getState().canUndo, false);
+  lib.setControl(enc(id), { ...old }, { selection: { encoderGroup: 3 } });
+  assert.equal(lib.getState().selection.encoderGroup, 3);
+  lib.undo();
+  assert.equal(lib.getState().selection.encoderGroup, 0);
+});
+
+test('setControl: a control with an unknown key is refused (validate flags unknown fields)', async () => {
+  const { lib } = await open();
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!;
+  const r = lib.setControl(enc(id), { ...old, channel: 5, bogus: 1 } as never);
+  const now = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]! as unknown as Record<string, unknown>;
+  assert.ok(r.message);
+  assert.equal('bogus' in now, false);
+  assert.equal(lib.getState().canUndo, false);
+});
+
+test('setControl refuses only problems the edit introduces, not an existing unrelated one', async () => {
+  const c = structuredClone(await open().then((o) => o.lib.getState().configuration));
+  c.setups[0]!.encoderGroups[0]!.encoders[0]!.lower = 200; // an existing problem
+  const { library: lib } = await openLibrary(memoryStorage(save(c)), { now: clock });
+  const id = firstId(lib);
+  const old = lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!;
+  const r = lib.setControl(enc(id), { ...old, label: 'x' });
+  assert.equal(r.message, undefined);
+  assert.equal(lib.getState().configuration.setups[0]!.encoderGroups[0]!.encoders[0]!.label, 'x');
+  // an edit that adds a new problem is still refused
+  assert.ok(lib.setControl(enc(id), { ...old, label: 'x', channel: 99 } as never).message);
 });

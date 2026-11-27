@@ -16,13 +16,25 @@
   import { loadOpen, saveOpen, WIDE_PX } from './connections.ts';
   import { createDevice } from './deviceStore.svelte.ts';
   import { createDeviceConnection } from '../midi/connection.ts';
-  import { browserMidiEnv } from '../midi/browserEnv.ts';
+  import { appMidiEnv } from './midiEnv.ts';
+  import { createMidiInputs } from '../midi/inputs.ts';
+  import { createLive, LIVE_CONTEXT } from './liveStore.svelte.ts';
+  import { selectMatch } from './liveView.ts';
+  import { createFollow, FOLLOW_CONTEXT } from './followState.svelte.ts';
+  import { factoryReset, isWarned } from './factoryControl.ts';
+  import { followTarget, isEditingField, shouldFollow } from './follow.ts';
+  import { createSwitchNote, SWITCH_CONTEXT, type SwitchUi } from './switchNote.svelte.ts';
+  import { createMapFlow, MAP_CONTEXT, type MapUi } from './mapFlow.svelte.ts';
+  import type { Match } from '../live/index.ts';
   import { GUIDE_CONTEXT, createGuide } from './guide.svelte.ts';
   import { COPY_CONTEXT, createCopyHold } from './copyHold.svelte.ts';
   import { copyKey, isTextTarget, levelOf } from './copyPaste.ts';
   import { matchKey } from './keyTable.ts';
   import KeysHelp from '../components/KeysHelp.svelte';
   import { createSender } from './sender.svelte.ts';
+  import WarningsDialog from '../components/WarningsDialog.svelte';
+  import { createWarningsDialog, WARNINGS_CONTEXT } from './warningsDialog.svelte.ts';
+  import { createResolvePlan, RESOLVE_PLAN_CONTEXT } from './resolvePlanState.svelte.ts';
   import SendDialog from '../components/SendDialog.svelte';
   import DumpGuide from '../components/DumpGuide.svelte';
   import TourOverlay from '../components/TourOverlay.svelte';
@@ -51,8 +63,17 @@
   const settings = createSettings();
   setContext(SETTINGS_CONTEXT, settings);
   // The device connection: listening only; it asks the browser for MIDI access only when the user presses Connect.
-  const device = createDevice(createDeviceConnection({ portName: faderfoxUc4.portName, deviceName: faderfoxUc4.deviceName, env: browserMidiEnv(), checkSendable: uc4Engine.checkSendable }));
+  const midiEnv = appMidiEnv();
+  const device = createDevice(createDeviceConnection({ portName: faderfoxUc4.portName, deviceName: faderfoxUc4.deviceName, env: midiEnv, checkSendable: uc4Engine.checkSendable }));
+  // The MIDI monitor's inputs (plan 0008): the same browser access, listening only.
+  const live = createLive(createMidiInputs({ portName: faderfoxUc4.portName, env: midiEnv, connectLabel: `Connect ${faderfoxUc4.deviceName}` }));
+  setContext(LIVE_CONTEXT, live);
   setContext(GUIDE_CONTEXT, createGuide());
+  setContext(RESOLVE_PLAN_CONTEXT, createResolvePlan());
+  const warningsDialog = createWarningsDialog();
+  /** Ignored and factory-layout warnings of the open setup: the status bar's "✓ No warnings · n ignored" (decision 30). */
+  const ignoredHere = $derived.by(() => { const s = store; return s ? s.allWarnings.filter((w) => w.setupId === s.state.selection.setupId && w.state !== 'open').length : 0; });
+  setContext(WARNINGS_CONTEXT, warningsDialog);
   const notices = createNotices();
   const dumpGuide = createDumpGuide();
   const tour = createTour();
@@ -104,6 +125,78 @@
     if (settings.theme === 'system') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = settings.theme;
   });
+  // The live view ranks matches by the open setup and its two group selections (plan 0008 decision 4).
+  $effect(() => {
+    const s = store?.state;
+    live.setContext(s ? { configuration: s.configuration, setupId: s.selection.setupId, encoderGroup: s.selection.encoderGroup, faderButtonGroup: s.selection.faderButtonGroup } : null);
+  });
+  /** A click on a UC4 row: shows its best match (its group, and its setup when it is another one) as ordinary selections. */
+  function showMatch(match: Match): void {
+    if (store) selectMatch(store, match, store.state.selection.setupId);
+  }
+  /** The offer's yes: the target's setup and both groups in one selection change. */
+  const switchNote = createSwitchNote();
+  function acceptOffer(silence: boolean): void {
+    if (!store) return;
+    const offer = live.acceptOffer();
+    if (!offer) return;
+    store.switchTo(offer.target); // one undo step
+    if (silence) live.declineOffer(true);
+    switchNote.show(offer, store.state.configuration);
+  }
+  /** Back is the undo of the switch step. */
+  function switchBack(): void {
+    if (!switchNote.note || !store) return;
+    switchNote.clear();
+    store.undo();
+  }
+  // The offer and its Back note: shown in the Connections column, or in the status bar while the column is closed.
+  // Follow (decision 25): the last UC4 message's best match is selected as the message arrives. It is a selection, not an undo step.
+  const follow = createFollow();
+  setContext(FOLLOW_CONTEXT, follow);
+  $effect(() => {
+    const touched = live.lastTouched; // a new object per message, so the same control touched twice still follows
+    if (!touched || !follow.on) return;
+    untrack(() => {
+      // Any field the user may be typing in pauses Follow, except the monitor's own input picker.
+      const active = document.activeElement;
+      const fieldFocused = isEditingField(active) && active?.closest('.monitor') === null;
+      if (!store || !shouldFollow({ on: follow.on, armed: live.armed !== null, fieldFocused })) return;
+      const target = followTarget(store.state.selection, touched.control);
+      if (target) showMatch(target);
+    });
+  });
+  const switchUi: SwitchUi = {
+    get offer() { return follow.on ? null : live.offer; },
+    get note() { return switchNote.note; },
+    accept: acceptOffer,
+    decline: (silence) => { live.declineOffer(silence); },
+    back: switchBack,
+  };
+  setContext(SWITCH_CONTEXT, switchUi);
+  // Map (plan 0008 steps 7 and 8): arm a monitor row, then click a control or move one on the UC4.
+  const focusUpper = (): void => { void tick().then(() => { document.querySelector<HTMLElement>('[data-property="upper"] input')?.focus(); }); };
+  const mapFlow = createMapFlow({ live, store: () => store, spotRelative: () => settings.spotRelative, focusUpper });
+  const mapTargets = $derived.by(() => {
+    const key = live.armed;
+    return key ? new Map(live.mapTargets(key).map((t) => [t.control.id, { ok: t.ok, reason: t.reason }])) : new Map<string, { ok: boolean; reason: string | null }>();
+  });
+  const mapUi: MapUi = {
+    flow: mapFlow, get targets() { return mapTargets; },
+    canReset: (ref) => (store ? isWarned(store.state.configuration, store.allWarnings, ref) && factoryReset(store.state.configuration, ref, '') !== null : false),
+  };
+  setContext(MAP_CONTEXT, mapUi);
+  // Map by touch: the first UC4 message that matches a control while armed picks it.
+  $effect(() => { if (live.armed !== null && live.touchTarget !== null) untrack(() => { mapFlow.touch(); }); });
+  // The result line goes when anything else changes the configuration (Undo would undo that instead).
+  $effect(() => { const c = store?.state.configuration; if (c !== undefined) mapFlow.changed(c); });
+  $effect(() => { const rows = live.rows; untrack(() => { mapFlow.rowsChanged(rows); }); });
+  $effect(() => {
+    const state = store?.state;
+    if (state) switchNote.changed({ setupId: state.selection.setupId, encoderGroup: state.selection.encoderGroup, faderButtonGroup: state.selection.faderButtonGroup }, state.configuration);
+  });
+  // The monitor listens whenever the UC4 connection holds MIDI access, whichever Connect button got it (the access is shared).
+  $effect(() => { if (device.state.kind === 'connected') void live.connect(); });
   onMount(() => {
     const mq = matchMedia(`(min-width: ${WIDE_PX}px)`);
     const onWide = (): void => { wide = mq.matches; };
@@ -111,6 +204,7 @@
     const detach = help.attach();
     const stopSysex = device.onSysex((m) => { received(m.bytes); }); // listening only
     void device.reconnect(); // silent: only when the permission is already given
+    void live.reconnect();
     opening.then(
       ({ library, message }) => {
         store = createStore(library, message);
@@ -121,7 +215,7 @@
         openError = `The library could not be opened (${e instanceof Error ? e.message : String(e)}). Reload to try again.${lost}`;
       },
     );
-    return () => { mq.removeEventListener('change', onWide); stopSysex(); detach(); device.dispose(); };
+    return () => { mq.removeEventListener('change', onWide); stopSysex(); detach(); device.dispose(); live.dispose(); };
   });
 
   // The keys that work anywhere (key table, "Anywhere"): Cmd-Z / Shift-Cmd-Z over the whole library (not while typing, nor behind a dialog), Cmd-, for Settings, ? for the key help.
@@ -169,6 +263,7 @@
   // A copy that is held ends first (plan 0006 decision 30): the first Esc stops pasting, the next leaves edit mode.
   function leaveEditMode(e: KeyboardEvent): void {
     if (e.key !== 'Escape' || e.defaultPrevented) return;
+    if (mapFlow.armed !== null && !(e.target instanceof Element && e.target.closest('dialog, [role="dialog"]'))) { mapFlow.cancel(); return; }
     if (e.target instanceof Element && e.target.closest('input, select, textarea, [contenteditable], dialog, [role="dialog"]')) return;
     if (copyHold.held) { copyHold.stop(); return; }
     if (!store?.state.selection.control) return;
@@ -187,7 +282,10 @@
   }
   // A click on empty ground in the device view leaves edit mode; a control, a button or the drawn buttons do not.
   function deviceClick(e: MouseEvent): void {
-    if (!store?.state.selection.control || !(e.target instanceof Element)) return;
+    if (!(e.target instanceof Element)) return;
+    // Armed Map: a click on empty space cancels it (a click on a control maps it, handled by the control).
+    if (mapFlow.armed !== null && !e.target.closest('[data-control], button, [role="button"]')) { mapFlow.cancel(); return; }
+    if (!store?.state.selection.control) return;
     if (e.target.closest('[data-control], button, [role="button"]')) return;
     store.selectControl(null);
   }
@@ -222,7 +320,7 @@
     <button type="button" class="gear" data-settings-toggle bind:this={gear} aria-label="Settings" aria-expanded={settings.open}
       data-help="Settings: theme, keys and slide speed · Cmd-," onclick={() => { settings.toggle(); }}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg></button>
   </header>
-  <ConnectionsColumn bind:this={column} onsenddump={() => { dumpGuide.show(); }} {device} profile={faderfoxUc4} {store} {confirm} queue={notices.queue} open={connOpen} onopen={setConnOpen} {arrivals}
+  <ConnectionsColumn bind:this={column} {live} onselectmatch={showMatch} onsenddump={() => { dumpGuide.show(); }} {device} profile={faderfoxUc4} {store} {confirm} queue={notices.queue} open={connOpen} onopen={setConnOpen} {arrivals}
     onreview={review} onexport={exportNotice} ondismiss={(n) => { notices.remove(n.dumpId); }} />
   <SettingsPanel {settings} opener={() => gear} onallkeys={showKeys} ontour={startTour} />
   <KeysHelp open={keysOpen} vim={settings.keys === 'vim'} onclose={closeKeys} />
@@ -233,11 +331,13 @@
   <ListResizeHandle width={shownWidth > 0 ? shownWidth : listWidth} onresize={(w) => { listWidth = w; }} oncommit={saveWidth} />
   <aside class="list" bind:offsetWidth={shownWidth} data-area="setups" data-copy-level="setup" data-help={listHelp}>{#if store}<LibraryList {store} {confirm} {device} {sender} profile={faderfoxUc4} />{/if}</aside>
   <ConfirmDialog {confirm} />
+  {#if store}<WarningsDialog {store} warnings={warningsDialog} />{/if}
   {#if store}<SendDialog {store} {device} {sender} profile={faderfoxUc4} />{/if}
   <TourOverlay {tour} onget={getSetups} profile={faderfoxUc4} />
   <WelcomeCard {welcome} profile={faderfoxUc4} />
   {#if store}<DumpGuide {dumpGuide} {device} {sender} profile={faderfoxUc4} />{/if}
-  <StatusBar help={helpLine} state={store?.state ?? null} problemAt={store?.problemAt ?? -1} onstep={(d) => store?.stepProblem(d)}
+  <StatusBar help={helpLine} state={store?.state ?? null} onopenproblems={() => { warningsDialog.show(); }} switchUi={connOpen ? null : switchUi} warnings={store?.warnings ?? []} ignored={ignoredHere} onopenwarnings={() => { warningsDialog.show(); }}
+    exportWarnings={store?.startMessage !== undefined ? (store.exportNote?.count ?? 0) : 0} onopenexport={() => { const n = store?.exportNote; if (n) warningsDialog.show({ scope: n.scope === 'all' ? 'all' : 'this' }); }}
     waiting={notices.queue.length} onopenconnections={openConnections} />
 </div>
 
@@ -256,7 +356,7 @@
     grid-template-areas: 'top top top top top' 'conn props centre split list' 'foot foot foot foot foot';
   }
   /* 1320 = WIDE_PX in connections.ts: the Connections column is a real column from there. */
-  @media (min-width: 1320px) { .app.conn-open { --left-col: 280px; } }
+  @media (min-width: 1320px) { .app.conn-open { --left-col: 320px; } }
   @media (min-width: 1100px) { .app { --device-min: 516px; } .centre { padding-inline: var(--space-2); } }
   .app > :global(footer) { grid-area: foot; }
   .app > :global(.handle) { grid-area: split; }

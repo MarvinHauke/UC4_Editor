@@ -14,23 +14,23 @@ export interface FlowLibrary {
 export interface FlowUi {
   ask(spec: ConfirmSpec): void;
   download(file: ExportFile): void;
-  /** A line for the help line that stays until the next command. */
-  say(text: string): void;
+  /** A line for the help line that stays until the next command. `warnFor` ('all' or a setup id): the line also offers the open warnings of what was exported (plan 0008 step 6). */
+  say(text: string, warnFor?: string): void;
 }
 
 const slotName = (n: number): string => `SE${String(n).padStart(2, '0')}`;
 const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-function deliver(result: ExportResult, what: string, ui: FlowUi): void {
+function deliver(result: ExportResult, what: string, ui: FlowUi, warnFor: string): void {
   if (!result.file) return; // refused: the library's message is on the help line
   ui.download(result.file);
-  ui.say(`Exported ${what} as ${result.file.name}. It is in your browser's downloads.`);
+  ui.say(`Exported ${what} as ${result.file.name}. It is in your browser's downloads.`, warnFor);
 }
-export const exportAll = (lib: Pick<FlowLibrary, 'exportWhole'>, ui: FlowUi): void => { deliver(lib.exportWhole(), 'all setups', ui); };
+export const exportAll = (lib: Pick<FlowLibrary, 'exportWhole'>, ui: FlowUi): void => { deliver(lib.exportWhole(), 'all setups', ui, 'all'); };
 export function exportOne(lib: Pick<FlowLibrary, 'getState' | 'exportSetup'>, ui: FlowUi): void {
   const state = lib.getState();
   const summary = state.setups.find((s) => s.id === state.selection.setupId);
-  deliver(lib.exportSetup(state.selection.setupId), `"${summary?.name ?? 'setup'}"`, ui);
+  deliver(lib.exportSetup(state.selection.setupId), `"${summary?.name ?? 'setup'}"`, ui, state.selection.setupId);
 }
 
 export function slotOptions(state: LibraryState): SlotOption[] {

@@ -14,7 +14,13 @@
   import { canPasteControl, isHeldControl } from '../app/copyPaste.ts';
   import { useGuide } from '../app/guide.svelte.ts';
   import { FRAMES, GROUP_LED, groupPitch, CROSSFADER, GROUP_LED_X, VIEWS } from '../app/profile/uc4Geometry.ts';
-  import { controlPath, problemsOf } from '../app/controlProblems.ts';
+  import { problemsOf } from '../app/controlProblems.ts';
+  import { controlPathOf } from '../model/index.ts';
+  import { warningsOf } from '../app/warningMarks.ts';
+  import { glyphNumber } from '../app/glyphText.ts';
+  import { useLive } from '../app/liveStore.svelte.ts';
+  import { useMap } from '../app/mapFlow.svelte.ts';
+  import { controlId } from '../live/index.ts';
   import { controlAt, groupOf, selectedSetup } from '../app/selectors.ts';
   import { printedGroupName } from '../app/printedNames.ts';
   import { PRINTED_GROUP_NAMES } from '../app/profile/uc4PrintedNames.ts';
@@ -42,7 +48,7 @@
     return { state, setup, setupIndex, eg: state.selection.encoderGroup, fg: state.selection.faderButtonGroup };
   });
   const group = $derived(part === 'upper' ? view.eg : view.fg);
-  type Shown = { type: string; number: number; label?: string };
+  type Shown = { type: string; number: number; lower?: number; upper?: number; label?: string };
   const shown = $derived<[ControlArea, Shown[]][]>(
     part === 'upper'
       ? [['encoders', view.setup.encoderGroups[view.eg]!.encoders], ['pushButtons', view.setup.encoderGroups[view.eg]!.pushButtons]]
@@ -51,7 +57,12 @@
   const name = $derived(view.setup.encoderGroups[view.eg]!.name);
   const selected = $derived(view.state.selection.control);
   const count = (area: ControlArea, index: number): number =>
-    problemsOf(view.state.problems, controlPath(view.setupIndex, area, groupOf(view.state, area), index)).length;
+    problemsOf(view.state.problems, controlPathOf(view.setupIndex, area, groupOf(view.state, area), index)).length;
+  const live = useLive();
+  const map = useMap();
+  const idOf = (area: ControlArea, index: number): string => controlId(view.setup.id, area, groupOf(view.state, area), index);
+  const warned = (area: ControlArea, index: number): number =>
+    warningsOf(store.warnings, controlPathOf(view.setupIndex, area, groupOf(view.state, area), index)).length;
   // The slide's length is a setting (0–400 ms); with less motion asked for by the system it is off unless the user set a speed.
   const settings = useSettings();
   const active = useActiveArea();
@@ -77,6 +88,8 @@
   const duration = $derived(instant ? 0 : slideDuration(settings.slideMs, reduced));
   // Plain click selects the control; Shift-click (or Shift + Enter) on encoder n or green button n shows group n.
   function select(area: ControlArea, index: number, shift: boolean): void {
+    // While Map is armed a click maps the control; one that can't take the message does nothing (its reason is in the help line).
+    if (map.flow.armed !== null) { if (map.targets.get(idOf(area, index))?.ok) map.flow.click(area, index); return; }
     if (shift && area === 'encoders') ongroup('encoder', index);
     else if (shift && area === 'buttons') ongroup('faderButton', index);
     else { const kind = kindOfArea(area); if (kind) active.setSection(kind); store.selectControl({ area, index }); }
@@ -108,9 +121,13 @@
     onpaste={() => { copy.pasteControlOnto(area, index); }}
     lit={guide.data?.lit.some((l) => l.area === area && l.index === index) ?? false}
     type={control.type}
-    number={control.number}
+    number={glyphNumber(area, control)}
     selected={selected?.area === area && selected.index === index}
     problemCount={count(area, index)}
+    warningCount={warned(area, index)}
+    live={live.controlStates.get(idOf(area, index))}
+    touchedAt={live.lastTouched?.control.id === idOf(area, index) ? live.lastTouched.at : null}
+    mapState={map.flow.armed === null ? undefined : (map.targets.get(idOf(area, index)) ?? { ok: false, reason: 'This control is not in the open setup.' })}
     shiftTarget={shiftTarget(area, index)}
     tabStop={activeKey === `${area}:${index}`}
     onarrow={(d) => { onarrow({ area, index }, d); }}

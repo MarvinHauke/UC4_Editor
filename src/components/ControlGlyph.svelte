@@ -3,16 +3,20 @@
   import { matchKey } from '../app/keyTable.ts';
   import { useCopyHold } from '../app/copyHold.svelte.ts';
   // One drawn control: its shape, "type number" text, a mark when it has problems. A button for mouse and keyboard.
+  import { isEncoderArea } from '../model/index.ts';
   import type { ControlArea } from '../storage/index.ts';
   import { GEOMETRY } from '../app/profile/uc4Geometry.ts';
   import type { Direction } from '../app/navigation.ts';
   import { AREA_NAMES, controlNumber } from '../app/profile/uc4Properties.ts';
+  import type { ControlState } from '../live/index.ts';
+  import { relativeAngle, ringPath, stateText } from '../app/liveView.ts';
 
   interface Props {
     area: ControlArea;
     index: number;
     type: string;
-    number: number;
+    /** What the control sends beside its type, as text (`glyphNumber`): empty for pitch bend and aftertouch. */
+    number: string;
     selected: boolean;
     /** A guide points at this control: the accent on its own outline. */
     lit?: boolean;
@@ -20,6 +24,14 @@
     pasteTarget?: boolean;
     onpaste?: () => void;
     problemCount: number;
+    /** Warnings that name this control (plan 0008): an amber triangle beside the problem mark; nothing is blocked. */
+    warningCount?: number;
+    /** What the UC4 last sent from this control (plan 0008): absent while unknown, never a guessed position. */
+    live?: ControlState;
+    /** When the last UC4 message was matched to this control (its `at`), else null: a glow of about a second, again on every message. */
+    touchedAt?: number | null;
+    /** While Map is armed: can this control take the row's message; `reason` is the help line when not. Undefined when Map is not armed. */
+    mapState?: { ok: boolean; reason: string | null };
     /** `shift`: Shift was held (click or Enter): on encoders and green buttons that picks the group, as on the UC4. */
     onselect: (shift: boolean) => void;
     /** For encoders and green buttons: the group a Shift-click shows ("encoder group 3 · Send 3"). */
@@ -30,7 +42,7 @@
     onfocused: () => void;
   }
   const copy = useCopyHold(); // needs COPY_CONTEXT, which App sets // needs COPY_CONTEXT (AreaView's parent sets it)
-  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
+  let { area, index, type, number, selected, lit = false, pasteTarget = false, onpaste, problemCount, warningCount = 0, live, touchedAt = null, mapState, onselect, shiftTarget, tabStop, onarrow, onfocused }: Props = $props();
 
   const shape = $derived(GEOMETRY[area][index]!);
   const name = $derived(`${AREA_NAMES[area].singular} ${controlNumber(index)}`);
@@ -42,10 +54,11 @@
     return shape.horizontal ? { x: shape.x + shape.width - 20, y: shape.y } : { x: shape.x + shape.width / 2, y: shape.y };
   });
   const kindWord = $derived(AREA_NAMES[area].singular.toLowerCase());
-  const kindClass = $derived(area === 'encoders' || area === 'pushButtons' ? 'enc' : 'fb');
+  const kindClass = $derived(isEncoderArea(area) ? 'enc' : 'fb');
   // Schema (decision 39): what it is · the one way · UC4. On encoders and green buttons the one way is Shift + click.
-  const help = $derived(
-    `${name}: ${type} ${number}${problemCount > 0 ? ` · ${problemCount} problem${problemCount === 1 ? '' : 's'}` : ''} · ${shiftTarget ? `Shift + click: ${shiftTarget}` : 'click to edit'}${shiftTarget ? ' · UC4: Shift + press' : ''}`,
+  const liveText = $derived(stateText(live));
+  const help = $derived(mapState ? (mapState.ok ? `${name}: click to map the row's message here` : (mapState.reason ?? `${name} can't take this message`)) :
+    `${name}: ${`${type} ${number}`.trim()}${liveText ? ` · live ${liveText}` : ''}${problemCount > 0 ? ` · ${problemCount} problem${problemCount === 1 ? '' : 's'}` : ''}${warningCount > 0 ? ` · ${warningCount} warning${warningCount === 1 ? '' : 's'}` : ''} · ${shiftTarget ? `Shift + click: ${shiftTarget}` : 'click to edit'}${shiftTarget ? ' · UC4: Shift + press' : ''}`,
   );
   function key(e: KeyboardEvent): void {
     const move = matchKey(e, ['controlMove']);
@@ -55,6 +68,23 @@
   // Centre of the text block; faders put it under the track, the others inside the shape.
   const cx = $derived(shape.shape === 'disc' ? shape.cx : shape.x + shape.width / 2);
   const cy = $derived(shape.shape === 'disc' ? shape.cy : shape.shape === 'pill' ? shape.y + shape.height / 2 : shape.y + shape.height);
+  // The UC4's own values (plan 0008 step 2): a fader's cap on its track, an encoder's ring, a button's press. Unknown draws nothing.
+  const fraction = $derived(live?.kind === 'absolute' ? live.fraction : null);
+  // The cap itself moves (decision 23): centre of the cap along the track, 0 at the bottom (fader 9: left), 127 at the top (right); unknown stays in the middle.
+  const capCentre = $derived.by((): number => {
+    if (shape.shape !== 'fader') return 0;
+    const f = fraction ?? 0.5;
+    if (shape.horizontal) return shape.x + 24 + f * (shape.width - 48);
+    const top = shape.y + 24, bottom = shape.y + shape.height - 24;
+    return bottom - f * (bottom - top);
+  });
+  const ring = $derived(shape.shape === 'disc' && (area === 'encoders') && live?.kind === 'absolute' && fraction !== null ? ringPath(shape.cx, shape.cy, shape.r + 7, fraction) : '');
+  const tick = $derived.by((): { x: number; y: number } | null => {
+    if (shape.shape !== 'disc' || area !== 'encoders' || live?.kind !== 'relative') return null;
+    const a = (relativeAngle(live.total) * Math.PI) / 180, r = shape.r + 7;
+    return { x: shape.cx + r * Math.sin(a), y: shape.cy - r * Math.cos(a) };
+  });
+  const pressed = $derived(live?.kind === 'button' ? live.on : false);
   const mark = $derived(
     shape.shape === 'disc' ? { x: shape.cx + shape.r * 0.7, y: shape.cy - shape.r * 0.7 } : { x: shape.x + shape.width - 2, y: shape.y + 2 },
   );
@@ -64,13 +94,16 @@
   class="control {kindClass}"
   class:selected
   class:lit
+  class:map-ok={mapState?.ok === true}
+  class:map-dim={mapState?.ok === false}
+  aria-disabled={mapState?.ok === false ? true : undefined}
   class:paste-dim={pasteTarget}
   use:flashOn={{ flash: copy.flash, target: `control:${area}:${index}`, svg: true }}
   data-control="{area}:{index}"
   role="button"
   tabindex={tabStop ? 0 : -1}
   aria-pressed={selected}
-  aria-label="{name}, {type} {number}{problemCount > 0 ? `, ${problemCount} problems` : ''}"
+  aria-label="{name}, {`${type} ${number}`.trim()}{liveText ? `, live ${liveText}` : ''}{problemCount > 0 ? `, ${problemCount} problems` : ''}{warningCount > 0 ? `, ${warningCount} warnings` : ''}"
   data-help={help}
   onclick={(e) => { onselect(e.shiftKey); }}
   onkeydown={key}
@@ -83,13 +116,13 @@
   {:else}
     <rect class="hit hitbox" x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx="8" />
     {#if shape.horizontal}
-      <line class="track" x1={shape.x + 10} y1={shape.y + shape.height / 2 - 6} x2={shape.x + shape.width - 10} y2={shape.y + shape.height / 2 - 6} />
-      <rect class="handle" x={cx - 14} y={shape.y + 2} width="28" height="44" rx="3" />
-      <text class="idx" x={cx} y={shape.y + 29}>{controlNumber(index)}</text>
+      <line class="track" x1={shape.x + 10} y1={shape.y + shape.height / 2} x2={shape.x + shape.width - 10} y2={shape.y + shape.height / 2} />
+      <rect class="handle" x={capCentre - 14} y={shape.y + shape.height / 2 - 22} width="28" height="44" rx="3" />
+      <text class="idx" x={capCentre} y={shape.y + shape.height / 2 + 5}>{controlNumber(index)}</text>
     {:else}
       <line class="track" x1={cx} y1={shape.y + 6} x2={cx} y2={shape.y + shape.height - 6} />
-      <rect class="handle" x={cx - 13} y={shape.y + 76} width="26" height="36" rx="3" />
-      <text class="idx" x={cx} y={shape.y + 98}>{controlNumber(index)}</text>
+      <rect class="handle" x={cx - 13} y={capCentre - 18} width="26" height="36" rx="3" />
+      <text class="idx" x={cx} y={capCentre + 4}>{controlNumber(index)}</text>
     {/if}
   {/if}
 
@@ -98,7 +131,7 @@
     <text class="type" x={cx} y={cy + 3}>{type}</text>
     <text class="num" x={cx} y={cy + 18}>{number}</text>
   {:else if shape.shape === 'pill'}
-    <text class="type" x={cx} y={cy + 4}>{type} {number}</text>
+    <text class="type" x={cx} y={cy + 4}>{`${type} ${number}`.trim()}</text>
   {:else}
     <text class="type" x={cx} y={cy + 16}>{type}</text>
     <text class="num" x={cx} y={cy + 30}>{number}</text>
@@ -107,6 +140,29 @@
   {#if problemCount > 0}
     <circle class="problem" cx={mark.x} cy={mark.y} r="6" />
     <text class="problem-text" x={mark.x} y={mark.y + 4}>!</text>
+  {/if}
+  {#if ring}<path class="live-ring" d={ring} />{/if}
+  {#if tick}<circle class="live-tick" cx={tick.x} cy={tick.y} r="4" />{/if}
+  {#if pressed && (shape.shape === 'disc' || shape.shape === 'pill')}
+    {#if shape.shape === 'disc'}<circle class="live-on" cx={shape.cx} cy={shape.cy} r={shape.r - 5} />
+    {:else}<rect class="live-on" x={shape.x + 3} y={shape.y + 3} width={shape.width - 6} height={shape.height - 6} rx="4" />{/if}
+  {/if}
+  {#if live?.kind === 'trigger' && (shape.shape === 'disc' || shape.shape === 'pill')}
+    {#key live.at}
+      {#if shape.shape === 'disc'}<circle class="live-on pulse" cx={shape.cx} cy={shape.cy} r={shape.r - 5} />
+      {:else}<rect class="live-on pulse" x={shape.x + 3} y={shape.y + 3} width={shape.width - 6} height={shape.height - 6} rx="4" />{/if}
+    {/key}
+  {/if}
+  {#if touchedAt !== null}
+    {#key touchedAt}
+      {#if shape.shape === 'disc'}<circle class="glow" cx={shape.cx} cy={shape.cy} r={shape.r} />
+      {:else}<rect class="glow" x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.shape === 'pill' ? 6 : 8} />{/if}
+    {/key}
+  {/if}
+  {#if warningCount > 0}
+    <!-- Beside the problem mark (14 units to its left when there is one), so both can show. -->
+    {@const wx = mark.x - (problemCount > 0 ? 16 : 0)}
+    <path class="warn" d="M{wx} {mark.y - 7} L{wx + 8} {mark.y + 6} L{wx - 8} {mark.y + 6} Z" />
   {/if}
   <!-- Drawn last: the badge stays on top of the problem mark and takes the click. -->
   {#if pasteTarget}
@@ -131,6 +187,8 @@
   .paste { cursor: pointer; color: var(--accent); }
   .paste circle { fill: var(--surface-2); stroke: var(--accent); stroke-width: 1.5; }
   .paste:hover circle { fill: var(--accent-soft); }
+  .control.map-ok .hit { stroke: var(--accent); stroke-width: 3; }
+  .control.map-dim { opacity: 0.35; cursor: not-allowed; }
   .control.lit .hit { stroke: var(--accent); stroke-width: 4; }
   .control.selected .hit { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 4; }
   .control.selected .hitbox { stroke: var(--accent); stroke-width: 3; }
@@ -142,5 +200,18 @@
   .type { font-family: var(--mono); }
   .num { font-family: var(--mono); font-weight: 400; }
   .problem { fill: var(--danger); pointer-events: none; }
+  .live-ring { fill: none; stroke: var(--encoder); stroke-width: 4; stroke-linecap: round; pointer-events: none; }
+  .live-tick { fill: var(--encoder); pointer-events: none; }
+  .live-on { fill: var(--led); opacity: 0.4; pointer-events: none; }
+  /* Last touched (decision 25): an outline in the control's own kind colour (the accent is selection's) that glows and fades in about a second, started again by each message. Reduced motion: a short still outline that clears. */
+  .glow { fill: none; stroke: var(--encoder); stroke-width: 3; pointer-events: none; animation: touched-glow 1s ease-out forwards; filter: drop-shadow(0 0 4px var(--encoder)); }
+  .fb .glow { stroke: var(--fader); filter: drop-shadow(0 0 4px var(--fader)); }
+  @keyframes touched-glow { from { opacity: 1; } to { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .glow { filter: none; animation: touched-still 1s steps(1, end) forwards; } }
+  @keyframes touched-still { from { opacity: 1; } to { opacity: 0; } }
+  .pulse { animation: pulse-fade 700ms ease-out forwards; }
+  @keyframes pulse-fade { from { opacity: 0.7; } to { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; opacity: 0.4; } }
+  .warn { fill: var(--warn); stroke: var(--surface-2); stroke-width: 1; stroke-linejoin: round; pointer-events: none; }
   .problem-text { fill: var(--on-danger); font-size: 14px; }
 </style>

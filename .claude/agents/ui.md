@@ -45,7 +45,7 @@ team (see `CLAUDE.md`, "Agent team"):
   user to look at (through the architect) before building it for real; never commit the prototype.
 - Check every change in the browser against the dev server (the `claude-in-chrome` tools, when the
   architect says it's your turn) with sample data: an empty library, 18 setups, long names, an
-  invalid import.
+  invalid import. Selectors, `fakeMidi`, measuring edges and the clean-up: `docs/agents/browser-checks.md`.
 - **UX checklist.** Every page change passes it before you commit:
   1. Click targets are at least 24 px; icons at least the text size.
   2. Every input looks like an input and shows focus (an accent ring).
@@ -66,6 +66,8 @@ team (see `CLAUDE.md`, "Agent team"):
   14. Every control looks pressable: a surface, border or hover background, never a bare dot or
       glyph (user, 2026-11-17).
   15. Text and a control beside it keep at least `--space-3` apart (user, 2026-11-17).
+  16. Long text wraps where a reader would break it: a label wraps inside its button, a value phrase
+      ("CC 10 ch 1", "1–5") stays on one line (retro, 2026-11-27). Check with the longest real text.
   Keep the list short. When a review finds a new kind of problem, propose an item to the architect
   instead of adding it yourself.
 - Never push. Don't edit `src/model/`, `src/protocol/`, `src/midi/` or `src/storage/` — send the
@@ -78,7 +80,7 @@ A task is a step of a decided plan: read the step, its plan and the glossary, an
 
 1. Implement; run `npm test` and `npm run build`; check the page in the browser when the architect
    gives you the turn, and save screenshots of what changed (`save_to_disk`): dark and light, a wide
-   window and 1024 px.
+   window and 1024 px; with them, the measured right edges of every list or button group you changed.
 2. Send `uc4-reviewer` the changed files and the screenshot paths; fix its findings and send the fixes back, however
    small. Commit only after its OK on them.
 3. Commit on the task's branch, your own files by path (`git commit -- <files>`; never a bare

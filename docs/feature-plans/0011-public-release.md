@@ -52,12 +52,12 @@ marvinhauke.github.io/UC4_Editor/guide/    the guide (Zensical → site/)
    editor's address in Getting started.
 3. **Editor for Pages** — uc4-ui · done (`b7c6ff1`; book icon in the toolbar in work) · Vite `base`, the guide link from `?` and Settings, the notice.
 4. **Build and deploy** — architect · done (`1558fc3`; preview checked) · `npm run pages`, `pages.yml`; a local preview of the joined site.
+5. **Privacy check and first public commit** — architect · decision 5; then the user enables Pages (Source: GitHub
+   Actions) and the first push goes to the public repository.
 6. **Faderfox's rules in the engine** — uc4-protocol · done 2026-11-25: the area guard (`c161565`, engine 0.12.0;
    `checkSendable` on encode, cutSlot and sendDump; only `0x1480`, `0x1700`, `0x1C00`, download type 02/03), the
    format checked against Faderfox's documentation (uc4-sysex.md §11), tests without `dumps/` (`039e984`; 3 skip
    when it is absent).
-5. **Privacy check and first public commit** — architect · decision 5; then the user enables Pages (Source: GitHub
-   Actions) and the first push goes to the public repository.
 
 ## Out of scope
 

@@ -176,12 +176,85 @@ The device view with no control selected, showing what the UC4 sends.
 _Avoid_: monitor mode, play mode
 
 **MIDI monitor**:
-The list of MIDI messages arriving from every connected input.
+The list at the bottom of Connections of the messages arriving from the chosen inputs, one row per message key
+(type, channel, number) whose value updates in place.
 _Avoid_: log, console
 
+**Follow**:
+A monitor switch: while on, each message from the UC4 selects the control it matches, switching group or setup.
+_Avoid_: track, sync, auto-select
+
+**Message key**:
+What makes two MIDI messages the same for the editor: the kind of message, the channel and the number (none for
+pitch bend and aftertouch; the program for program change).
+_Avoid_: message id, CC address
+
+**Match**:
+A control of the library whose message is the one that arrived; several matches are ranked by the active setup and
+groups.
+_Avoid_: hit, mapping
+
+**Pin**:
+The user's pick of which match a message key is, held until the active setup changes.
+_Avoid_: lock, bind
+
+**Warning**:
+Something in a setup that may be a mistake but is allowed, such as two controls that can play at the same time
+sending the same message; it never blocks a send.
+_Avoid_: problem (the validator rejects), error
+
+**Ignore**:
+To accept a warning as intended; the editor remembers it, lists it under "Ignored", and counts it again as
+soon as either control's message changes. A second click on the pressed "Ignored" button undoes it.
+_Avoid_: waive, suppress, accept; dismiss (that closes a dump notice); "Show again"
+
+**Factory collision**:
+A warning that comes from the factory layout itself (each factory setup's EG4 encoders and FG1 faders send the same
+CC); it starts ignored and is marked "factory layout" until either control changes.
+_Avoid_: default warning
+
+**Resolve**:
+To fix warnings and problems in the Problems and warnings dialog: pick a **suggestion** per row (one per
+control), check the **Changes** table, then Apply them all as one undo step.
+_Avoid_: fix, auto-fix; ✕ (that clears a mapping)
+
+**Changes** (the plan):
+The list of picked suggestions at the bottom of the dialog: control, property, before, after. Nothing changes until
+Apply; closing the dialog keeps it, a reload drops it.
+_Avoid_: diff, pending edits
+
+**Suggestion**:
+The value Resolve would give a control: the next free number on its channel (or the next channel), skipping
+well-known CCs and numbers already planned, or for a problem the nearest valid value. Shown before it is applied, never applied unseen.
+_Avoid_: proposal, auto value
+
+**Map**:
+Giving a control the command type, channel and number of a MIDI monitor row's message.
+_Avoid_: learn (the later quick mode), assign, bind
+
 **Learn**:
-Taking a control's command type, channel and number from the next message of another MIDI device.
-_Avoid_: MIDI learn mapping, capture
+A later quick mode that maps each new incoming message to the next control in turn.
+_Avoid_: map (one row to one control); the UC4's own learn is the device's (hold encoder 6)
+
+**Map by touch**:
+Mapping a monitor row by moving the target control on the UC4 instead of clicking it in the editor.
+_Avoid_: smart learn, merge mode
+
+**Other device**:
+Any MIDI device besides the UC4: an instrument or a third-party controller.
+_Avoid_: device (the UC4)
+
+**Instrument**:
+An other device that makes or shapes sound (a synth, drum machine, effect) and may have a CC table.
+_Avoid_: synth (too narrow), target
+
+**Third-party controller**:
+An other device that is a controller itself, of another maker or model.
+_Avoid_: second controller
+
+**CC table**:
+The list of an instrument's parameters with the message each one listens to.
+_Avoid_: CC map, preset, profile (the device profile is the UC4's)
 
 **Connections**:
 The column for the UC4's MIDI connection, the dumps it received and kept, and later the sends to it and other MIDI
@@ -207,7 +280,7 @@ _Avoid_: shortcut
 **Problem**:
 A value in a loaded configuration that the validator rejects; it is marked, never changed, and
 blocks sending.
-_Avoid_: error (a refused file), warning
+_Avoid_: error (a refused file), warning (allowed, see Warning)
 
 **Transfer**:
 Receiving a dump from the device or sending one to it over MIDI.
