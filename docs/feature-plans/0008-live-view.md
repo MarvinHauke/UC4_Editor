@@ -435,6 +435,27 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    closes it. With Follow off the click only opens the row. Why: the name and buttons were shown twice; the room
    goes to a readable Map button. Supersedes the closed-row parts of decisions 25 and 26 (✕ stays, in the open row).
 
+35. **Resolve plans changes in the dialog, applied in one go** (user, 2026-11-27, grill R4–R5, after trying step 15;
+   supersedes how decision 32 applies a suggestion, and its ↺ icon): applying straight from a row felt silent and
+   meant closing and reopening the dialog. Now:
+   - **Solution column:** each row offers one choice per control (`Enc3 → CC 70`, `FAd3 → CC 70`) and leave.
+     Picking one changes nothing yet: it adds a line to the **Changes** table at the bottom of the dialog (control,
+     property, before, after, ✕). A planned number is **reserved**, so the next row's suggestion moves on.
+   - **The After value is editable**; a value that collides is marked at once.
+   - **Apply n changes** is one undo step; the dialog stays open, solved rows leave the list, the changed values
+     flash on the device view. Discard drops the plan. Closing the dialog keeps the plan quietly until it is
+     reopened; a reload drops it.
+   - **The property panel only hints** ("Free: CC 70", "Open in Problems and warnings"): changes are applied in one
+     place, the dialog.
+   - **Factory rows get the Ignore toggle too**, starting pressed, so a factory warning can be made to count.
+   - **Suggestions skip well-known CCs** (0 and 32 bank select, 1 modulation, 7 volume, 10 pan, 11 expression,
+     64–69 pedals, 120–127 channel mode); typing one yourself gives a quiet hint in the panel ("CC 64 is often
+     sustain: fine for a DAW, may clash with an instrument").
+   Later (idea C): planned changes as ghost labels on the device view ("34 → 70"), with the dialog as a docked side
+   panel instead of a modal; which panel it docks over (property panel or setup list) is decided then. Rejected:
+   applying from a row (silent), applying in the property panel (one control at a time), a separate diff view
+   (interrupts), before/after fields inside each row (idea B: which control changes is less clear).
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it
@@ -562,6 +583,14 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    tests, browser list (toggle, block order, Resolve both kinds, undo, property panel line, Review… placement).
 16. **Monitor row cleanup** (decision 34) — done 2026-11-27, before 15: uc4-ui (`e15f082`; reviewed; screenshots checked by the architect) — uc4-ui · blocked by: none · Checks: tests,
    browser list with the MIDI stub (closed row, Map on hover, click selects and opens with Follow on and off).
+17. **Resolve plan: model** (decision 35) — uc4-model · blocked by: none · suggestions that respect planned
+   changes (reserved numbers) and skip the well-known CCs; a plan type (control, property, before, after); applying
+   a plan as one library edit; checking a typed After value for collisions; factory warnings can be counted again.
+   Checks: model and storage tests (reserved numbers move on, skip list, one undo step, factory toggle).
+18. **Resolve plan: dialog and panel** (decision 35) — uc4-ui · blocked by: 17 · Solution column with one choice per
+   control, the Changes table (editable After, ✕, Discard, Apply n changes), flash on the device view, the plan kept
+   while the dialog is closed; the panel's hint line and "Open in Problems and warnings"; factory rows' toggle; the
+   well-known-CC hint. Checks: tests, browser list.
 
 ## Out of scope
 

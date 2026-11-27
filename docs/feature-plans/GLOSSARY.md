@@ -214,13 +214,18 @@ CC); it starts ignored and is marked "factory layout" until either control chang
 _Avoid_: default warning
 
 **Resolve**:
-To fix a warning or problem with the editor's **suggestion**, in one click and one undo step (icon ↺). For a factory
-collision both controls are offered.
+To fix warnings and problems in the Problems and warnings dialog: pick a **suggestion** per row (one per
+control), check the **Changes** table, then Apply them all as one undo step.
 _Avoid_: fix, auto-fix; ✕ (that clears a mapping)
 
+**Changes** (the plan):
+The list of picked suggestions at the bottom of the dialog: control, property, before, after. Nothing changes until
+Apply; closing the dialog keeps it, a reload drops it.
+_Avoid_: diff, pending edits
+
 **Suggestion**:
-The value Resolve would give a control: the next free number on its channel (or the next channel), or for a
-problem the nearest valid value. Shown before it is applied, never applied unseen.
+The value Resolve would give a control: the next free number on its channel (or the next channel), skipping
+well-known CCs and numbers already planned, or for a problem the nearest valid value. Shown before it is applied, never applied unseen.
 _Avoid_: proposal, auto value
 
 **Map**:
