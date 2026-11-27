@@ -559,7 +559,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    library edit. Checks: model tests for each rule, factory SE01 collisions.
 15. **Dialog and panel: Ignore toggle, blocks, Resolve** (decisions 31–33) — uc4-ui · blocked by: 14 · Checks:
    tests, browser list (toggle, block order, Resolve both kinds, undo, property panel line, Review… placement).
-16. **Monitor row cleanup** (decision 34) — uc4-ui · blocked by: none (after 15, one builder) · Checks: tests,
+16. **Monitor row cleanup** (decision 34) — done 2026-11-27, before 15: uc4-ui (`e15f082`; reviewed; screenshots checked by the architect) — uc4-ui · blocked by: none · Checks: tests,
    browser list with the MIDI stub (closed row, Map on hover, click selects and opens with Follow on and off).
 
 ## Out of scope
