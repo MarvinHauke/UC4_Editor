@@ -206,7 +206,7 @@ export interface Library {
    * (is dropped) as soon as either control's message set changes (even a part the two don't share), so a new double is not hidden.
    */
   ignore(warnings: readonly Warning[]): CommandResult;
-  /** Reopens an ignored warning (Show again): one undo step. A `factory` warning can't be shown again (change a control instead): refused with a message. */
+  /** Reopens an ignored warning (the pressed "Ignored" button): one undo step. A `factory` warning can't be counted again by hand (change a control instead): refused with a message. */
   showAgain(warning: Warning): CommandResult;
   /**
    * What Resolve would offer for a warning (as `state.warnings` lists it, its state decides side by side) or a problem
