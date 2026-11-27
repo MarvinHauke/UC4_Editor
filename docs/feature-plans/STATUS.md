@@ -5,7 +5,7 @@ The order of features is in the [plan index](README.md#next-in-dependency-order)
 plans; protocol facts in `docs/protocol/uc4-sysex.md`. Finished work is in the git history, not here: when an item is
 done, delete it (pruned 2026-11-26, retro).
 
-_Last updated: 2026-11-27 (0008 steps 20–21, the review fixes, in work). Before: 2026-11-27 (0008 steps 13–19 done; code review queued). Before: 2026-11-26 (0008 live view built, code-review fixes done; Split removal and the retro's checks in work)._
+_Last updated: 2026-11-27 (0008 steps 20–21 done; retro next). Before: 2026-11-27 (0008 steps 13–19 done; code review queued). Before: 2026-11-26 (0008 live view built, code-review fixes done; Split removal and the retro's checks in work)._
 
 ## In work
 
@@ -29,16 +29,14 @@ _Last updated: 2026-11-27 (0008 steps 20–21, the review fixes, in work). Befor
 - **Review judgement calls** (user's /code-review of `feat/live-view`, 2026-11-27): one model helper for the message
   key, "what a control sends", the encoder half and slot names. Done from that review: `d26800d`, `c760681`, `809ab0e`
   (Ignore rename, 0008 decision 29); 0008 step 13, the check always reachable (`7766162`, decision 30).
-- **0008 steps 14–16 done** (`a1b9589`, `edcc82a`, `e15f082`; decisions 31–34). Left from step 15: a 1024 px browser
-  run of the dialog (long "change … instead" lines, a long panel label); "ch 1" wraps before the 1 in dialog rows
-  (keep it together in the UI, not in the model text the tests read).
+- **0008 steps 14–16 done** (`a1b9589`, `edcc82a`, `e15f082`; decisions 31–34).
 - **0008 steps 17–18 done** (`ceca4c7`, `530b1c1`, decision 35); step 19 (headings, Actions column, factory fold) done (`5ff76d5`).
   Later: idea C, ghost labels on the device view and a docked side panel.
 - **Later, own plan:** a warning level setting ("hard" turns warnings into errors; user, 2026-11-27).
 
 - **Fixes from the user's /code-review of `feat/live-view`** (2026-11-27) as 0008 steps 20 and 21: done and
-  browser-checked (`1c6e53e`, `adfb3c7`, `a61386f`); uc4-ui fixes two small finds (Solution labels clip at 1024 px,
-  focus after Remove); then a retro, then the PR on the user's word. Architect part done: `src/live/` in CLAUDE.md
+  browser-checked (`1c6e53e`, `adfb3c7`, `a61386f`); follow-ups `9bbab4f` (labels wrap, focus after Remove) and
+  `c839a36` (value phrases kept on one line); then a retro, then the PR on the user's word. Architect part done: `src/live/` in CLAUDE.md
   and the layer chain; the unasked-for bits kept as 0008 decision 37 ([Map] on the next-to-map row too).
   Judgement calls for later: `live/session.ts` (579-line closure) and `storage/library.ts` (1547 lines) splits;
   `FakeInput` duplicated in devMidi and tests; shared button CSS.
