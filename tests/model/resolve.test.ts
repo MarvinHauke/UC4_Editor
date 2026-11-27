@@ -54,7 +54,8 @@ test('the number wraps at 127', () => {
   const s = silent();
   cc(enc(s, 0, 0), 1, 126); cc(fad(s, 0, 0), 1, 126); cc(enc(s, 0, 1), 1, 127);
   const r = resolveWarning(cfgOf(s), warn(s, E(0, 0), F(0, 0)));
-  assert.deepEqual(r.choices[0]!.suggestion, { change: { number: 0 }, text: 'CC 0' });
+  // 0 and 1 are well-known (bank select, modulation): skipped
+  assert.deepEqual(r.choices[0]!.suggestion, { change: { number: 2 }, text: 'CC 2' });
 });
 
 test('a CC of another channel or a note of the same number does not count as taken', () => {
@@ -119,7 +120,7 @@ test('CCAh wraps at 31, not 127', () => {
   Object.assign(enc(s, 0, 0), { type: 'CCAh', channel: 1, number: 31 });
   cc(fad(s, 0, 0), 1, 31);
   const r = resolveWarning(cfgOf(s), warn(s, E(0, 0), F(0, 0)));
-  assert.deepEqual(r.choices[1]!.suggestion, { change: { number: 0 }, text: 'CC 0' });
+  assert.deepEqual(r.choices[1]!.suggestion, { change: { number: 2 }, text: 'CC 2' }); // 0 and 1 are well-known
 });
 
 test('a PrGC range moves as a block of the same width, direction kept', () => {
@@ -186,7 +187,7 @@ test('the control that differs from factory is the one to change, with "instead"
   assert.equal(r.choices[0]!.path, E(0, 0));
   assert.equal(r.choices[0]!.name, 'Enc1 · EG1');
   assert.equal(r.choices[0]!.short, 'Enc1');
-  assert.equal(r.choices[0]!.suggestion!.text, 'CC 64');
+  assert.equal(r.choices[0]!.suggestion!.text, 'CC 70'); // 64–69 are well-known
   assert.equal(r.choices[1]!.path, F(1, 0));
   assert.equal(r.choices[1]!.short, 'FAd1');
 });
@@ -229,9 +230,9 @@ test('factory collisions SE01: both sides suggested side by side, every EG4 / FG
     assert.equal(r.sideBySide, true);
     assert.equal(r.choices.length, 2);
     assert.deepEqual(r.choices.map((c) => c.path), [E(3, i), F(0, i)]);
-    // free CCs on ch 1 in factory SE01: 0–7, 64–71, 113–127. Above 32 + i the first free is 64.
-    assert.equal(r.choices[0]!.suggestion!.text, 'CC 64');
-    assert.equal(r.choices[1]!.suggestion!.text, 'CC 64');
+    // free CCs on ch 1 in factory SE01: 0–7, 64–71, 113–127; 64–69 are well-known, so the first is 70.
+    assert.equal(r.choices[0]!.suggestion!.text, 'CC 70');
+    assert.equal(r.choices[1]!.suggestion!.text, 'CC 70');
     taken.add(r.choices[0]!.suggestion!.text);
   });
   assert.equal(taken.size, 1);

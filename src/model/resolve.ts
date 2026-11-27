@@ -1,9 +1,25 @@
 // Resolve suggestions (plan 0008 decision 32): for a warning, which control to change and to what; for a problem, the
-// nearest valid value. Pure; never throws; changes nothing (the library applies a choice as one edit).
+// nearest valid value. Decision 35: a suggestion respects the plan (numbers already planned are reserved) and skips the
+// well-known CCs; the plan is a list of entries that `applyPlan` applies to a configuration. Pure; never throws;
+// changes nothing (the library applies a plan as one edit).
 import { factorySetup } from './factory.ts';
-import { controlName, keysOf, programsOf } from './warnings.ts';
+import { controlName, keysOf, programsOf, warnings } from './warnings.ts';
 import type { Sender } from './warnings.ts';
 import type { Problem, Setup, Uc4Config, Warning } from './types.ts';
+
+/** The CC numbers other gear reads as something (sustain, volume, all notes off…): a suggestion never offers them. */
+export const WELL_KNOWN_CC: readonly { number: number; name: string }[] = [
+  { number: 0, name: 'bank select' }, { number: 1, name: 'modulation' }, { number: 7, name: 'volume' },
+  { number: 10, name: 'pan' }, { number: 11, name: 'expression' }, { number: 32, name: 'bank select LSB' },
+  { number: 64, name: 'sustain' }, { number: 65, name: 'portamento' }, { number: 66, name: 'sostenuto' },
+  { number: 67, name: 'soft pedal' }, { number: 68, name: 'legato' }, { number: 69, name: 'hold 2' },
+  { number: 120, name: 'all sound off' }, { number: 121, name: 'reset controllers' }, { number: 122, name: 'local control' },
+  { number: 123, name: 'all notes off' }, { number: 124, name: 'omni off' }, { number: 125, name: 'omni on' },
+  { number: 126, name: 'mono' }, { number: 127, name: 'poly' },
+];
+const WELL_KNOWN = new Map(WELL_KNOWN_CC.map((e) => [e.number, e.name]));
+/** What a CC number is well known for ("sustain"), or undefined: for the hint beside a typed number. */
+export const wellKnownCc = (n: number): string | undefined => WELL_KNOWN.get(n);
 
 /** The properties a suggestion sets; every other property of the control stays. */
 export interface ControlChange { channel?: number; number?: number; lower?: number; upper?: number }
@@ -91,7 +107,9 @@ function suggest(setup: Setup, ref: Ref, c: Control): { suggestion: Suggestion |
       const pair = c.type === 'CCAh';
       const max = pair ? 31 : 127;
       if (!Number.isInteger(c.number) || c.number < 0 || c.number > 127) return none('The number is not valid: fix that first.');
-      const free = (to: number, n: number): boolean => !used.has(`${kind}:${to}:${n}`) && (!pair || !used.has(`${kind}:${to}:${n + 32}`));
+      const skipped = (n: number): boolean => kind === 'cc' && (WELL_KNOWN.has(n) || (pair && WELL_KNOWN.has(n + 32)));
+      const free = (to: number, n: number): boolean =>
+        !skipped(n) && !used.has(`${kind}:${to}:${n}`) && (!pair || !used.has(`${kind}:${to}:${n + 32}`));
       const from = Math.min(c.number, max);
       for (let step = 0; step < 16; step++) {
         const to = ((ch - 1 + step) % 16) + 1;
@@ -132,22 +150,25 @@ function suggest(setup: Setup, ref: Ref, c: Control): { suggestion: Suggestion |
   }
 }
 
-function choiceFor(config: Uc4Config, path: string, setupId: string): ResolveChoice | null {
+function choiceFor(config: Uc4Config, planned: Uc4Config, path: string, setupId: string): ResolveChoice | null {
   const ref = parse(path);
   const setup = ref ? config.setups?.[ref.si] : undefined;
   if (!ref || ref.property || !setup || setup.id !== setupId) return null;
   const c = controlAt(setup, ref);
   if (!c) return null;
-  return { path, ...names(ref), ...suggest(setup, ref, c) };
+  // The search runs on the setup as the plan would leave it, so every planned number counts as taken.
+  return { path, ...names(ref), ...suggest(planned.setups?.[ref.si] ?? setup, ref, c) };
 }
 
 /**
  * Resolve for a warning. The control to change is the one that differs from the factory setup of the slot (the one the
  * user changed); both or neither → the second-named. A factory collision (`options.factory`, the warning's state)
- * offers both side by side. Nothing is applied.
+ * offers both side by side. With `plan` (decision 35) the numbers it plans count as taken, so the next row moves on.
+ * Nothing is applied.
  */
-export function resolveWarning(config: Uc4Config, warning: Warning, options: { factory?: boolean } = {}): Resolution {
-  const [first, second] = warning.controls.map((p) => choiceFor(config, p, warning.setupId));
+export function resolveWarning(config: Uc4Config, warning: Warning, options: { factory?: boolean; plan?: ResolvePlan } = {}): Resolution {
+  const planned = options.plan && options.plan.length > 0 ? applyPlan(config, options.plan).config : config;
+  const [first, second] = warning.controls.map((p) => choiceFor(config, planned, p, warning.setupId));
   if (!first || !second) return { choices: [], sideBySide: false };
   if (options.factory) return { choices: [first, second], sideBySide: true };
   const setup = config.setups[parse(first.path)!.si]!;
@@ -182,4 +203,107 @@ export function resolveProblem(config: Uc4Config, problem: Problem): Resolution 
     choices: [{ ...base, suggestion: { change: { [ref.property]: nearest }, text: `${PROPERTY_WORD[ref.property]} ${nearest}` } }],
     sideBySide: false,
   };
+}
+
+// --- the plan (decision 35) ---
+
+/** The properties a plan entry can set (the numbers a control has). */
+export type PlanProperty = 'channel' | 'number' | 'lower' | 'upper';
+/** One planned change: a control (path as `validate` uses), the property, what it is now and what it would become. */
+export interface PlanEntry { path: string; property: PlanProperty; before: number; after: number }
+export type ResolvePlan = readonly PlanEntry[];
+export interface RefusedEntry { entry: PlanEntry; reason: string }
+
+const PLAN_PROPERTIES: readonly string[] = ['channel', 'number', 'lower', 'upper'];
+
+/** The plan entries a choice's suggestion stands for (one per property it sets, `before` read from the configuration); none without a suggestion or control. */
+export function entriesOf(config: Uc4Config, choice: ResolveChoice): PlanEntry[] {
+  const ref = parse(choice.path);
+  const c = ref && !ref.property ? controlAt(config.setups?.[ref.si], ref) as unknown as Record<string, unknown> | undefined : undefined;
+  if (!c || !choice.suggestion) return [];
+  const out: PlanEntry[] = [];
+  for (const property of PLAN_PROPERTIES as PlanProperty[]) {
+    const after = (choice.suggestion.change as Record<string, number | undefined>)[property];
+    const before = c[property];
+    if (after !== undefined && typeof before === 'number') out.push({ path: choice.path, property, before, after });
+  }
+  return out;
+}
+
+/** Why `value` is no good for `property` of this control, or undefined. */
+function invalidValue(c: Control, property: string, value: unknown): string | undefined {
+  const range = RANGE[property];
+  if (!range) return `A control has no ${property} to plan.`;
+  if (typeof value !== 'number' || !Number.isInteger(value)) return `The ${property} must be a whole number.`;
+  const hi = property === 'number' && c.type === 'CCAh' ? 31 : range[1];
+  if (value < range[0] || value > hi) return `The ${property} must be ${range[0]}–${hi}.`;
+  return undefined;
+}
+
+/**
+ * Applies the plan to a configuration, entry by entry. An entry whose control is gone, whose property the control does
+ * not have, whose `before` is no longer the control's value (it changed since the user saw it) or whose `after` is not
+ * a valid value is refused with a reason and the rest still apply. Nothing is changed in place; with nothing applied the
+ * same configuration comes back. Never throws.
+ */
+export function applyPlan(config: Uc4Config, plan: ResolvePlan): { config: Uc4Config; applied: PlanEntry[]; refused: RefusedEntry[] } {
+  const applied: PlanEntry[] = [];
+  const refused: RefusedEntry[] = [];
+  let next: Uc4Config = config;
+  for (const entry of plan ?? []) {
+    const ref = typeof entry?.path === 'string' ? parse(entry.path) : null;
+    const setup = ref && !ref.property ? next.setups?.[ref.si] : undefined;
+    const c = ref && setup ? controlAt(setup, ref) as unknown as Record<string, unknown> | undefined : undefined;
+    const no = (reason: string): void => { refused.push({ entry, reason }); };
+    if (!ref || !setup || !c) { no('That control is no longer there.'); continue; }
+    if (typeof c[entry.property] !== 'number') { no(`${names(ref).short} has no ${entry.property}.`); continue; }
+    if (c[entry.property] !== entry.before) { no(`${names(ref).short}: the ${entry.property} is ${String(c[entry.property])} now, not ${entry.before}.`); continue; }
+    const bad = invalidValue(c as unknown as Control, entry.property, entry.after);
+    if (bad) { no(`${names(ref).short}: ${bad}`); continue; }
+    const groups = groupsOf(setup, ref.area);
+    const key = isGroupOfEncoders(ref.area) ? 'encoderGroups' : 'faderButtonGroups';
+    const nextSetup = {
+      ...setup,
+      [key]: groups.map((g, gi) => (gi !== ref.group ? g : {
+        ...g, [ref.area]: g[ref.area]!.map((x, i) => (i === ref.index ? { ...x, [entry.property]: entry.after } : x)),
+      })),
+    } as Setup;
+    next = { ...next, setups: next.setups.map((s, i) => (i === ref.si ? nextSetup : s)) };
+    applied.push(entry);
+  }
+  return { config: next, applied, refused };
+}
+const isGroupOfEncoders = (a: Area): boolean => a === 'encoders' || a === 'pushButtons';
+
+/** What a typed After value comes to: `valid` false with a `reason`, or the controls it would collide with. */
+export interface PlanCheck { valid: boolean; reason?: string; collidesWith: { path: string; name: string }[] }
+
+/**
+ * Checks a typed After value for one control of the plan: is it a valid value, and does it collide (two controls that can
+ * play together send the same message) given the configuration plus the rest of the plan? The entry's own planned value
+ * is replaced by `after`. Nothing is applied; never throws.
+ */
+export function checkPlanValue(config: Uc4Config, plan: ResolvePlan, entry: { path: string; property: PlanProperty; after: number }): PlanCheck {
+  const ref = typeof entry?.path === 'string' ? parse(entry.path) : null;
+  const setup = ref && !ref.property ? config.setups?.[ref.si] : undefined;
+  const c = ref && setup ? controlAt(setup, ref) : undefined;
+  if (!ref || !c) return { valid: false, reason: 'That control is no longer there.', collidesWith: [] };
+  const bad = invalidValue(c, entry.property, entry.after);
+  if (bad) return { valid: false, reason: bad, collidesWith: [] };
+  const rest = (plan ?? []).filter((e) => !(e.path === entry.path && e.property === entry.property));
+  const base = applyPlan(config, rest).config;
+  const before = (controlAt(base.setups[ref.si], ref) as unknown as Record<string, unknown>)[entry.property];
+  const { config: candidate, refused } = applyPlan(base, [{ path: entry.path, property: entry.property, before: before as number, after: entry.after }]);
+  if (refused.length > 0) return { valid: false, reason: refused[0]!.reason, collidesWith: [] };
+  const out: PlanCheck['collidesWith'] = [];
+  const seen = new Set<string>();
+  for (const w of warnings(candidate)) {
+    if (w.setupId !== setup!.id || !w.controls.includes(entry.path)) continue;
+    const other = w.controls.find((p) => p !== entry.path)!;
+    if (seen.has(other)) continue;
+    seen.add(other);
+    const o = parse(other);
+    out.push({ path: other, name: o ? names(o).name : other });
+  }
+  return { valid: true, collidesWith: out };
 }

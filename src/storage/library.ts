@@ -11,8 +11,8 @@ import {
   FORMAT, GREEN_DISPLAYS, GREEN_TYPES, PUSH_TYPES, SCHEMA_VERSION,
   changeType, factorySetup, load, normalizeGroupName, resolveProblem, resolveWarning, save, validate,
 } from '../model/index.ts';
-import { warnings as collisions } from '../model/index.ts';
-import type { Resolution, Warning, Encoder, EncoderGroup, Fader, FaderButtonGroup, GreenButton, Problem, PushButton, Setup, Uc4Config } from '../model/index.ts';
+import { applyPlan as applyResolvePlan, warnings as collisions } from '../model/index.ts';
+import type { PlanEntry, RefusedEntry, Resolution, ResolvePlan, Warning, Encoder, EncoderGroup, Fader, FaderButtonGroup, GreenButton, Problem, PushButton, Setup, Uc4Config } from '../model/index.ts';
 import { IMPORT_READS, describeSlots, looksLikeDump, readDump, slotName } from './dumpImport.ts';
 import { markPath, pastedMarks, PASTED, dropMarkPaths, dropMarks, hasMarkPaths, hasMarks, markProblems, marksFromProblems, parseMarks } from './marks.ts';
 import type { Marks } from './marks.ts';
@@ -146,6 +146,16 @@ export interface CommandResult { state: LibraryState; message?: string }
 /** What Resolve changed: the control and the properties set (flash those fields). Absent when it was refused. */
 export type ResolveResult = CommandResult & { changed?: { address: ControlAddress; properties: ControlProperty[] } };
 
+/**
+ * What applying a Resolve plan did (decision 35). `changed` has one entry per control that changed, with the properties
+ * set (flash those fields); absent when nothing was applied. `refused` lists the entries that were not applied, each with
+ * its reason: stale (the control changed since the plan saw it), a value out of range, or one the control cannot take.
+ */
+export type ApplyPlanResult = CommandResult & {
+  changed?: { address: ControlAddress; properties: ControlProperty[] }[];
+  refused: RefusedEntry[];
+};
+
 /** A file the UI offers for download; the library only makes the name and the text. */
 export interface ExportFile { name: string; text: string }
 /** `file` is absent when the export was refused (see `message`). Exporting counts as "exported" at once. */
@@ -206,16 +216,27 @@ export interface Library {
    * (is dropped) as soon as either control's message set changes (even a part the two don't share), so a new double is not hidden.
    */
   ignore(warnings: readonly Warning[]): CommandResult;
-  /** Reopens an ignored warning (the pressed "Ignored" button): one undo step. A `factory` warning can't be counted again by hand (change a control instead): refused with a message. */
+  /**
+   * Counts an ignored warning again (the pressed "Ignored" button, decision 31): one undo step. A `factory` warning counts
+   * again too (decision 35; it starts ignored); `ignore` puts it back. Both lapse as soon as either control's message changes.
+   */
   showAgain(warning: Warning): CommandResult;
   /**
    * What Resolve would offer for a warning (as `state.warnings` lists it, its state decides side by side) or a problem
-   * (as `state.problems` lists it), plan 0008 decision 32. Changes nothing. `choices[0]` is the control to change,
+   * (as `state.problems` lists it), plan 0008 decision 32. With a `plan` (decision 35) the numbers it plans count as taken
+   * (a warning only). Changes nothing. `choices[0]` is the control to change,
    * `choices[1]` the "change <other> instead" of a warning; no choices when the item is no longer current.
    */
-  suggest(item: Warning | Problem): Resolution;
+  suggest(item: Warning | Problem, plan?: ResolvePlan): Resolution;
   /**
-   * Applies choice `choice` (default 0) of `suggest(item)`: its control gets the suggested value, one undo step, and the
+   * Applies a Resolve plan (decision 35) as ONE undo step: every entry sets one property of one control. An entry is
+   * refused, with a reason, when it is stale (`before` is no longer the control's value), invalid, or would make the
+   * control a problem; the others still apply. Selection stays as it is; `changed` says what to flash. Nothing applied is
+   * no step (the message gives the first reason). Never throws.
+   */
+  applyPlan(plan: ResolvePlan): ApplyPlanResult;
+  /**
+   * Applies at once (the dialog now plans and uses `applyPlan`) choice `choice` (default 0) of `suggest(item)`: its control gets the suggested value, one undo step, and the
    * selection goes to that control in the same step (setup, its group, the control) so the editor can flash it. Refused,
    * with the reason, when the item is no longer current or the choice has no suggestion. `changed` names what changed.
    */
@@ -618,11 +639,11 @@ function createLibrary(
     return result(message);
   };
   /** The Resolve choices for a warning or problem, and whether it is still current (listed in the state). */
-  const resolution = (item: Warning | Problem): { resolution: Resolution; current: boolean } => {
+  const resolution = (item: Warning | Problem, plan?: ResolvePlan): { resolution: Resolution; current: boolean } => {
     if ('controls' in item) {
       const id = warningId(item);
       const listed = state.warnings.find((w) => warningId(w) === id);
-      return { resolution: listed ? resolveWarning(state.configuration, listed, { factory: listed.state === 'factory' }) : { choices: [], sideBySide: false }, current: !!listed };
+      return { resolution: listed ? resolveWarning(state.configuration, listed, { factory: listed.state === 'factory', ...(plan ? { plan } : {}) }) : { choices: [], sideBySide: false }, current: !!listed };
     }
     const listed = state.problems.some((p) => p.path === item.path && p.message === item.message);
     return { resolution: listed ? resolveProblem(state.configuration, item) : { choices: [], sideBySide: false }, current: listed };
@@ -1368,22 +1389,70 @@ function createLibrary(
     },
 
     ignore(list) {
-      const current = new Set(state.warnings.filter((w) => w.state === 'open').map(warningId));
-      const next = addIgnored(ignored, list.filter((w) => current.has(warningId(w))));
-      if (next === ignored) return result();
-      return ignoreStep(next, next.length - ignored.length === 1 ? 'Warning ignored.' : `${next.length - ignored.length} warnings ignored.`);
+      const open = new Map(state.warnings.filter((w) => w.state === 'open').map((w) => [warningId(w), w]));
+      const wanted = list.filter((w) => open.has(warningId(w)));
+      // A factory warning counted again goes back to the factory layout (ignored) by dropping its "counted" entry.
+      const back = new Set(wanted.filter((w) => ignored.some((e) => e.counted && warningId(e) === warningId(w))).map(warningId));
+      const kept = back.size === 0 ? ignored : ignored.filter((e) => !(e.counted && back.has(warningId(e))));
+      const next = addIgnored(kept, wanted.filter((w) => !back.has(warningId(w))));
+      const n = back.size + (next.length - kept.length);
+      if (n === 0) return result();
+      return ignoreStep(next, n === 1 ? 'Warning ignored.' : `${n} warnings ignored.`);
     },
     showAgain(warning) {
       const id = warningId(warning);
       const listed = state.warnings.find((w) => warningId(w) === id);
-      if (listed?.state === 'factory') return refuse('This is the factory layout: it counts as ignored until one of the two controls changes.');
-      const next = removeIgnored(ignored, warning);
+      if (!listed) return result();
+      // A factory warning counts again by a "counted" entry; any other ignored warning by dropping its entry.
+      const next = listed.state === 'factory' ? addIgnored(ignored, [listed], true) : listed.state === 'ignored' ? removeIgnored(ignored, warning) : ignored;
       if (next === ignored) return result();
       return ignoreStep(next, 'Warning is open again.');
     },
 
-    suggest(item) {
-      return resolution(item).resolution;
+    suggest(item, plan) {
+      return resolution(item, plan).resolution;
+    },
+    applyPlan(plan) {
+      const config = state.configuration;
+      const first = applyResolvePlan(config, plan);
+      const refused: RefusedEntry[] = [...first.refused];
+      // A control that would become a problem is refused whole (all its entries), like setControl does.
+      const byControl = new Map<string, PlanEntry[]>();
+      for (const e of first.applied) byControl.set(e.path, [...(byControl.get(e.path) ?? []), e]);
+      const before = new Set(validate(config).map((p) => `${p.path}|${p.message}`));
+      const good: PlanEntry[] = [];
+      for (const [path, entries] of byControl) {
+        const candidate = applyResolvePlan(config, entries).config;
+        const under = (p: { path: string }) => p.path === path || p.path.startsWith(path + '.') || p.path.startsWith(path + '[');
+        const problem = validate(candidate).find((p) => under(p) && !before.has(`${p.path}|${p.message}`));
+        if (problem) for (const e of entries) refused.push({ entry: e, reason: `This control cannot be set: ${problem.message}` });
+        else good.push(...entries);
+      }
+      const reasons = refused.map((r) => r.reason);
+      if (good.length === 0) {
+        const message = reasons[0] ?? 'There is nothing to apply.';
+        return { ...(reasons.length > 0 ? refuse(message) : result()), refused };
+      }
+      const { config: next } = applyResolvePlan(config, good);
+      const changed: { address: ControlAddress; properties: ControlProperty[] }[] = [];
+      for (const e of good) {
+        const ref = locate(e.path)!;
+        const setup = config.setups[ref.setupIndex]!;
+        const group = ref.encoderGroup ?? ref.faderButtonGroup ?? 0;
+        const area = ref.control!.area;
+        const address: ControlAddress = { setupId: setup.id, area, group, index: ref.control!.index };
+        const entry = changed.find((c) => c.address.setupId === setup.id && c.address.area === area && c.address.group === group && c.address.index === address.index);
+        if (entry) entry.properties.push(e.property); else changed.push({ address, properties: [e.property] });
+      }
+      const message = `${good.length} change${good.length === 1 ? '' : 's'} applied.`;
+      // Marks are per setup; the entries may span setups, so drop per setup.
+      let nextMarks = marks;
+      for (const id of new Set(changed.map((c) => c.address.setupId))) {
+        const own = changed.filter((c) => c.address.setupId === id)
+          .flatMap((c) => c.properties.map((p) => `${groupKey(c.address.area)}[${c.address.group}].${c.address.area}[${c.address.index}].${p}`));
+        nextMarks = dropMarkPaths(nextMarks, id, own);
+      }
+      return { ...commit(next, message, nextMarks), changed, refused };
     },
     resolve(item, choice = 0) {
       const { resolution: r, current } = resolution(item);

@@ -8,7 +8,11 @@ import type { MessageKey, Uc4Config, Warning } from '../model/index.ts';
 import { canon } from './libraryInfo.ts';
 
 /** `signature` is what both controls sent when it was ignored (`Warning.signature`); entries saved before it existed have none. */
-export interface IgnoredEntry { setupId: string; controls: [string, string]; key: MessageKey; signature?: string }
+export interface IgnoredEntry {
+  setupId: string; controls: [string, string]; key: MessageKey; signature?: string;
+  /** Only on a factory collision the user made count again (decision 35): the opposite of ignored. It lapses like any entry. */
+  counted?: true;
+}
 export type Ignored = readonly IgnoredEntry[];
 
 /** `open`: counts, blocks nothing. `ignored`: the user accepted it. `factory`: the factory layout, ignored until a control changes. */
@@ -37,10 +41,10 @@ export function parseIgnored(text: string | null, config: Uc4Config): Ignored {
     const out: IgnoredEntry[] = [];
     for (const e of o as unknown[]) {
       if (typeof e !== 'object' || e === null) continue;
-      const { setupId, controls, key, signature } = e as Record<string, unknown>;
+      const { setupId, controls, key, signature, counted } = e as Record<string, unknown>;
       if (typeof setupId !== 'string' || !ids.has(setupId) || !isKey(key)) continue;
       if (!Array.isArray(controls) || controls.length !== 2 || !controls.every((c) => typeof c === 'string')) continue;
-      const w: IgnoredEntry = { setupId, controls: [controls[0] as string, controls[1] as string], key: { kind: key.kind, channel: key.channel, ...(key.number === undefined ? {} : { number: key.number }) }, ...(typeof signature === 'string' ? { signature } : {}) };
+      const w: IgnoredEntry = { setupId, controls: [controls[0] as string, controls[1] as string], key: { kind: key.kind, channel: key.channel, ...(key.number === undefined ? {} : { number: key.number }) }, ...(typeof signature === 'string' ? { signature } : {}), ...(counted === true ? { counted: true as const } : {}) };
       const id = warningId(w);
       if (!seen.has(id)) { seen.add(id); out.push(w); }
     }
@@ -50,7 +54,7 @@ export function parseIgnored(text: string | null, config: Uc4Config): Ignored {
 
 export const stringifyIgnored = (w: Ignored): string => JSON.stringify(w);
 
-const toIgnoredEntry = (w: Warning): IgnoredEntry => ({ setupId: w.setupId, controls: [w.controls[0], w.controls[1]], key: { ...w.key }, signature: w.signature });
+const toIgnoredEntry = (w: Warning, counted = false): IgnoredEntry => ({ setupId: w.setupId, controls: [w.controls[0], w.controls[1]], key: { ...w.key }, signature: w.signature, ...(counted ? { counted: true as const } : {}) });
 
 /** The entry still stands for this warning: same pair and message, and (when it knows) both controls still send what they sent. */
 const matches = (e: IgnoredEntry, w: Warning): boolean => warningId(e) === warningId(w) && (e.signature === undefined || e.signature === w.signature);
@@ -73,10 +77,10 @@ export function pruneIgnored(ignored: Ignored, current: readonly Warning[]): Ign
   return changed ? keep : ignored;
 }
 
-/** `ignored` plus these warnings (the ones already ignored are not added twice). */
-export function addIgnored(ignored: Ignored, add: readonly Warning[]): Ignored {
+/** `ignored` plus these warnings (the ones already there are not added twice). `counted`: entries that make factory warnings count again. */
+export function addIgnored(ignored: Ignored, add: readonly Warning[], counted = false): Ignored {
   const fresh = add.filter((w) => !ignored.some((e) => matches(e, w)));
-  return fresh.length === 0 ? ignored : [...ignored, ...fresh.map(toIgnoredEntry)];
+  return fresh.length === 0 ? ignored : [...ignored, ...fresh.map((w) => toIgnoredEntry(w, counted))];
 }
 
 export function removeIgnored(ignored: Ignored, w: Warning): Ignored {
@@ -122,5 +126,10 @@ function isFactoryLayout(config: Uc4Config, w: Warning): boolean {
 
 /** Every warning of every setup with its state. Ignored wins over factory. */
 export function listWarnings(config: Uc4Config, ignored: Ignored, current: readonly Warning[] = warnings(config)): ListedWarning[] {
-  return current.map((w) => ({ ...w, state: ignored.some((e) => matches(e, w)) ? 'ignored' : isFactoryLayout(config, w) ? 'factory' : 'open' }));
+  return current.map((w) => {
+    const entry = ignored.find((e) => matches(e, w));
+    // A "counted" entry only works on the factory layout; it lapses with it.
+    const state: WarningState = entry && !entry.counted ? 'ignored' : entry || !isFactoryLayout(config, w) ? 'open' : 'factory';
+    return { ...w, state };
+  });
 }

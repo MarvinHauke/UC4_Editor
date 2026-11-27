@@ -114,12 +114,37 @@ test('ignoring a factory warning is no step; ignoring an ignored one again is no
   assert.equal(open_(lib).length, 1); // that undo was the first ignore, not a second one
 });
 
-test('showAgain of a factory warning is refused with a message', async () => {
+test('showAgain of a factory warning counts it again, one undo step; ignore puts it back to factory', async () => {
   const { lib } = await open();
-  const r = lib.showAgain(lib.getState().warnings[0]!);
-  assert.ok(r.message);
+  const w = lib.getState().warnings[0]!;
+  const r = lib.showAgain(w);
+  assert.equal(r.message, 'Warning is open again.');
+  assert.equal(lib.getState().warnings[0]!.state, 'open');
+  assert.equal(open_(lib).length, 1);
+  assert.equal(lib.getState().canUndo, true);
+  lib.showAgain(lib.getState().warnings[0]!); // already counted: no step
+  lib.undo();
   assert.equal(lib.getState().warnings[0]!.state, 'factory');
   assert.equal(lib.getState().canUndo, false);
+  lib.redo();
+  lib.ignore([lib.getState().warnings[0]!]); // the pressed toggle again
+  assert.equal(lib.getState().warnings[0]!.state, 'factory');
+  assert.equal(open_(lib).length, 0);
+  lib.undo();
+  assert.equal(lib.getState().warnings[0]!.state, 'open');
+});
+
+test('a factory warning counted again survives a reload and lapses when a control changes', async () => {
+  const { lib, storage } = await open();
+  lib.showAgain(lib.getState().warnings[0]!);
+  await lib.whenSaved();
+  const again = (await openLibrary(storage, { now: clock })).library;
+  assert.equal(open_(again).length, 1);
+  assert.equal(again.getState().warnings.filter((w) => w.state === 'factory').length, 8 * 16 + 2 * 2 - 1);
+  const w = open_(again)[0]!;
+  again.setProperty(enc(SE01, Number(/Enc(\d)/.exec(w.message)![1]) - 1, 3), 'number', 90);
+  assert.equal(open_(again).length, 0);
+  assert.equal(again.getState().warnings.some((x) => x.state === 'ignored'), false);
 });
 
 test('an ignored entry survives a reload', async () => {
