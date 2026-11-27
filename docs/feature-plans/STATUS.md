@@ -5,20 +5,20 @@ The order of features is in the [plan index](README.md#next-in-dependency-order)
 plans; protocol facts in `docs/protocol/uc4-sysex.md`. Finished work is in the git history, not here: when an item is
 done, delete it (pruned 2026-11-26, retro).
 
-_Last updated: 2026-11-27 (0008 steps 20–21 done; retro next). Before: 2026-11-27 (0008 steps 13–19 done; code review queued). Before: 2026-11-26 (0008 live view built, code-review fixes done; Split removal and the retro's checks in work)._
+_Last updated: 2026-11-27 (0008 PR #2 open; retro next). Before: 2026-11-27 (0008 steps 20–21 done; retro next). Before: 2026-11-27 (0008 steps 13–19 done; code review queued). Before: 2026-11-26 (0008 live view built, code-review fixes done; Split removal and the retro's checks in work)._
 
 ## In work
 
 - **0008 live view** (user, 2026-11-26, branch `feat/live-view`, local): monitor, matching, pins, Follow, switch offer,
   warnings with waivers and the Problems and warnings dialog, Map by click and by touch, clearing a colliding
   mapping (decisions 3–28). Steps 1–12 built and browser-checked; the code review's 9 findings fixed (decision 27);
-  1477 tests. Not browser-checked: the "● n problems" button, Connect from the dump guide, ✕ on an already-factory
-  control (unit-tested). PR only on the user's word. Later: monitor sorting (decision 25 Q5), a control label field,
+  1572 tests. **PR #2** opened 2026-11-27 (user's word), not merged. Not browser-checked: the "● n problems" button, Connect from the dump guide, ✕ on an already-factory
+  control (unit-tested). Later: monitor sorting (decision 25 Q5), a control label field,
   DAW feedback, Learn, check mode (decisions 16, 9, 19).
 - **Local branches, not pushed** (user tries first, 0010 decision 7): `fix/guide-and-dump-overlay` →
   `feat/onboarding` (0012, welcome card `d6b7a9f`) → `feat/compact-dumps` (0010 step 6 in work).
 - **Public:** `MarvinHauke/UC4_Editor` (PR #1 merged and deployed 2026-11-26; the old repo is `UC4_Editor-workshop`).
-  0011: PR #2 with the user. 0009 user guide built (`ab52ad4`; preview `npm run docs` on :8000).
+  0011: its PR with the user (not opened yet). 0009 user guide built (`ab52ad4`; preview `npm run docs` on :8000).
 - **Retro 2026-11-26** done: CI on every push and pull request (`ac1c652`: plan check, lint, test, build),
   `tools/check-plans.ts` (`7696577`), lint green (`a1a2c2e`), one storage-key module with a lint rule (`a664155`),
   "one right edge" and `docs/agents/browser-checks.md` (`5b9a0b3`), STATUS pruned. 0008 step 12 (no Split) done;
@@ -36,7 +36,7 @@ _Last updated: 2026-11-27 (0008 steps 20–21 done; retro next). Before: 2026-11
 
 - **Fixes from the user's /code-review of `feat/live-view`** (2026-11-27) as 0008 steps 20 and 21: done and
   browser-checked (`1c6e53e`, `adfb3c7`, `a61386f`); follow-ups `9bbab4f` (labels wrap, focus after Remove) and
-  `c839a36` (value phrases kept on one line); then a retro, then the PR on the user's word. Architect part done: `src/live/` in CLAUDE.md
+  `c839a36` (value phrases kept on one line); PR #2 open; the retro next. Architect part done: `src/live/` in CLAUDE.md
   and the layer chain; the unasked-for bits kept as 0008 decision 37 ([Map] on the next-to-map row too).
   Judgement calls for later: `live/session.ts` (579-line closure) and `storage/library.ts` (1547 lines) splits;
   `FakeInput` duplicated in devMidi and tests; shared button CSS.
