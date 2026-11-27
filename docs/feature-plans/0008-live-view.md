@@ -587,7 +587,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    changes (reserved numbers) and skip the well-known CCs; a plan type (control, property, before, after); applying
    a plan as one library edit; checking a typed After value for collisions; factory warnings can be counted again.
    Checks: model and storage tests (reserved numbers move on, skip list, one undo step, factory toggle).
-18. **Resolve plan: dialog and panel** (decision 35) — uc4-ui · blocked by: 17 · Solution column with one choice per
+18. **Resolve plan: dialog and panel** (decision 35) — done 2026-11-27: uc4-ui (`530b1c1`; reviewed; screenshots at 1024 px checked by the architect) — uc4-ui · blocked by: 17 · Solution column with one choice per
    control, the Changes table (editable After, ✕, Discard, Apply n changes), flash on the device view, the plan kept
    while the dialog is closed; the panel's hint line and "Open in Problems and warnings"; factory rows' toggle; the
    well-known-CC hint. Checks: tests, browser list.
