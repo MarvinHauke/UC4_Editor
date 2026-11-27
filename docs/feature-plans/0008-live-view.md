@@ -456,6 +456,13 @@ Facts the design rests on: the listen check (2026-11-16, below); the type lists 
    applying from a row (silent), applying in the property panel (one control at a time), a separate diff view
    (interrupts), before/after fields inside each row (idea B: which control changes is less clear).
 
+36. **Column headings; Show and Ignore in one column** (user, 2026-11-27, after trying step 18): the dialog's list
+   gets a heading row **Finding · Solution · Actions**, kept in view while the list scrolls. **Show** and the
+   **Ignore** toggle stack in the Actions column, the way the two solution buttons stack in theirs. Pressed toggles
+   (a picked solution, "Ignored") get a soft pressed style (tinted, accent border); solid accent stays for
+   **Apply** alone, the one action that changes the setup (architect, from the step 18 review). Why: the columns
+   had no names, and three button columns read as clutter.
+
 ## Open questions
 
 Hints from the UC4 Configurator, not evidence ([other editors](../reference/other-uc4-editors.md), item 4): it
@@ -591,6 +598,8 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    control, the Changes table (editable After, ✕, Discard, Apply n changes), flash on the device view, the plan kept
    while the dialog is closed; the panel's hint line and "Open in Problems and warnings"; factory rows' toggle; the
    well-known-CC hint. Checks: tests, browser list.
+19. **Dialog headings and Actions column** (decision 36) — uc4-ui · blocked by: 18 · Checks: browser at 1024 px,
+   dark and light, columns and heading aligned, heading stays on scroll.
 
 ## Out of scope
 
