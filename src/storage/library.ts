@@ -9,10 +9,10 @@
 import {
   BUTTON_MODES, ENCODER_DISPLAYS, ENCODER_MODES, ENCODER_TYPES, FADER_DISPLAYS, FADER_MODES, FADER_TYPES,
   FORMAT, GREEN_DISPLAYS, GREEN_TYPES, PUSH_TYPES, SCHEMA_VERSION,
-  changeType, factorySetup, load, normalizeGroupName, save, validate,
+  changeType, factorySetup, load, normalizeGroupName, resolveProblem, resolveWarning, save, validate,
 } from '../model/index.ts';
 import { warnings as collisions } from '../model/index.ts';
-import type { Warning, Encoder, EncoderGroup, Fader, FaderButtonGroup, GreenButton, Problem, PushButton, Setup, Uc4Config } from '../model/index.ts';
+import type { Resolution, Warning, Encoder, EncoderGroup, Fader, FaderButtonGroup, GreenButton, Problem, PushButton, Setup, Uc4Config } from '../model/index.ts';
 import { IMPORT_READS, describeSlots, looksLikeDump, readDump, slotName } from './dumpImport.ts';
 import { markPath, pastedMarks, PASTED, dropMarkPaths, dropMarks, hasMarkPaths, hasMarks, markProblems, marksFromProblems, parseMarks } from './marks.ts';
 import type { Marks } from './marks.ts';
@@ -143,6 +143,9 @@ export interface LibraryState {
 
 export interface CommandResult { state: LibraryState; message?: string }
 
+/** What Resolve changed: the control and the properties set (flash those fields). Absent when it was refused. */
+export type ResolveResult = CommandResult & { changed?: { address: ControlAddress; properties: ControlProperty[] } };
+
 /** A file the UI offers for download; the library only makes the name and the text. */
 export interface ExportFile { name: string; text: string }
 /** `file` is absent when the export was refused (see `message`). Exporting counts as "exported" at once. */
@@ -205,6 +208,18 @@ export interface Library {
   ignore(warnings: readonly Warning[]): CommandResult;
   /** Reopens an ignored warning (Show again): one undo step. A `factory` warning can't be shown again (change a control instead): refused with a message. */
   showAgain(warning: Warning): CommandResult;
+  /**
+   * What Resolve would offer for a warning (as `state.warnings` lists it, its state decides side by side) or a problem
+   * (as `state.problems` lists it), plan 0008 decision 32. Changes nothing. `choices[0]` is the control to change,
+   * `choices[1]` the "change <other> instead" of a warning; no choices when the item is no longer current.
+   */
+  suggest(item: Warning | Problem): Resolution;
+  /**
+   * Applies choice `choice` (default 0) of `suggest(item)`: its control gets the suggested value, one undo step, and the
+   * selection goes to that control in the same step (setup, its group, the control) so the editor can flash it. Refused,
+   * with the reason, when the item is no longer current or the choice has no suggestion. `changed` names what changed.
+   */
+  resolve(item: Warning | Problem, choice?: number): ResolveResult;
   undo(): CommandResult;
   redo(): CommandResult;
   /** Selects what problem number `index` of `state.problems` points at (setup, group, control). */
@@ -602,6 +617,17 @@ function createLibrary(
     saveNow();
     return result(message);
   };
+  /** The Resolve choices for a warning or problem, and whether it is still current (listed in the state). */
+  const resolution = (item: Warning | Problem): { resolution: Resolution; current: boolean } => {
+    if ('controls' in item) {
+      const id = warningId(item);
+      const listed = state.warnings.find((w) => warningId(w) === id);
+      return { resolution: listed ? resolveWarning(state.configuration, listed, { factory: listed.state === 'factory' }) : { choices: [], sideBySide: false }, current: !!listed };
+    }
+    const listed = state.problems.some((p) => p.path === item.path && p.message === item.message);
+    return { resolution: listed ? resolveProblem(state.configuration, item) : { choices: [], sideBySide: false }, current: listed };
+  };
+
   const setupIndex = (id: string): number => state.configuration.setups.findIndex((s) => s.id === id);
   const withSetup = (id: string, change: (s: Setup) => Setup): Uc4Config => {
     const i = setupIndex(id);
@@ -1354,6 +1380,35 @@ function createLibrary(
       const next = removeIgnored(ignored, warning);
       if (next === ignored) return result();
       return ignoreStep(next, 'Warning is open again.');
+    },
+
+    suggest(item) {
+      return resolution(item).resolution;
+    },
+    resolve(item, choice = 0) {
+      const { resolution: r, current } = resolution(item);
+      if (!current) return refuse('That is no longer a warning or problem: nothing to resolve.');
+      const picked = r.choices[choice];
+      if (!picked) return refuse('There is nothing to resolve here.');
+      if (!picked.suggestion) return refuse(`${picked.name}: ${picked.reason ?? 'no suggestion'}.`);
+      const ref = locate(picked.path);
+      const setup = ref && state.configuration.setups[ref.setupIndex];
+      if (!ref || !setup || !ref.control) return refuse('There is no such control.');
+      const group = ref.encoderGroup ?? ref.faderButtonGroup ?? 0;
+      const address: ControlAddress = { setupId: setup.id, area: ref.control.area, group, index: ref.control.index };
+      const old = readControl(state.configuration, address);
+      if (!old) return refuse('There is no such control.');
+      const properties = Object.keys(picked.suggestion.change) as ControlProperty[];
+      const selection: SelectionChange = {
+        setupId: setup.id, control: ref.control,
+        ...(isEncoderArea(ref.control.area) ? { encoderGroup: group } : { faderButtonGroup: group }),
+      };
+      const done = library.setControl(address, { ...old, ...picked.suggestion.change } as AnyControl, { selection });
+      if (done.message) return done; // refused: setControl said why and changed nothing
+      const text = picked.suggestion.text;
+      const message = 'controls' in item ? `${picked.name} now sends ${text}.` : `${picked.name}: ${text}.`;
+      publish({ ...state, message });
+      return { ...result(message), changed: { address, properties } };
     },
 
     undo() {

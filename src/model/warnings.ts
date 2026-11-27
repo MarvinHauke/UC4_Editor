@@ -11,7 +11,7 @@ interface Entry {
   keys: MessageKey[];
 }
 
-type Sender = { type: string; channel: number; number: number; lower?: number; upper?: number };
+export type Sender = { type: string; channel: number; number: number; lower?: number; upper?: number };
 
 // What a control sends: CC types and the button `CC` are all CC; `CCAh` is CC n and n + 32; `OFF` sends nothing.
 // PrGC sends programs: a button's is its upper value, an encoder's or fader's the range lower…upper.
@@ -29,7 +29,7 @@ export function programsOf(c: { lower?: number; upper?: number }, isButton: bool
   return Array.from({ length: Math.max(0, hi - lo + 1) }, (_, i) => lo + i);
 }
 
-function keysOf(c: Sender, isButton: boolean): MessageKey[] {
+export function keysOf(c: Sender, isButton: boolean): MessageKey[] {
   const channel = c.channel;
   if (typeof channel !== 'number' || typeof c.number !== 'number') return [];
   switch (c.type) {
@@ -55,6 +55,13 @@ export function describeKey(k: MessageKey): string {
   return `${KIND_NAME[k.kind]}${n} ch ${k.channel}`;
 }
 
+const NAME_PREFIX = { encoders: 'Enc', pushButtons: 'Pbt', faders: 'FAd', buttons: 'btn' } as const;
+/** A control as the warnings and Resolve name it: short "Enc3", full "Enc3 · EG1" (group and index are 0-based). */
+export function controlName(area: keyof typeof NAME_PREFIX, group: number, index: number): { short: string; name: string } {
+  const short = `${NAME_PREFIX[area]}${index + 1}`;
+  return { short, name: `${short} · ${area === 'encoders' || area === 'pushButtons' ? 'EG' : 'FG'}${group + 1}` };
+}
+
 const canPlayTogether = (a: Entry, b: Entry): boolean => a.half !== b.half || a.group === b.group;
 
 // Note: the factory layout collides by design (EG4 encoders ↔ FG1 faders, CC 32–39; docs/reference/uc4-device.md).
@@ -66,12 +73,12 @@ export function warnings(config: Uc4Config): Warning[] {
       if (c) entries.push({ path, name, half, group, order: entries.length, keys: keysOf(c, button) });
     };
     (setup.encoderGroups ?? []).forEach((g, gi) => {
-      g?.encoders?.forEach((c, i) => { add(`setups[${si}].encoderGroups[${gi}].encoders[${i}]`, `Enc${i + 1} · EG${gi + 1}`, 'enc', gi, c); });
-      g?.pushButtons?.forEach((c, i) => { add(`setups[${si}].encoderGroups[${gi}].pushButtons[${i}]`, `Pbt${i + 1} · EG${gi + 1}`, 'enc', gi, c, true); });
+      g?.encoders?.forEach((c, i) => { add(`setups[${si}].encoderGroups[${gi}].encoders[${i}]`, controlName('encoders', gi, i).name, 'enc', gi, c); });
+      g?.pushButtons?.forEach((c, i) => { add(`setups[${si}].encoderGroups[${gi}].pushButtons[${i}]`, controlName('pushButtons', gi, i).name, 'enc', gi, c, true); });
     });
     (setup.faderButtonGroups ?? []).forEach((g, gi) => {
-      g?.faders?.forEach((c, i) => { add(`setups[${si}].faderButtonGroups[${gi}].faders[${i}]`, `FAd${i + 1} · FG${gi + 1}`, 'fad', gi, c); });
-      g?.buttons?.forEach((c, i) => { add(`setups[${si}].faderButtonGroups[${gi}].buttons[${i}]`, `btn${i + 1} · FG${gi + 1}`, 'fad', gi, c, true); });
+      g?.faders?.forEach((c, i) => { add(`setups[${si}].faderButtonGroups[${gi}].faders[${i}]`, controlName('faders', gi, i).name, 'fad', gi, c); });
+      g?.buttons?.forEach((c, i) => { add(`setups[${si}].faderButtonGroups[${gi}].buttons[${i}]`, controlName('buttons', gi, i).name, 'fad', gi, c, true); });
     });
 
     const byKey = new Map<string, Entry[]>();
