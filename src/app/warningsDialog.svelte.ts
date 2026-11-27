@@ -7,23 +7,19 @@ import type { Scope } from './warningList.ts';
 export function createWarningsDialog() {
   let open = $state(false);
   let scope = $state<Scope>('this');
-  let showIgnored = $state(false);
   let control = $state<string | null>(null);
   return {
     get open() { return open; },
     get scope() { return scope; },
-    get showIgnored() { return showIgnored; },
     /** The control path the list is narrowed to, or null. */
     get control() { return control; },
-    /** Opens it: "this setup" unless asked, narrowed to a control when given; ignored stay hidden unless asked. */
-    show(options: { scope?: Scope; control?: string | null; showIgnored?: boolean } = {}): void {
+    /** Opens it: "this setup" unless asked, narrowed to a control when given. */
+    show(options: { scope?: Scope; control?: string | null } = {}): void {
       scope = options.scope ?? 'this';
       control = options.control ?? null;
-      showIgnored = options.showIgnored ?? false;
       open = true;
     },
     setScope(next: Scope): void { scope = next; if (next === 'all') control = null; },
-    setShowIgnored(on: boolean): void { showIgnored = on; },
     clearControl(): void { control = null; },
     close(): void { open = false; },
   };

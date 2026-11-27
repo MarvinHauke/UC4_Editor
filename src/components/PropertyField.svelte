@@ -3,6 +3,7 @@
   import type { Field } from '../app/profile/uc4Properties.ts';
   import { isEmptyEntry } from '../app/numberEntry.ts';
   import { NUMBER_UNUSED_TYPES } from '../app/glyphText.ts';
+  import { flashOn, type Flash } from '../app/flash.ts';
   import { VALUE_WORDS, commandTypeLine, maxFor } from '../app/profile/uc4Properties.ts';
 
   interface Props {
@@ -13,8 +14,10 @@
     /** How to set this on the UC4 by hand (the help line). */
     hint?: string;
     onchange: (value: string | number) => void;
+    /** Resolve's event: the field flashes when it is one of the changed properties. */
+    flash?: Flash | null;
   }
-  let { field, value, control, problem, hint, onchange }: Props = $props();
+  let { field, value, control, problem, hint, onchange, flash = null }: Props = $props();
 
   const id = $props.id();
   let draftError = $state<string | null>(null);
@@ -69,7 +72,7 @@
   }
 </script>
 
-<div class="field" data-property={field.key} data-help="{field.friendly}: {field.input === 'choice' ? `one of ${field.choices.join(' ')}` : `${field.min}–${max}${unused ? (field.key === 'number' ? `; the UC4 does not send it for ${control.type}` : '; not used by relative types (CCr1, CCr2)') : ''}`}{typeLine ? ` · ${typeLine}` : ''} · UC4: {hint ?? field.device}">
+<div class="field" use:flashOn={{ flash, target: field.key, ring: true }} data-property={field.key} data-help="{field.friendly}: {field.input === 'choice' ? `one of ${field.choices.join(' ')}` : `${field.min}–${max}${unused ? (field.key === 'number' ? `; the UC4 does not send it for ${control.type}` : '; not used by relative types (CCr1, CCr2)') : ''}`}{typeLine ? ` · ${typeLine}` : ''} · UC4: {hint ?? field.device}">
   <label for={id}><span class="friendly">{field.friendly}</span><span class="device">{field.device}</span></label>
   {#if field.input === 'choice'}
     <select {id} class:invalid value={String(value)} aria-invalid={invalid} onchange={(e) => onchange(e.currentTarget.value)}>

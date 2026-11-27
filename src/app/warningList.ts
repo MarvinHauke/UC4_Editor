@@ -8,24 +8,24 @@ import { parseControlPath } from './warningMarks.ts';
 export type Scope = 'this' | 'all';
 export interface ProblemEntry { index: number; problem: Problem }
 
-export interface ListOptions { scope: Scope; showIgnored: boolean; setupId: string; setupIndex: number; control: string | null }
+export interface ListOptions { scope: Scope; setupId: string; setupIndex: number; control: string | null }
 
 /** The setup a problem's path lies in, or -1. */
 const problemSetup = (path: string): number => { const m = /^setups\[(\d+)\]/.exec(path); return m ? Number(m[1]) : -1; };
 
-/** Problems (with their index in `state.problems`, which `selectProblem` takes) and warnings to list. Problems never hide (one that belongs to no setup shows in every scope), and carry no control filter. */
+/** Problems (with their index in `state.problems`, which `selectProblem` takes) and warnings to list, of every state (the dialog groups them in blocks). Problems never hide (one that belongs to no setup shows in every scope), and carry no control filter. */
 export function listEntries(problems: readonly Problem[], warnings: readonly ListedWarning[], o: ListOptions): { problems: ProblemEntry[]; warnings: ListedWarning[] } {
   const here = (setupId: string): boolean => o.scope === 'all' || setupId === o.setupId;
   return {
     problems: problems.map((problem, index) => ({ index, problem })).filter((e) => { const at = problemSetup(e.problem.path); return o.scope === 'all' || at === -1 || at === o.setupIndex; }),
     warnings: warnings.filter((w) =>
-      here(w.setupId) && (o.showIgnored || w.state === 'open') && (o.control === null || w.controls.includes(o.control))),
+      here(w.setupId) && (o.control === null || w.controls.includes(o.control))),
   };
 }
 
-/** How many ignored and factory warnings the filter hides (the toggle says so). */
-export function hiddenCount(warnings: readonly ListedWarning[], o: Pick<ListOptions, 'scope' | 'setupId'>): number {
-  return warnings.filter((w) => (o.scope === 'all' || w.setupId === o.setupId) && w.state !== 'open').length;
+/** The dialog's warning blocks in order (decision 31): open, ignored, the factory layout's. */
+export function blocksOf(warnings: readonly ListedWarning[]): { open: ListedWarning[]; ignored: ListedWarning[]; factory: ListedWarning[] } {
+  return { open: warnings.filter((w) => w.state === 'open'), ignored: warnings.filter((w) => w.state === 'ignored'), factory: warnings.filter((w) => w.state === 'factory') };
 }
 
 /** The name of the control that is not `path` ("FAd5 · FG1"), from the control paths, not from the message text. */

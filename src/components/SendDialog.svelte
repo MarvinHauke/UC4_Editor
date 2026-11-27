@@ -94,16 +94,20 @@
     <h2 id="send-title">{view.title}</h2>
     <p>{view.replaces}</p>
     {#if pending.length > 0}
-      <h3 class="warn"><span aria-hidden="true">▲</span> {check.text}</h3>
+      <div class="checkline">
+        <h3 class="warn"><span aria-hidden="true">▲</span> {check.text}</h3>
+        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to show, resolve or ignore them one by one · this dialog stays">Review…</button>
+      </div>
       <ul class="changes" aria-label="Warnings">
         {#each pending.slice(0, 5) as w, i (i)}<li>{w.message}</li>{/each}
         {#if pending.length > 5}<li class="more">+ {pending.length - 5} more</li>{/if}
       </ul>
-      <p class="muted">A warning blocks nothing. “Send anyway” ignores these, so they stop counting; Undo brings them back.
-        <button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list of warnings, to show or ignore them one by one · this dialog stays">Review…</button></p>
+      <p class="muted">A warning blocks nothing. “Send anyway” ignores these, so they stop counting; Undo brings them back.</p>
     {:else if target?.kind === 'send'}
-      <p class="muted check"><span aria-hidden="true">✓</span> {check.text}
-        {#if ignoredCount > 0}<button type="button" class="review" onclick={() => { warningsDialog.show({ showIgnored: true }); }} data-help="Review: opens the list, to see the ignored warnings · this dialog stays">Review…</button>{/if}</p>
+      <div class="checkline">
+        <p class="muted check"><span aria-hidden="true">✓</span> <span class="nowrap">{check.text}</span></p>
+        {#if ignoredCount > 0}<button type="button" class="review" onclick={() => { warningsDialog.show(); }} data-help="Review: opens the list, to see the ignored warnings · this dialog stays">Review…</button>{/if}
+      </div>
     {/if}
     {#if view.changesTitle}<h3>{view.changesTitle}</h3>{/if}
     {#if view.noChanges}
@@ -127,9 +131,11 @@
 
 <style>
   .warn { color: var(--warn); }
-  .review { margin-left: var(--space-2); }
-  /* The check line's button sits on its own line, flush left, so a wrapped line doesn't leave it indented. */
-  .check .review { display: block; margin: var(--space-2) 0 0; }
+  /* The check line: its words left, Review… at the right edge (decision 33). */
+  .checkline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+  .checkline > :global(h3), .checkline > :global(p) { margin: 0; }
+  .review { flex: none; }
+  .nowrap { white-space: nowrap; }
   h3 { margin: var(--space-2) 0 var(--space-1); font-size: var(--text-md); }
   dialog { position: fixed; margin: 0; z-index: 20; box-sizing: border-box; overflow-y: auto; padding: var(--space-3); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
   h2 { margin: 0 0 var(--space-2); font-size: var(--text-lg); overflow-wrap: anywhere; }

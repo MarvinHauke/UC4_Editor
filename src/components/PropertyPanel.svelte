@@ -6,6 +6,7 @@
   import { controlPath, problemsOf } from '../app/controlProblems.ts';
   import { warningsOf } from '../app/warningMarks.ts';
   import { otherName } from '../app/warningList.ts';
+  import { resolveOptions } from '../app/resolveView.ts';
   import { useWarningsDialog } from '../app/warningsDialog.svelte.ts';
   import { NOTICE_SHORT } from '../app/links.ts';
   import PropertyField from './PropertyField.svelte';
@@ -56,8 +57,13 @@
     {#if warned.length > 0}
       <ul class="warned" aria-label="Warnings">
         {#each warned as w (w.message)}
+          {@const o = resolveOptions(store.suggest(w))[0]}
           <li><button type="button" onclick={() => { warningsDialog.show({ control: path }); }}
-            data-help="Warning: {w.message} · allowed, but check it is intended · click to review, show or ignore it"><span aria-hidden="true">▲</span> Also sent by {otherName(w, path)}</button></li>
+            data-help="Warning: {w.message} · allowed, but check it is intended · click to review, show or ignore it"><span aria-hidden="true">▲</span> Also sent by {otherName(w, path)}</button>
+            {#if o?.ok}
+              <button type="button" class="resolve" aria-label="Resolve: {o.label}" onclick={() => { store.resolve(w, 0); }}
+                data-help="Resolve: {o.label} · one undo step · the control is selected and the changed field flashes"><span aria-hidden="true">↺</span> {o.label}</button>
+            {/if}</li>
         {/each}
       </ul>
     {/if}
@@ -71,6 +77,7 @@
             problem={problems.find((p) => p.property === field.key)?.message}
             hint={deviceHint(sel.area, sel.index, field.key)}
             onchange={(value) => store.setProperty(sel.area, group, sel.index, field.key, value)}
+            flash={store.resolved}
           />
         {/each}
       </div>
@@ -92,8 +99,9 @@
   header { margin-bottom: var(--space-3); }
   .where { margin: 0; color: var(--text-muted); font-size: var(--text-sm); }
   .warned { margin: 0 0 var(--space-3); padding: 0; list-style: none; font-size: var(--text-sm); color: var(--warn); }
-  .warned li { margin-bottom: var(--space-1); }
+  .warned li { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-1); }
   .warned button { display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%; min-height: 24px; padding: 0 var(--space-2); font: inherit; font-size: var(--text-sm); text-align: left; color: var(--warn); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .warned .resolve { color: var(--text); }
   .warned button:hover { background: var(--accent-soft); }
   .warned button:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
   .fields { display: flex; flex-direction: column; gap: var(--space-2); }
