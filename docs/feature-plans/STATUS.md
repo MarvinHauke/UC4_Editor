@@ -37,7 +37,7 @@ _Last updated: 2026-11-27 (0008 steps 20–21, the review fixes, in work). Befor
 - **Later, own plan:** a warning level setting ("hard" turns warnings into errors; user, 2026-11-27).
 
 - **Fixes from the user's /code-review of `feat/live-view`** (2026-11-27) as 0008 steps 20 (uc4-ui) and 21
-  (uc4-model), in work; then a retro, then the PR on the user's word. Architect part done: `src/live/` in CLAUDE.md
+  (model half `adfb3c7`; UI call sites with uc4-ui), in work; then a retro, then the PR on the user's word. Architect part done: `src/live/` in CLAUDE.md
   and the layer chain; the unasked-for bits kept as 0008 decision 37 ([Map] on the next-to-map row too).
   Judgement calls for later: `live/session.ts` (579-line closure) and `storage/library.ts` (1547 lines) splits;
   `FakeInput` duplicated in devMidi and tests; shared button CSS.

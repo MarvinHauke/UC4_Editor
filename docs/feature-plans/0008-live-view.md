@@ -619,7 +619,7 @@ Cut 2026-11-26 (`/to-tickets`, approved by the user). Tracer bullets; each names
    value the user typed, not on a suggestion (35); a Changes line is dropped with a "Remove" text button, not ✕ (✕ clears a mapping, glossary); raw px
    spacing in ConnectionsColumn, MidiMonitor, FollowSwitch, MonitorRow onto the spacing tokens. Checks: tests,
    browser list at 1024 px, dark and light.
-21. **Review fixes: model** (user's /code-review, 2026-11-27) — uc4-model · blocked by: none · remove
+21. **Review fixes: model** (user's /code-review, 2026-11-27) — model half done: uc4-model (`adfb3c7`; reviewed: `src/model/controlPath.ts`, `setPlanAfter`, `unignore`); UI call sites and `setAfter` → `setPlanAfter` with uc4-ui — uc4-model · blocked by: none · remove
    `library.resolve` (35); `showAgain` renamed `unignore` (the glossary avoids "Show again"); one helper for the encoder-side areas
    (replaces the `area === 'encoders' || area === 'pushButtons'` copies) and one control-path parse/format (replaces
    three regexes); a one-end edit of a planned `PrGC` range moves the block (keeps its width, never reverses).
